@@ -45,12 +45,14 @@ jobs:
         run: bash install.sh --ci
       - name: Verify
         run: python3 tests/verify.py --launch
-      - name: Updater
+      - name: Updater (self-update from the latest release)
         run: |
           if [ "$RUNNER_OS" = macOS ]; then home="$HOME/Library/Application Support/Derp"; else home=$HOME/.local/share/derp; fi
+          echo 0.0.1 > "$home/VERSION"
           bash "$home/lib/derp-update"
-          cat "$home/update.log" 2>/dev/null || true
-          ! grep -q 'failed' "$home/update.log" 2>/dev/null
+          cat "$home/update.log"
+          grep -qE 'Derp [0-9.]+ installed' "$home/update.log"
+          ! grep -qE "failed|couldn't" "$home/update.log"
       - name: Uninstall
         run: |
           if [ "$RUNNER_OS" = macOS ]; then home="$HOME/Library/Application Support/Derp"; else home=$HOME/.local/share/derp; fi
@@ -83,12 +85,15 @@ jobs:
         run: powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -CI
       - name: Verify
         run: python tests/verify.py --launch
-      - name: Updater
+      - name: Updater (self-update from the latest release)
         run: |
+          Set-Content -Path "$env:LOCALAPPDATA\Derp\VERSION" -Value '0.0.1'
           powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Derp\lib\derp-update.ps1"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $log = "$env:LOCALAPPDATA\Derp\update.log"
-          if (Test-Path $log) { Get-Content $log; if (Select-String -Path $log -Pattern 'Engine update failed') { exit 1 } }
+          Get-Content $log
+          if (-not (Select-String -Path $log -Pattern 'Derp [0-9.]+ installed')) { throw 'self-update did not install' }
+          if (Select-String -Path $log -Pattern 'failed') { throw 'update failed' }
       - name: Uninstall
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Derp\lib\uninstall.ps1" -Purge

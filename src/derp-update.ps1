@@ -16,26 +16,24 @@ try { $lockStream = [IO.File]::Open($lock, 'OpenOrCreate', 'ReadWrite', 'None') 
 
 try {
     # 1. Derp itself.
+    $work = Join-Path $env:TEMP ('derp-update-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    New-Item -ItemType Directory -Path $work | Out-Null
     try {
-        $release = Get-LatestRelease
-        $tag = $release.tag_name.TrimStart('v')
+        $release = Get-LatestRelease $work
+        $tag = $release.Version
         $installed = (Get-Content (Join-Path $DerpHome 'VERSION') -Raw -ErrorAction SilentlyContinue)
         if ($installed) { $installed = $installed.Trim() }
         if (Test-NewerVersion $tag $installed) {
             Write-Log "updating Derp $installed -> $tag"
-            $work = Join-Path $env:TEMP ('derp-update-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
-            New-Item -ItemType Directory -Path $work | Out-Null
-            try {
-                $folder = Expand-Release $release $work
-                & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'install.ps1') -Update -CI
-                Write-Log "Derp $tag installed"
-            } finally {
-                Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
-            }
+            $folder = Expand-Release $release $work
+            & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'install.ps1') -Update -CI | Out-Null
+            if ($LASTEXITCODE) { Write-Log "Derp $tag failed to install" } else { Write-Log "Derp $tag installed" }
             . (Join-Path $DerpHome 'lib\lib.ps1')
         }
     } catch {
         Write-Log "Derp update failed: $($_.Exception.Message)"
+    } finally {
+        Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
     }
 
     # 2. The engine.

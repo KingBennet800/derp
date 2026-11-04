@@ -9,6 +9,9 @@
 #                             agent run: at most every 6 hours, notify when done
 set -euo pipefail
 
+# One block, so bash reads the whole script before running it: updating Derp
+# replaces this file mid-run.
+{
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=src/lib.sh
 source "$here/lib.sh"
@@ -34,7 +37,7 @@ if ! mkdir "$lock" 2>/dev/null; then
   [[ -n $(find "$lock" -maxdepth 0 -mmin +120 2>/dev/null) ]] || exit 0
   rm -rf "$lock" && mkdir "$lock"
 fi
-trap 'rm -rf "$lock"' EXIT
+trap 'rm -rf "$lock" "${work:-}"' EXIT
 
 if [[ $background ]]; then
   last=$(date -r "$CHECKED" +%s 2>/dev/null || echo 0)
@@ -42,20 +45,25 @@ if [[ $background ]]; then
   sleep 45 # let Derp finish starting up first
 fi
 
-# 1. Derp itself.
-release=$(curl -fs --max-time 30 "https://api.github.com/repos/$DERP_REPO/releases/latest" || true)
-[[ $release ]] || log "couldn't reach GitHub to check for Derp updates"
-tag=$(sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' <<<"$release" | head -n1)
+# 1. Derp itself: the latest release's SHA256SUMS names its version. (Read
+# from the release's files; GitHub's API is rate-limited per IP address.)
+releases=https://github.com/$DERP_REPO/releases
+work=$(mktemp -d "${TMPDIR:-/tmp}/derp-update.XXXXXX")
+tag='' tarball=''
+if curl -fsSL --max-time 30 "$releases/latest/download/SHA256SUMS" -o "$work/SHA256SUMS"; then
+  tarball=$(grep -oE 'derp-[0-9]+(\.[0-9]+)*\.tar\.gz$' "$work/SHA256SUMS" | head -n1 || true)
+  tag=${tarball#derp-}
+  tag=${tag%.tar.gz}
+else
+  log "couldn't reach GitHub to check for Derp updates"
+fi
 installed=$(cat "$DERP_HOME/VERSION" 2>/dev/null || echo 0)
 if [[ $tag ]] && version_newer "$tag" "$installed"; then
   log "updating Derp $installed -> $tag"
-  work=$(mktemp -d "${TMPDIR:-/tmp}/derp-update.XXXXXX")
-  tarball=$(grep -o '"browser_download_url": *"[^"]*\.tar\.gz"' <<<"$release" | head -n1 | cut -d'"' -f4)
-  sums=$(grep -o '"browser_download_url": *"[^"]*/SHA256SUMS"' <<<"$release" | head -n1 | cut -d'"' -f4)
-  if curl -fsSL "$tarball" -o "$work/${tarball##*/}" && curl -fsSL "$sums" -o "$work/SHA256SUMS" &&
-    (cd "$work" && grep " ${tarball##*/}\$" SHA256SUMS >expected &&
+  if curl -fsSL "$releases/download/v$tag/$tarball" -o "$work/$tarball" &&
+    (cd "$work" && grep " $tarball\$" SHA256SUMS >expected &&
       if command -v sha256sum >/dev/null; then sha256sum -c --quiet expected; else shasum -a 256 -c expected >/dev/null; fi); then
-    tar -xzf "$work/${tarball##*/}" -C "$work"
+    tar -xzf "$work/$tarball" -C "$work"
     if DERP_QUIET=1 bash "$work"/derp-*/install.sh --update >>"$LOG" 2>&1; then
       log "Derp $tag installed"
       notify "Derp updated" "Derp $tag is installed."
@@ -65,11 +73,11 @@ if [[ $tag ]] && version_newer "$tag" "$installed"; then
   else
     log "Derp $tag download failed or failed its checksum"
   fi
-  rm -rf "$work"
   # The new release may bring a new library; continue with it.
   # shellcheck source=src/lib.sh
   source "$DERP_HOME/lib/lib.sh"
 fi
+rm -rf "$work"
 
 # 2. The engine.
 latest=$(latest_firefox_version || true)
@@ -99,3 +107,5 @@ elif [[ $latest && $current && $latest != "$current" && $(engine_version "$DERP_
   log "engine $latest installed"
   [[ $background ]] || say "Engine $latest installed"
 fi
+exit
+}

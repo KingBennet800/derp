@@ -16,21 +16,21 @@ SRC=
 if [[ -f ${BASH_SOURCE[0]:-} ]]; then SRC=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd); fi
 
 # Run from a pipe or as a lone file: fetch the latest release, check it
-# against the release's checksums, and run its installer instead.
+# against the release's checksums, and run its installer instead. (Through
+# the release's own files: GitHub's API is rate-limited per IP address.)
 if [[ ! $SRC || ! -f $SRC/src/lib.sh ]]; then
-  repo=KingBennet800/derp
+  releases=https://github.com/KingBennet800/derp/releases
   work=$(mktemp -d)
   trap 'rm -rf "$work"' EXIT
-  curl -fsSL "https://api.github.com/repos/$repo/releases/latest" -o "$work/release.json"
-  tarball=$(grep -o '"browser_download_url": *"[^"]*\.tar\.gz"' "$work/release.json" | head -n1 | cut -d'"' -f4)
-  sums=$(grep -o '"browser_download_url": *"[^"]*/SHA256SUMS"' "$work/release.json" | head -n1 | cut -d'"' -f4)
-  [[ $tarball && $sums ]] || { echo "derp: couldn't find the latest release of $repo" >&2; exit 1; }
-  curl -fsSL "$tarball" -o "$work/${tarball##*/}"
-  curl -fsSL "$sums" -o "$work/SHA256SUMS"
-  (cd "$work" && grep " ${tarball##*/}\$" SHA256SUMS >expected &&
+  curl -fsSL "$releases/latest/download/SHA256SUMS" -o "$work/SHA256SUMS"
+  tarball=$(grep -oE 'derp-[0-9]+(\.[0-9]+)*\.tar\.gz$' "$work/SHA256SUMS" | head -n1)
+  [[ $tarball ]] || { echo "derp: couldn't find the latest release" >&2; exit 1; }
+  version=${tarball#derp-}
+  curl -fsSL "$releases/download/v${version%.tar.gz}/$tarball" -o "$work/$tarball"
+  (cd "$work" && grep " $tarball\$" SHA256SUMS >expected &&
     if command -v sha256sum >/dev/null; then sha256sum -c --quiet expected; else shasum -a 256 -c expected >/dev/null; fi) ||
     { echo "derp: release download failed its checksum" >&2; exit 1; }
-  tar -xzf "$work/${tarball##*/}" -C "$work"
+  tar -xzf "$work/$tarball" -C "$work"
   bash "$work"/derp-*/install.sh "$@"
   exit
 fi
@@ -56,8 +56,13 @@ rm -rf "$DERP_HOME/features" "$DERP_HOME/theme"
 cp -Rp "$SRC/src/features" "$DERP_HOME/features"
 cp -Rp "$SRC/theme" "$DERP_HOME/theme"
 for f in derp-patch.py lib.sh derp-update; do
-  # -p keeps mtimes, so an unchanged patcher doesn't trigger a re-brand.
-  cmp -s "$SRC/src/$f" "$DERP_HOME/lib/$f" 2>/dev/null || cp -p "$SRC/src/$f" "$DERP_HOME/lib/$f"
+  # -p keeps mtimes, so an unchanged patcher doesn't trigger a re-brand. The
+  # new file is renamed into place: derp-update runs this installer, and bash
+  # keeps reading the running script from its original file.
+  if ! cmp -s "$SRC/src/$f" "$DERP_HOME/lib/$f" 2>/dev/null; then
+    cp -p "$SRC/src/$f" "$DERP_HOME/lib/.$f.new"
+    mv -f "$DERP_HOME/lib/.$f.new" "$DERP_HOME/lib/$f"
+  fi
 done
 install -m 755 "$SRC/uninstall.sh" "$DERP_HOME/lib/uninstall.sh"
 chmod +x "$DERP_HOME/lib/derp-update"

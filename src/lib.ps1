@@ -150,21 +150,23 @@ function Install-StagedEngine {
     Remove-Item $old -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-function Get-LatestRelease {
-    Invoke-RestMethod -Uri "https://api.github.com/repos/$DerpRepo/releases/latest" -Headers $Headers -UseBasicParsing
+# The latest release's version, zip and checksum, from its SHA256SUMS (read
+# from the release's files; GitHub's API is rate-limited per IP address).
+function Get-LatestRelease([string]$Work) {
+    $sums = Join-Path $Work 'SHA256SUMS'
+    Save-Url "https://github.com/$DerpRepo/releases/latest/download/SHA256SUMS" $sums
+    $line = Get-Content $sums | Where-Object { $_ -match ' (derp-(\d+(\.\d+)*)\.zip)$' } | Select-Object -First 1
+    if (-not $line) { throw "The latest Derp release lists no zip" }
+    $null = $line -match ' (derp-(\d+(\.\d+)*)\.zip)$'
+    @{ Version = $Matches[2]; Zip = $Matches[1]; Hash = $line.Split(' ')[0].ToUpper() }
 }
 
-# Download a release's zip, check it against the release's SHA256SUMS and
-# unpack it; returns the folder holding its install.ps1.
+# Download a release's zip, check its checksum and unpack it; returns the
+# folder holding its install.ps1.
 function Expand-Release($Release, [string]$Work) {
-    $zip = $Release.assets | Where-Object { $_.name -like '*.zip' } | Select-Object -First 1
-    $sums = $Release.assets | Where-Object { $_.name -eq 'SHA256SUMS' } | Select-Object -First 1
-    if (-not $zip -or -not $sums) { throw "The latest Derp release has no zip or SHA256SUMS" }
-    $zipPath = Join-Path $Work $zip.name
-    Save-Url $zip.browser_download_url $zipPath
-    Save-Url $sums.browser_download_url (Join-Path $Work 'SHA256SUMS')
-    $line = Get-Content (Join-Path $Work 'SHA256SUMS') | Where-Object { $_ -like "* $($zip.name)" } | Select-Object -First 1
-    if (-not $line -or (Get-FileHash $zipPath -Algorithm SHA256).Hash -ne $line.Split(' ')[0].ToUpper()) {
+    $zipPath = Join-Path $Work $Release.Zip
+    Save-Url "https://github.com/$DerpRepo/releases/download/v$($Release.Version)/$($Release.Zip)" $zipPath
+    if ((Get-FileHash $zipPath -Algorithm SHA256).Hash -ne $Release.Hash) {
         throw "The Derp release download failed its checksum"
     }
     Expand-Archive -Path $zipPath -DestinationPath $Work -Force

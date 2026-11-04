@@ -18,21 +18,22 @@ $ErrorActionPreference = 'Stop'
 $Src = $PSScriptRoot
 
 # Run through `irm | iex` or as a lone file: fetch the latest release, check
-# it against the release's checksums, and run its installer instead.
+# it against the release's checksums, and run its installer instead. (Through
+# the release's own files: GitHub's API is rate-limited per IP address.)
 if (-not $Src -or -not (Test-Path (Join-Path $Src 'src\lib.ps1'))) {
     $ProgressPreference = 'SilentlyContinue'
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-    $headers = @{ 'User-Agent' = 'derp-installer' }
-    $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/KingBennet800/derp/releases/latest' -Headers $headers -UseBasicParsing
-    $zip = $release.assets | Where-Object { $_.name -like '*.zip' } | Select-Object -First 1
-    $sums = $release.assets | Where-Object { $_.name -eq 'SHA256SUMS' } | Select-Object -First 1
+    $releases = 'https://github.com/KingBennet800/derp/releases'
     $work = Join-Path $env:TEMP ('derp-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
     New-Item -ItemType Directory -Path $work | Out-Null
-    $zipPath = Join-Path $work $zip.name
-    Invoke-WebRequest -Uri $zip.browser_download_url -OutFile $zipPath -UseBasicParsing -Headers $headers
-    Invoke-WebRequest -Uri $sums.browser_download_url -OutFile (Join-Path $work 'SHA256SUMS') -UseBasicParsing -Headers $headers
-    $line = Get-Content (Join-Path $work 'SHA256SUMS') | Where-Object { $_ -like "* $($zip.name)" } | Select-Object -First 1
-    if (-not $line -or (Get-FileHash $zipPath -Algorithm SHA256).Hash -ne $line.Split(' ')[0].ToUpper()) {
+    $sums = Join-Path $work 'SHA256SUMS'
+    Invoke-WebRequest -Uri "$releases/latest/download/SHA256SUMS" -OutFile $sums -UseBasicParsing
+    $line = Get-Content $sums | Where-Object { $_ -match ' (derp-(\d+(\.\d+)*)\.zip)$' } | Select-Object -First 1
+    if (-not $line) { throw "Couldn't find the latest Derp release" }
+    $null = $line -match ' (derp-(\d+(\.\d+)*)\.zip)$'
+    $zipPath = Join-Path $work $Matches[1]
+    Invoke-WebRequest -Uri "$releases/download/v$($Matches[2])/$($Matches[1])" -OutFile $zipPath -UseBasicParsing
+    if ((Get-FileHash $zipPath -Algorithm SHA256).Hash -ne $line.Split(' ')[0].ToUpper()) {
         throw 'The Derp release download failed its checksum'
     }
     Expand-Archive -Path $zipPath -DestinationPath $work -Force

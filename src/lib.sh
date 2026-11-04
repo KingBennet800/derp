@@ -81,20 +81,17 @@ derp_python() {
 }
 
 install_portable_python() {
-  local api=https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest
-  local arch work url name sums
+  # Straight from the release's files, not GitHub's API (rate-limited per IP).
+  local base=https://github.com/astral-sh/python-build-standalone/releases/latest/download
+  local arch work name
   arch=$(uname -m)
   [[ $arch == arm64 ]] && arch=aarch64
   say "Fetching a portable Python for Derp's patcher"
   work=$(mktemp -d)
-  curl -fsSL "$api" -o "$work/release.json"
-  url=$(grep -o "https://[^\"]*/cpython-3\.12\.[0-9]*+[0-9]*-$arch-apple-darwin-install_only\.tar\.gz" "$work/release.json" | head -n1)
-  sums=$(grep -o 'https://[^"]*/SHA256SUMS' "$work/release.json" | head -n1)
-  [[ $url && $sums ]] || die "couldn't find a portable Python build for $arch"
-  name=${url##*/}
-  name=${name//%2B/+}
-  curl -fsSL "$url" -o "$work/$name"
-  curl -fsSL "$sums" -o "$work/SHA256SUMS"
+  curl -fsSL "$base/SHA256SUMS" -o "$work/SHA256SUMS"
+  name=$(grep -oE "cpython-3\.12\.[0-9]+\+[0-9]+-$arch-apple-darwin-install_only\.tar\.gz\$" "$work/SHA256SUMS" | head -n1)
+  [[ $name ]] || die "couldn't find a portable Python build for $arch"
+  curl -fsSL "$base/${name//+/%2B}" -o "$work/$name"
   grep " $name\$" "$work/SHA256SUMS" >"$work/expected" || die "no checksum published for $name"
   (cd "$work" && shasum -a 256 -c expected >/dev/null) || die "portable Python checksum mismatch"
   mkdir -p "$DERP_HOME"

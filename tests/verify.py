@@ -7,6 +7,7 @@ is off.
     python3 tests/verify.py --launch  also start the engine headless once
 """
 import importlib.util
+import json
 import os
 import pathlib
 import subprocess
@@ -52,6 +53,12 @@ def main():
         check((ENGINE / "browser/omni.ja.firefox").exists(), "pristine archive kept for re-branding")
     for target in patch.CONFIG_FILES:
         check((ENGINE / target).exists(), f"{target} installed")
+    try:
+        policies = json.loads((ENGINE / "distribution/policies.json").read_text())["policies"]
+    except (OSError, ValueError, KeyError):
+        policies = {}
+    check(policies.get("DisableAccounts") is True, "Mozilla accounts off")
+    check(policies.get("IPProtectionAvailable") is False, "Mozilla VPN off")
     for name in patch.WINDOW_ICONS:
         check((ENGINE / "browser/chrome/icons/default" / name).exists(), f"window icon {name}")
     check((ENGINE / ".derp-stamp").exists(), "branding stamp written")
@@ -73,6 +80,7 @@ def main():
         check(plist_value("CFBundleName") == "Derp", "app named Derp")
         check(plist_value("CFBundleIdentifier") == "io.github.kingbennet800.derp", "own bundle id")
         check(plist_value("LSEnvironment.XRE_PROFILE_PATH") == str(HOME / "profile"), "opens Derp's own profile")
+        check(plist_value("LSEnvironment.MOZ_CRASHREPORTER_DISABLE") == "1", "no crash reporter")
         check((APP / "Contents/Resources/derp.icns").exists(), "app icon")
         for strings in APP.glob("Contents/Resources/*.lproj/InfoPlist.strings"):
             check(plist_value("CFBundleName", strings) in ("", "Derp"), f"{strings.parent.name} name")

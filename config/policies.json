@@ -3,6 +3,9 @@
     "DisableAppUpdate": true,
     "DisableTelemetry": true,
     "DisableFirefoxStudies": true,
+    "DisableAccounts": true,
+    "DisableFeedbackCommands": true,
+    "IPProtectionAvailable": false,
     "DontCheckDefaultBrowser": true,
     "DefaultBrowserSettingEnabled": false,
     "NoDefaultBookmarks": true,
@@ -14,18 +17,23 @@
       "UrlbarInterventions": false,
       "SkipOnboarding": true,
       "MoreFromMozilla": false,
+      "FirefoxLabs": false,
+      "WhatsNew": false,
       "Locked": false
     },
     "FirefoxHome": {
       "Search": true,
       "TopSites": true,
       "SponsoredTopSites": false,
-      "SponsoredStories": false,
       "Stories": false,
+      "SponsoredStories": false,
+      "Weather": false,
       "Locked": false
     },
     "FirefoxSuggest": {
+      "WebSuggestions": false,
       "SponsoredSuggestions": false,
+      "OnlineEnabled": false,
       "ImproveSuggest": false,
       "Locked": false
     },

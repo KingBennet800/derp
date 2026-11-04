@@ -87,9 +87,8 @@ Windows) to delete it too.
   separators and close buttons that appear on hover. The toolbar holds just
   sidebar, back, forward and reload, plus the extensions and ⋮ menus; the
   address bar has no pill until you hover or type, and its page buttons
-  (bookmark, reader view, install) appear on hover. The account avatar lives at
-  the top right, uBlock Origin in the extensions menu, and the bookmarks bar is
-  off (Ctrl+Shift+B). Neutral grays, a blue accent, no translucency or blur.
+  (bookmark, reader view, install) appear on hover. uBlock Origin lives in the
+  extensions menu, and the bookmarks bar is off (Ctrl+Shift+B). Neutral grays, a blue accent, no translucency or blur.
   Follows GNOME light/dark; private windows are dark with a violet tint. Works
   with any theme: the selected tab takes the theme's toolbar color.
 - **Derp touches**: loading tabs show a tiny bouncing Derp orb, and a
@@ -106,10 +105,19 @@ Windows) to delete it too.
   (removable).
 - **Quiet**: no telemetry, studies, remote rollouts, sponsored tiles/suggestions
   or onboarding nags; no default bookmarks. The previous session is restored on start.
+- **No Mozilla account or services**: no sign-in, Sync or Send Tab, and none of
+  Mozilla's online services: no VPN, Relay email masks, Monitor breach alerts,
+  online address-bar suggestions, weather, stories, Firefox Labs, "More from
+  Mozilla", feedback or "report broken site" forms, and no crash reports sent to
+  Mozilla. Settings opens on **Import and backup** (the local half of what was
+  "Account and sync"). Still on, because they keep you safe or are what the
+  engine is: security updates to certificate revocation lists and blocklists,
+  Safe Browsing, add-on installs and updates from addons.mozilla.org, and
+  downloads of on-device translation models.
 - **No Firefox branding**: name, logos, the fox mascot (about 90 illustrations,
   including the private-browsing mask), the first-run splash animation, UI text,
-  the updater window and the process name all say Derp. Mozilla's online
-  services keep Mozilla's name (Mozilla Relay, Mozilla Monitor). The engine still
+  the updater window and the process name all say Derp. Where Mozilla's own
+  services are named, they keep Mozilla's name. The engine still
   tells websites it is Firefox (user agent), so sites work normally.
 
 ## Features Firefox users keep asking for

@@ -7,7 +7,8 @@
  *   launcher.
  * - Memory Saver: unloads tabs you haven't looked at for a while.
  * - A "Derp" page in Settings for these, JPEG XL and AI controls.
- * - Derp's minimal toolbar layout, applied once (you can rearrange after). */
+ * - Derp's minimal toolbar layout, applied once (you can rearrange after).
+ * Mozilla's account and online services are off by policy (config/). */
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -61,22 +62,30 @@ const WebApps = {
 };
 
 const Layout = {
-  // Bump to apply a new default layout once more; earlier versions stay applied.
-  VERSION: 1,
   PREF: "derp.layout.version",
+  // Each step runs once per profile, in order; you can rearrange freely after.
+  STEPS: [
+    // 1: uBlock Origin lives in the extensions menu, off the toolbar.
+    CustomizableUI => CustomizableUI.addWidgetToArea("ublock0_raymondhill_net-browser-action", CustomizableUI.AREA_ADDONS),
+    // 2: no Mozilla account button (Derp turns accounts off).
+    CustomizableUI => CustomizableUI.removeWidgetFromArea("fxa-toolbar-menu-button"),
+  ],
 
   init() {
-    if (Services.prefs.getIntPref(this.PREF, 0) >= this.VERSION) {
+    const done = Services.prefs.getIntPref(this.PREF, 0);
+    if (done >= this.STEPS.length) {
       return;
     }
     const apply = () => {
       Services.obs.removeObserver(apply, "browser-delayed-startup-finished");
-      const { CustomizableUI } = lazy;
-      // The account avatar sits at the end of the tab strip...
-      CustomizableUI.addWidgetToArea("fxa-toolbar-menu-button", CustomizableUI.AREA_TABSTRIP);
-      // ...and uBlock Origin moves into the extensions menu, off the toolbar.
-      CustomizableUI.addWidgetToArea("ublock0_raymondhill_net-browser-action", CustomizableUI.AREA_ADDONS);
-      Services.prefs.setIntPref(this.PREF, this.VERSION);
+      for (const step of this.STEPS.slice(done)) {
+        try {
+          step(lazy.CustomizableUI);
+        } catch (e) {
+          console.error("Derp layout step failed:", e);
+        }
+      }
+      Services.prefs.setIntPref(this.PREF, this.STEPS.length);
     };
     Services.obs.addObserver(apply, "browser-delayed-startup-finished");
   },

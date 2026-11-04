@@ -5,6 +5,12 @@ pane-derp-title = Derp
 derp-pane-header =
     .heading = Derp
 
+# "Account and sync" without Mozilla accounts.
+derp-pane-import-backup-title = Import and backup
+    .title = Import and backup
+derp-import-backup-section =
+    .heading = Import and backup
+
 derp-memory-saver-group =
     .label = Memory Saver
     .description = Unload tabs you haven’t used for a while to free up memory. Pinned tabs, tabs playing sound, picture-in-picture, calls and pages with unsaved changes stay loaded. Unloaded tabs look faded and reload when you open them.

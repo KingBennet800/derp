@@ -74,10 +74,25 @@ pref("extensions.ml.enabled", false);
 // No remote rollouts: they can swap in Mozilla's newer (Firefox-branded,
 // signed) new tab page or onboarding that Derp can't rebrand.
 pref("nimbus.rollouts.enabled", false);
+
+// ── No Mozilla account or online services ────────────────────────────────
+// policies.json turns off the account (sign-in, Sync, Send Tab), Mozilla's
+// VPN, feedback/"report broken site", Firefox Labs and online suggestions.
+pref("signon.firefoxRelay.feature", "disabled"); // Relay email masks
+pref("signon.management.page.breach-alerts.enabled", false); // Monitor breach alerts
+pref("browser.contentblocking.report.monitor.enabled", false);
+pref("browser.contentblocking.report.vpn.enabled", false);
+pref("browser.contentblocking.report.show_mobile_app", false);
 pref("browser.promo.pin.enabled", false);
 pref("browser.vpn_promo.enabled", false);
 pref("browser.preferences.moreFromMozilla", false);
-pref("browser.contentblocking.report.show_mobile_app", false);
+pref("browser.uitour.enabled", false); // mozilla.org pages can't drive the UI
+pref("ui.new-webcompat-reporter.enabled", false);
+// Crash reports aren't sent to Mozilla (Derp is a modified build).
+pref("breakpad.reportURL", "");
+pref("browser.tabs.crashReporting.sendReport", false);
+pref("browser.crashReports.unsubmittedCheck.enabled", false);
+pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 // ── Clean new tab & address bar ──────────────────────────────────────────
 pref("browser.newtabpage.activity-stream.showSponsored", false);

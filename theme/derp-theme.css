@@ -249,11 +249,6 @@
   --panel-menuitem-border-radius: 8px !important;
 }
 
-/* No "sign in" nag dot on the account button. */
-#fxa-toolbar-menu-button .toolbarbutton-badge {
-  display: none !important;
-}
-
 /* ── Toolbars ───────────────────────────────────────────────────────────── */
 
 #nav-bar {

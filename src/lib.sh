@@ -174,6 +174,8 @@ brand_engine() {
   # Derp's own profile, never Firefox's, however the app is opened.
   plutil -extract LSEnvironment xml1 -o /dev/null "$plist" 2>/dev/null || plutil -insert LSEnvironment -dictionary "$plist"
   plutil -replace LSEnvironment.XRE_PROFILE_PATH -string "$DERP_HOME/profile" "$plist"
+  # No crash reporter window offering to send reports to Mozilla.
+  plutil -replace LSEnvironment.MOZ_CRASHREPORTER_DISABLE -string 1 "$plist"
   # Localized names override Info.plist's (the menu bar would still say Firefox).
   for strings in "$target"/Contents/Resources/*.lproj/InfoPlist.strings; do
     [[ -f $strings ]] || continue

@@ -41,4 +41,6 @@ for arg in "$@"; do
 done
 
 export MOZ_ENABLE_WAYLAND=1
+# No crash reporter window offering to send reports to Mozilla.
+export MOZ_CRASHREPORTER_DISABLE=1
 exec "$bin" --name derp --class derp "${profile[@]}" "$@"

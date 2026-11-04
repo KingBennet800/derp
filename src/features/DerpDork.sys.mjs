@@ -13,6 +13,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const PREF = "derp.dork";
+// Set once you've made your dork (pressed "That's me!"); until then Derp
+// greets you with the editor at startup.
+const MADE_PREF = "derp.dork.made";
 const WIDGET = "derp-dork-button";
 const VIEW = "PanelUI-derp-dork";
 const XHTML = "http://www.w3.org/1999/xhtml";
@@ -486,9 +489,30 @@ export const DerpDork = {
         return true;
       },
       onCreated: node => this.paintButton(node),
-      onViewShowing: event => this.render(event.target, { pop: false }),
     });
     Services.prefs.addObserver(PREF, () => this.refresh());
+    Services.prefs.addObserver(MADE_PREF, () => this.refresh());
+    if (!this.made) {
+      this.welcomeOnStartup();
+    }
+  },
+
+  get made() {
+    return Services.prefs.getBoolPref(MADE_PREF, false);
+  },
+
+  /** A new Derp makes you make your dork: the editor opens, welcoming you, in
+   * the first window of each session until you press "That's me!". */
+  welcomeOnStartup() {
+    const greet = win => {
+      Services.obs.removeObserver(greet, "browser-delayed-startup-finished");
+      win.setTimeout(() => {
+        if (!this.made && !win.closed) {
+          this.openEditor(win, { welcome: true });
+        }
+      }, 700);
+    };
+    Services.obs.addObserver(greet, "browser-delayed-startup-finished");
   },
 
   /** Strings, styles and the editor for a browser window (once). The editor
@@ -508,6 +532,8 @@ export const DerpDork = {
 
   paintButton(node, dork = this.get()) {
     node.setAttribute("image", this.dataURL(dork, 48));
+    // A ring pulses around the avatar until you've made your dork.
+    node.toggleAttribute("derp-new", !this.made);
     if (dork.name) {
       node.ownerDocument.l10n.setAttributes(node, "derp-dork-button-named", { name: dork.name });
     } else {
@@ -530,8 +556,9 @@ export const DerpDork = {
   },
 
   /** Open the editor in a browser window, from its avatar button if it has one. */
-  openEditor(win) {
-    this.prepare(win.document);
+  openEditor(win, { welcome = false } = {}) {
+    const view = this.prepare(win.document);
+    view.toggleAttribute("welcome", welcome);
     const node = lazy.CustomizableUI.getWidget(WIDGET)?.forWindow(win)?.node;
     const anchor = node?.checkVisibility() ? node : win.document.getElementById("PanelUI-menu-button");
     win.PanelUI.showSubView(VIEW, anchor);
@@ -590,6 +617,12 @@ export const DerpDork = {
       { class: "derp-dork" },
       h(
         "div",
+        { class: "derp-dork-welcome" },
+        h("h2", { "data-l10n-id": "derp-dork-welcome-title" }),
+        h("p", { "data-l10n-id": "derp-dork-welcome" })
+      ),
+      h(
+        "div",
         { class: "derp-dork-hero" },
         h("img", { class: "derp-dork-face", alt: "" }),
         name,
@@ -610,6 +643,11 @@ export const DerpDork = {
     body.className = "panel-subview-body";
     body.append(editor);
     view.append(body);
+
+    // However it's opened (the avatar, Settings, the welcome), it shows the
+    // current dork; welcome mode lasts until it closes.
+    view.addEventListener("ViewShowing", () => this.render(view, { pop: false }));
+    view.addEventListener("ViewHiding", () => view.removeAttribute("welcome"));
 
     let typing = null;
     name.addEventListener("input", () => {
@@ -637,6 +675,7 @@ export const DerpDork = {
       } else if (button.dataset.action === "save") {
         this.savePicture(doc.defaultView).catch(console.error);
       } else if (button.dataset.action === "done") {
+        Services.prefs.setBoolPref(MADE_PREF, true);
         view.closest("panel")?.hidePopup();
       }
     });
@@ -662,6 +701,8 @@ export const DerpDork = {
     for (const button of view.querySelectorAll(".derp-dork-tabs > button")) {
       button.setAttribute("aria-selected", button.dataset.tab === tab.id);
     }
+    const done = view.querySelector("[data-action=done]");
+    doc.l10n.setAttributes(done, view.hasAttribute("welcome") ? "derp-dork-welcome-done" : "derp-dork-done");
 
     const focused = doc.activeElement?.dataset?.value;
     const choice = (part, value, content, attrs = {}) => {

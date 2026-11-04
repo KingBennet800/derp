@@ -143,5 +143,12 @@ if (-not $current -or $Engine) {
 }
 
 if (-not $Update) {
-    Write-Say 'Done. Open Derp from the Start menu. To make it your default browser: Settings > Apps > Default apps > Derp.'
+    # Open Derp right away: the first thing it does is have you make your dork.
+    if (-not $CI -and -not (Test-DerpRunning)) {
+        Start-Process -FilePath $exe -ArgumentList "-profile `"$ProfileDir`""
+        Write-Say 'Done. Derp is opening: first, make your dork!'
+    } else {
+        Write-Say 'Done. Open Derp from the Start menu.'
+    }
+    Write-Say 'To make it your default browser: Settings > Apps > Default apps > Derp.'
 }

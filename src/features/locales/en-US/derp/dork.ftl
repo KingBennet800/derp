@@ -20,6 +20,11 @@ derp-dork-tab-hair = Hair
 derp-dork-tab-extras = Extras
 derp-dork-tab-backdrop = Backdrop
 
+# Shown the first time Derp starts: it makes you make your dork.
+derp-dork-welcome-title = Welcome to Derp!
+derp-dork-welcome = First, make your dork: a little cartoon you. It’s your Derp profile, and it stays on this device.
+derp-dork-welcome-done = That’s me!
+
 derp-dork-shuffle = Shuffle
 derp-dork-save = Save picture
 derp-dork-done = Done

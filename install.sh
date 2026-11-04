@@ -133,8 +133,20 @@ else
   register_app
 fi
 
+# Open Derp right away: the first thing it does is have you make your dork.
+open_derp() {
+  if [[ $PLATFORM == macos ]]; then
+    open "$DERP_APP" 2>/dev/null
+  else
+    [[ ${WAYLAND_DISPLAY:-}${DISPLAY:-} ]] || return 1
+    setsid -f "$HOME/.local/bin/derp" </dev/null >/dev/null 2>&1
+  fi
+}
+
 if [[ $mode == install ]]; then
-  if [[ $PLATFORM == linux ]]; then
+  if [[ ! $ci ]] && ! derp_running && open_derp; then
+    say "Done. Derp is opening: first, make your dork!"
+  elif [[ $PLATFORM == linux ]]; then
     say "Done. Open Derp from your app grid, or run: derp"
   else
     say "Done. Derp is in ~/Applications; open it from Launchpad or Spotlight."

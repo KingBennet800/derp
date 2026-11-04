@@ -26,7 +26,8 @@ irm https://raw.githubusercontent.com/KingBennet800/derp/main/install.ps1 | iex
 ```
 
 The one-liners download the latest [release](https://github.com/KingBennet800/derp/releases),
-check it against the release's `SHA256SUMS`, and run its installer. You can also
+check it against the release's `SHA256SUMS`, and run its installer. When it's
+done, Derp opens and has you make your dork first. You can also
 download a release (or clone this repo) and run `install.sh` / `install.ps1` from it.
 Run the installer again at any time to repair Derp.
 
@@ -134,7 +135,9 @@ browsers and backups.
 
 Your dork is stored only on this device, in your profile's preferences
 (`derp.dork`). There's no sign-in and no server. Every new profile starts with
-a random dork of its own.
+a random dork of its own, and the first time Derp opens it welcomes you with
+the editor so you can make it yours. It asks again each time Derp starts (and
+a ring pulses around the avatar) until you press **That's me!**
 
 ## Features Firefox users keep asking for
 

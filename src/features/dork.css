@@ -40,6 +40,40 @@
   outline-offset: 1px;
 }
 
+/* ── Welcome (the first time) ─────────────────────────────────────────────── */
+
+.derp-dork-welcome {
+  display: none;
+  text-align: center;
+}
+
+#PanelUI-derp-dork[welcome] .derp-dork-welcome {
+  display: block;
+}
+
+#PanelUI-derp-dork[welcome] .derp-dork-note {
+  display: none;
+}
+
+.derp-dork-welcome h2 {
+  margin: 0;
+  font-size: 1.45em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.derp-dork-welcome p {
+  margin: 4px 8px 0;
+  color: var(--dork-dim);
+  font-size: 0.95em;
+}
+
+/* Until you've made your dork, a ring pulses around the avatar. */
+#derp-dork-button[derp-new] > .toolbarbutton-icon {
+  outline: 2px solid var(--dork-accent, var(--derp-accent, AccentColor));
+  outline-offset: -2px;
+}
+
 /* ── You ─────────────────────────────────────────────────────────────────── */
 
 .derp-dork-hero {
@@ -230,6 +264,14 @@
   #derp-dork-button:hover > .toolbarbutton-icon {
     transform: rotate(-8deg) scale(1.06);
   }
+
+  #derp-dork-button[derp-new] > .toolbarbutton-icon {
+    animation: derp-dork-ring 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes derp-dork-ring {
+  50% { outline-offset: 1px; outline-color: transparent; }
 }
 
 @keyframes derp-dork-pop {

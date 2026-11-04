@@ -1,0 +1,5 @@
+/* Derp: styles for Derp's built-in pages, then your own tweaks.
+ * Put your changes in custom-content.css. */
+@import url("derp-palette.css");
+@import url("derp-content.css");
+@import url("custom-content.css");

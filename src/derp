@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# derp — launch the Derp browser.
+#
+# Any arguments go straight to the engine, e.g.:
+#   derp https://example.com      derp --private-window      derp --new-window
+set -euo pipefail
+
+DERP_HOME="${DERP_HOME:-$HOME/.local/share/derp}"
+ENGINE="$DERP_HOME/firefox"
+PROFILE="$DERP_HOME/profile"
+
+die() {
+  notify-send --icon=derp "Derp" "$1" 2>/dev/null || true
+  echo "derp: $1" >&2
+  exit 1
+}
+
+# Unless Derp is already running: swap in a staged update, re-brand if needed
+# (the patcher leaves Firefox a .purgecaches marker when it changes anything).
+rc=0
+python3 -I "$DERP_HOME/lib/derp-patch.py" --launch >/dev/null || rc=$?
+case $rc in
+  0 | 3 | 10) ;;
+  *) echo "derp: branding check failed (exit $rc); starting anyway" >&2 ;;
+esac
+
+[[ -x $ENGINE/firefox ]] || die "engine not found in $ENGINE — re-run Derp's install.sh"
+
+
+# Look for a newer engine in the background (rate-limited, never blocks startup).
+setsid -f nice -n 10 "$DERP_HOME/lib/derp-update" --background </dev/null >/dev/null 2>&1 || true
+
+# Starting through the "derp" link names the process "derp" instead of "firefox".
+bin=$ENGINE/derp
+[[ -x $bin ]] || bin=$ENGINE/firefox
+
+# Web app desktop entries pass their own -profile (the same one).
+profile=(--profile "$PROFILE")
+for arg in "$@"; do
+  [[ $arg == -profile || $arg == --profile ]] && profile=()
+done
+
+export MOZ_ENABLE_WAYLAND=1
+exec "$bin" --name derp --class derp "${profile[@]}" "$@"

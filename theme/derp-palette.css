@@ -1,0 +1,38 @@
+/* Derp palette — shared by the browser UI (chrome:) and Derp's built-in pages
+ * (about:). Managed by Derp's installer.
+ *
+ * Firefox's Nova UI takes its accents, text and icon tints from two violet
+ * scales. These are the same steps remapped to Derp's look: a clean blue
+ * accent (the blue end of Derp's logo) and true neutral grays, at the same
+ * OKLCH lightness so contrast doesn't change. */
+
+@-moz-document url-prefix("chrome:"), url-prefix("about:") {
+  :root {
+    --color-violet-0: #f0f5ff !important;
+    --color-violet-10: #cddfff !important;
+    --color-violet-20: #aac8ff !important;
+    --color-violet-30: #86b1ff !important;
+    --color-violet-40: #6298ff !important;
+    --color-violet-50: #417ff8 !important;
+    --color-violet-60: #2c69df !important;
+    --color-violet-70: #2757b6 !important;
+    --color-violet-80: #1d4593 !important;
+    --color-violet-90: #153471 !important;
+    --color-violet-100: #0f244d !important;
+    --color-violet-110: #0c1628 !important;
+
+    --color-violet-desaturated-0: #eef2f7 !important;
+    --color-violet-desaturated-10: #e1e5ea !important;
+    --color-violet-desaturated-20: #cbcfd4 !important;
+    --color-violet-desaturated-30: #afb3b7 !important;
+    --color-violet-desaturated-40: #8e9296 !important;
+    --color-violet-desaturated-50: #6e7176 !important;
+    --color-violet-desaturated-60: #515459 !important;
+    --color-violet-desaturated-70: #383b3f !important;
+    --color-violet-desaturated-80: #232629 !important;
+    --color-violet-desaturated-90: #14161a !important;
+
+    /* Panels, menus and cards: Firefox's dark gray (#23222b) has a purple cast. */
+    --background-color-box: light-dark(#ffffff, #26272a) !important;
+  }
+}

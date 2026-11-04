@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: shellcheck
+        run: shellcheck -x install.sh uninstall.sh src/lib.sh src/derp src/derp-update
+      - name: Python compiles
+        run: python3 -m py_compile src/derp-patch.py tests/verify.py brand/make-assets.py
+      - name: Release files are complete
+        run: |
+          grep -qxE '[0-9]+\.[0-9]+\.[0-9]+' VERSION
+          test -s brand/build/derp.ico && test -s brand/build/derp.icns
+
+  unix:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # Test the portable Python that Macs without Apple's developer tools get.
+      DERP_FORCE_PORTABLE_PYTHON: ${{ runner.os == 'macOS' && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install
+        run: bash install.sh --ci
+      - name: Install again (repair / re-brand path)
+        run: bash install.sh --ci
+      - name: Verify
+        run: python3 tests/verify.py --launch
+      - name: Updater
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then home="$HOME/Library/Application Support/Derp"; else home=$HOME/.local/share/derp; fi
+          bash "$home/lib/derp-update"
+          cat "$home/update.log" 2>/dev/null || true
+          ! grep -q 'failed' "$home/update.log" 2>/dev/null
+      - name: Uninstall
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then home="$HOME/Library/Application Support/Derp"; else home=$HOME/.local/share/derp; fi
+          bash "$home/lib/uninstall.sh" --purge
+          if [ "$RUNNER_OS" = macOS ]; then test ! -e ~/Applications/Derp.app && test ! -e "$HOME/Library/Application Support/Derp"
+          else test ! -e ~/.local/share/derp && test ! -e ~/.local/bin/derp; fi
+
+  windows:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: powershell # Windows PowerShell 5.1, what every Windows PC has
+    steps:
+      - uses: actions/checkout@v5
+      - name: PowerShell parses
+        run: |
+          foreach ($f in 'install.ps1', 'uninstall.ps1', 'src\lib.ps1', 'src\derp-update.ps1') {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errors) | Out-Null
+            if ($errors) { $errors; exit 1 }
+          }
+      - name: Install
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -CI
+      - name: Install again (repair / re-brand path)
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -CI
+      - name: Verify
+        run: python tests/verify.py --launch
+      - name: Updater
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Derp\lib\derp-update.ps1"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $log = "$env:LOCALAPPDATA\Derp\update.log"
+          if (Test-Path $log) { Get-Content $log; if (Select-String -Path $log -Pattern 'Engine update failed') { exit 1 } }
+      - name: Uninstall
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Derp\lib\uninstall.ps1" -Purge
+          if (Test-Path "$env:LOCALAPPDATA\Derp") { throw 'Derp folder left behind' }
+          if (Test-Path 'HKCU:\Software\Clients\StartMenuInternet\Derp') { throw 'registry left behind' }

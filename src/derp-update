@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# derp-update — keep Derp current on Linux and macOS:
+#   * Derp itself, from the latest GitHub release (checksum-verified), and
+#   * its Firefox engine, fetched from Mozilla, verified, branded and staged
+#     next to the current one, then swapped in while Derp isn't running.
+#
+#   derp-update               check now
+#   derp-update --background  what the Linux launcher and the macOS login
+#                             agent run: at most every 6 hours, notify when done
+set -euo pipefail
+
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=src/lib.sh
+source "$here/lib.sh"
+
+background=
+[[ ${1:-} == --background ]] && background=1 && export DERP_QUIET=1
+LOG=$DERP_HOME/update.log
+CHECKED=$DERP_HOME/.update-checked
+log() { printf '%s %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$*" >>"$LOG"; }
+notify() {
+  [[ $background ]] || { say "$2"; return; }
+  if [[ $PLATFORM == macos ]]; then
+    osascript -e "display notification \"$2\" with title \"$1\"" 2>/dev/null || true
+  else
+    notify-send --icon=derp --app-name=Derp "$1" "$2" 2>/dev/null || true
+  fi
+}
+
+mkdir -p "$DERP_HOME"
+# One run at a time (mkdir is atomic; a lock older than 2 hours is stale).
+lock=$DERP_HOME/.update.lock.d
+if ! mkdir "$lock" 2>/dev/null; then
+  [[ -n $(find "$lock" -maxdepth 0 -mmin +120 2>/dev/null) ]] || exit 0
+  rm -rf "$lock" && mkdir "$lock"
+fi
+trap 'rm -rf "$lock"' EXIT
+
+if [[ $background ]]; then
+  last=$(date -r "$CHECKED" +%s 2>/dev/null || echo 0)
+  (($(date +%s) - last >= 6 * 3600)) || exit 0
+  sleep 45 # let Derp finish starting up first
+fi
+
+# 1. Derp itself.
+release=$(curl -fs --max-time 30 "https://api.github.com/repos/$DERP_REPO/releases/latest" || true)
+[[ $release ]] || log "couldn't reach GitHub to check for Derp updates"
+tag=$(sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' <<<"$release" | head -n1)
+installed=$(cat "$DERP_HOME/VERSION" 2>/dev/null || echo 0)
+if [[ $tag ]] && version_newer "$tag" "$installed"; then
+  log "updating Derp $installed -> $tag"
+  work=$(mktemp -d "${TMPDIR:-/tmp}/derp-update.XXXXXX")
+  tarball=$(grep -o '"browser_download_url": *"[^"]*\.tar\.gz"' <<<"$release" | head -n1 | cut -d'"' -f4)
+  sums=$(grep -o '"browser_download_url": *"[^"]*/SHA256SUMS"' <<<"$release" | head -n1 | cut -d'"' -f4)
+  if curl -fsSL "$tarball" -o "$work/${tarball##*/}" && curl -fsSL "$sums" -o "$work/SHA256SUMS" &&
+    (cd "$work" && grep " ${tarball##*/}\$" SHA256SUMS >expected &&
+      if command -v sha256sum >/dev/null; then sha256sum -c --quiet expected; else shasum -a 256 -c expected >/dev/null; fi); then
+    tar -xzf "$work/${tarball##*/}" -C "$work"
+    if DERP_QUIET=1 bash "$work"/derp-*/install.sh --update >>"$LOG" 2>&1; then
+      log "Derp $tag installed"
+      notify "Derp updated" "Derp $tag is installed."
+    else
+      log "Derp $tag failed to install"
+    fi
+  else
+    log "Derp $tag download failed or failed its checksum"
+  fi
+  rm -rf "$work"
+  # The new release may bring a new library; continue with it.
+  # shellcheck source=src/lib.sh
+  source "$DERP_HOME/lib/lib.sh"
+fi
+
+# 2. The engine.
+latest=$(latest_firefox_version || true)
+current=$(engine_version "$DERP_ENGINE")
+staged_dir=$([[ $PLATFORM == macos ]] && echo "$DERP_STAGED/Contents/Resources" || echo "$DERP_STAGED")
+staged=$(engine_version "$staged_dir")
+if [[ $latest ]]; then
+  touch "$CHECKED"
+  if [[ -z $current ]] || { version_newer "$latest" "$current" && [[ $staged != "$latest" ]]; }; then
+    log "staging engine $latest (current: ${current:-none})"
+    say "Fetching engine $latest"
+    if (DERP_QUIET=1 stage_engine "$latest") >>"$LOG" 2>&1; then
+      log "engine $latest staged"
+    else
+      log "engine $latest failed to stage"
+      [[ $background ]] || say "Engine $latest failed to stage; see $LOG"
+    fi
+  fi
+else
+  log "couldn't reach Mozilla to check for engine updates"
+fi
+
+apply_staged
+if [[ -e $DERP_STAGED ]]; then
+  notify "Derp update ready" "Engine $latest is used the next time you open Derp."
+elif [[ $latest && $current && $latest != "$current" && $(engine_version "$DERP_ENGINE") == "$latest" ]]; then
+  log "engine $latest installed"
+  [[ $background ]] || say "Engine $latest installed"
+fi

@@ -1,0 +1,33 @@
+/* Derp's About dialog. Replaces chrome://branding/content/aboutDialog.css. */
+
+@media not ((prefers-contrast) and (prefers-color-scheme: light)) {
+  #aboutDialogContainer {
+    background-color: #1c1d20;
+    color: #e8eaed;
+    color-scheme: dark;
+  }
+
+  #bottomBox {
+    background-color: #151618;
+  }
+
+  #trademark {
+    color: #8e9296;
+  }
+}
+
+#rightBox {
+  background-size: auto 44px;
+  margin-inline: 30px;
+  padding-top: 76px;
+}
+
+#bottomBox {
+  padding: 15px 10px;
+}
+
+#trademark {
+  font-size: xx-small;
+  text-align: center;
+  margin-block: 10px;
+}

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="body" x1="110" y1="70" x2="410" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C6F57E"/>
+      <stop offset=".42" stop-color="#2FD6BE"/>
+      <stop offset="1" stop-color="#2F6FEB"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="176" cy="140" r="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".6"/>
+      <stop offset=".55" stop-color="#fff" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="depth" cx="340" cy="400" r="270" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B2E8F" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#1B2E8F" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-50%" width="140%" height="200%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <clipPath id="mouth">
+      <path d="M190 316c26 62 112 74 146-12-40 22-100 26-146 12z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="256" cy="478" rx="150" ry="16" fill="#06151c" opacity=".28" filter="url(#soft)"/>
+
+  <circle cx="256" cy="262" r="200" fill="url(#body)"/>
+  <circle cx="256" cy="262" r="200" fill="url(#depth)"/>
+  <circle cx="256" cy="262" r="200" fill="url(#shine)"/>
+  <circle cx="256" cy="262" r="197" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="6"/>
+
+  <ellipse cx="146" cy="304" rx="26" ry="14" fill="#FF5D8F" opacity=".55"/>
+  <ellipse cx="378" cy="292" rx="26" ry="14" fill="#FF5D8F" opacity=".55"/>
+
+  <circle cx="186" cy="230" r="60" fill="#fff"/>
+  <circle cx="322" cy="218" r="72" fill="#fff"/>
+  <circle cx="186" cy="230" r="60" fill="none" stroke="#0B1424" stroke-opacity=".1" stroke-width="5"/>
+  <circle cx="322" cy="218" r="72" fill="none" stroke="#0B1424" stroke-opacity=".1" stroke-width="5"/>
+  <circle cx="208" cy="210" r="27" fill="#0B1424"/>
+  <circle cx="298" cy="244" r="32" fill="#0B1424"/>
+  <circle cx="217" cy="200" r="9" fill="#fff"/>
+  <circle cx="309" cy="233" r="10" fill="#fff"/>
+
+  <path d="M190 316c26 62 112 74 146-12-40 22-100 26-146 12z" fill="#0B1424"/>
+  <ellipse cx="284" cy="364" rx="34" ry="26" fill="#FF6B8B" clip-path="url(#mouth)"/>
+</svg>

@@ -1,0 +1,6 @@
+/* Derp: loads the Derp theme, then your own tweaks.
+ * Don't edit this file or derp-theme.css (reinstalling overwrites them) —
+ * put your changes in custom.css. */
+@import url("derp-palette.css");
+@import url("derp-theme.css");
+@import url("custom.css");

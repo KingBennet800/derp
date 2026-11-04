@@ -1,0 +1,56 @@
+name: Release
+
+# Push a tag like v1.2.3 (matching VERSION) to publish a release. Installed
+# copies of Derp pick it up within 6 hours.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tag matches VERSION
+        run: test "v$(cat VERSION)" = "$GITHUB_REF_NAME"
+      - name: Build archives
+        run: |
+          name=derp-$(cat VERSION)
+          git archive --format=tar.gz --prefix="$name/" -o "$name.tar.gz" HEAD
+          git archive --format=zip --prefix="$name/" -o "$name.zip" HEAD
+          sha256sum "$name.tar.gz" "$name.zip" > SHA256SUMS
+          cat SHA256SUMS
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" derp-*.tar.gz derp-*.zip SHA256SUMS \
+            --title "Derp $(cat VERSION)" --generate-notes --verify-tag
+
+  # Install from the published release exactly the way the README says to.
+  one-liners:
+    needs: publish
+    name: one-liner ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install (Linux, macOS)
+        if: runner.os != 'Windows'
+        working-directory: ${{ runner.temp }}
+        run: curl -fsSL "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/install.sh" | bash -s -- --ci
+      - name: Install (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        working-directory: ${{ runner.temp }}
+        run: '& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/$env:GITHUB_REPOSITORY/$env:GITHUB_SHA/install.ps1"))) -CI'
+      - name: Verify
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then python tests/verify.py --launch; else python3 tests/verify.py --launch; fi

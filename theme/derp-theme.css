@@ -1,0 +1,477 @@
+/* Derp — browser chrome theme (Firefox 159, Nova UI).
+ *
+ * A quiet, minimal frame: tabs in the title bar, the selected tab outlined by
+ * a hairline that runs on as the toolbar's top edge, an address bar with no
+ * pill until you reach for it, round icon buttons, neutral grays and a blue
+ * accent. No translucency or blur.
+ *
+ * Managed by Derp's installer and overwritten on reinstall. Put your own
+ * tweaks in custom.css next to this file.
+ *
+ * userChrome is a user-origin sheet, so overriding Firefox's author-origin
+ * tokens needs !important. */
+
+/* ── Palette ────────────────────────────────────────────────────────────── */
+
+/* Registered as real colors so each light/dark pair below is resolved once,
+ * on the window root. Left unregistered, Firefox resolves them per element,
+ * and with "dark toolbars" on, the tab and address bar came out dark on a
+ * light toolbar. */
+@property --derp-accent { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-frame { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-frame-inactive { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-toolbar { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-field { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-field-focus { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-text { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-text-dim { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-icon { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-hover { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-line { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-content-line { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --derp-content { syntax: "<color>"; inherits: true; initial-value: transparent; }
+
+:root {
+  --derp-accent: light-dark(#2f6feb, #86b1ff);
+  --derp-frame: light-dark(#ececee, #1b1b1c);
+  --derp-frame-inactive: light-dark(#f2f2f4, #212122);
+  --derp-toolbar: light-dark(#fafafa, #272728);
+  --derp-field: light-dark(#ededf0, #303032);
+  --derp-field-focus: light-dark(#ffffff, #303032);
+  --derp-text: light-dark(#1d1d1f, #ececec);
+  --derp-text-dim: light-dark(#6e6e73, #a3a3a6);
+  --derp-icon: light-dark(#5a5a60, #b4b4b8);
+  --derp-hover: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.07));
+  --derp-line: light-dark(#d8d8dc, #3a3a3c);
+  --derp-content-line: light-dark(#e0e0e4, #333335);
+  --derp-content: light-dark(#ffffff, #1e1e1f);
+
+  /* Hairlines: Derp's gray, or a tint of the text color under add-on themes. */
+  --derp-hairline: var(--derp-line);
+
+  --derp-tab-radius: 10px;
+  --derp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --derp-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --derp-gradient: linear-gradient(90deg, #c6f57e, #2fd6be 45%, #2f6feb);
+
+  /* Private windows are always dark, with a violet tint so they stand out. */
+  &[privatebrowsingmode="temporary"] {
+    --derp-accent: #b8a4ff;
+    --derp-frame: #1c1925;
+    --derp-frame-inactive: #211e2a;
+    --derp-toolbar: #2a2633;
+    --derp-field: #343040;
+    --derp-field-focus: #343040;
+    --derp-text: #ecebf2;
+    --derp-text-dim: #bdb8cc;
+    --derp-icon: #cbc5da;
+    --derp-hover: rgba(255, 255, 255, 0.08);
+    --derp-line: #3d3848;
+    --derp-content-line: #3a3546;
+    --derp-content: #1f1c27;
+  }
+}
+
+/* Recolor Firefox's own tokens — only for the built-in themes (private
+ * windows use one too), so an add-on theme from addons.mozilla.org still looks
+ * the way its author intended. */
+:root:is([theme-in-app], :not([lwtheme]), [privatebrowsingmode="temporary"]) {
+  --toolbox-background-color: var(--derp-frame) !important;
+  --toolbox-background-color-inactive: var(--derp-frame-inactive) !important;
+  --toolbox-background-gradient: none !important;
+  --toolbox-background-image: none !important;
+  --toolbox-text-color: var(--derp-text) !important;
+  --toolbox-text-color-current: var(--derp-text) !important;
+  --toolbar-text-color: var(--derp-text) !important;
+  --toolbar-background-color: var(--derp-toolbar) !important;
+  --tabs-navbar-separator-color: transparent !important;
+  --chrome-content-separator-color: var(--derp-content-line) !important;
+
+  --toolbar-field-background-color: var(--derp-field) !important;
+  --toolbar-field-background-color-focus: var(--derp-field-focus) !important;
+  --toolbar-field-border-color: transparent !important;
+  --toolbar-field-border-color-focus: var(--derp-accent) !important;
+  --toolbar-field-text-color: var(--derp-text) !important;
+
+  --toolbarbutton-icon-fill: var(--derp-icon) !important;
+  --toolbarbutton-background-color-hover: var(--derp-hover) !important;
+  --toolbarbutton-background-color-active: color-mix(in srgb, currentColor 16%, transparent) !important;
+  --toolbarbutton-border-radius: 999px !important;
+
+  --color-accent-primary: var(--derp-accent) !important;
+  --focus-outline-color: var(--derp-accent) !important;
+  --tab-icon-fill-loading: var(--derp-accent) !important;
+
+  --tab-background-color-selected: var(--derp-toolbar) !important;
+  --tab-background-color-hover: var(--derp-hover) !important;
+  --tab-border-color-selected: transparent !important;
+  --tab-box-shadow-selected: none !important;
+  --tab-text-color: var(--derp-text-dim) !important;
+  --tab-text-color-hover: var(--derp-text) !important;
+  --tab-text-color-selected: var(--derp-text) !important;
+
+  --tabpanel-background-color: var(--derp-content) !important;
+}
+
+/* Add-on themes (Alpenglow, the Nova colorways, addons.mozilla.org themes)
+ * keep their own colors. Their selected-tab color usually differs from their
+ * toolbar, so below the selected tab takes the toolbar's color, as Chrome does
+ * with themes; its text follows suit. */
+:root[lwtheme]:not([theme-in-app], [privatebrowsingmode="temporary"]) {
+  --tab-text-color-selected: var(--toolbar-text-color) !important;
+  --tabs-navbar-separator-color: transparent !important;
+  --derp-hairline: color-mix(in srgb, var(--toolbar-text-color) 16%, transparent);
+}
+
+/* ── Tabs: minimal folder tabs ───────────────────────────────────────────
+ * The selected tab is the toolbar's color with a hairline outline. The
+ * hairline runs on along the bottom of the tab strip as the toolbar's top
+ * edge, broken only where the selected tab opens into the toolbar. */
+
+#TabsToolbar {
+  background-image: linear-gradient(var(--derp-hairline), var(--derp-hairline)) !important;
+  background-repeat: no-repeat !important;
+  background-position: bottom !important;
+  background-size: 100% 1px !important;
+}
+
+#tabbrowser-tabs[orient="horizontal"] {
+  .tab-background {
+    margin-block: 6px 5px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .tabbrowser-tab[selected] {
+    /* Room for the curved feet, which sit just outside the tab. */
+    overflow-clip-margin: calc(var(--derp-tab-radius) + 2px) !important;
+  }
+
+  .tabbrowser-tab[selected] > .tab-stack > .tab-background {
+    --derp-tab-fill:
+      linear-gradient(var(--toolbar-background-color), var(--toolbar-background-color)),
+      var(--toolbox-background-color);
+    position: relative;
+    margin-block-end: 0 !important;
+    border-radius: var(--derp-tab-radius) var(--derp-tab-radius) 0 0 !important;
+    /* The toolbar's color over the frame's, so a translucent theme toolbar
+       still comes out opaque and covers the hairline under the tab. The
+       shorthand also resets Firefox's Light/Dark theme styling, which paints
+       a gradient border here with background-clip: border-area. */
+    background: var(--derp-tab-fill) !important;
+    box-shadow:
+      inset 1px 0 var(--derp-hairline),
+      inset -1px 0 var(--derp-hairline),
+      inset 0 1px var(--derp-hairline) !important;
+
+    /* Curved feet: the tab's fill with a quarter circle cut out, and the
+       hairline drawn along the curve. Each overlaps the tab's edge by 1px so
+       the straight side line hands over to the arc, which then lands on the
+       hairline running along the tab strip. */
+    &::before,
+    &::after {
+      --r: var(--derp-tab-radius);
+      content: "";
+      position: absolute;
+      bottom: 0;
+      width: var(--r);
+      height: var(--r);
+      pointer-events: none;
+      background:
+        radial-gradient(
+          circle at var(--derp-foot-at),
+          transparent calc(var(--r) - 1.6px),
+          var(--derp-hairline) calc(var(--r) - 0.9px),
+          var(--derp-hairline) calc(var(--r) - 0.4px),
+          transparent calc(var(--r) + 0.1px)
+        ),
+        var(--derp-tab-fill);
+      mask-image: radial-gradient(circle at var(--derp-foot-at), transparent calc(var(--r) - 1.6px), #000 calc(var(--r) - 0.9px));
+    }
+
+    &::before {
+      --derp-foot-at: 0 0;
+      inset-inline-start: calc(1px - var(--r));
+    }
+
+    &::after {
+      --derp-foot-at: 100% 0;
+      inset-inline-end: calc(1px - var(--r));
+    }
+
+    &:dir(rtl)::before {
+      --derp-foot-at: 100% 0;
+    }
+
+    &:dir(rtl)::after {
+      --derp-foot-at: 0 0;
+    }
+  }
+
+  .tabbrowser-tab[selected] .tab-label {
+    font-weight: 500;
+  }
+
+  /* Close buttons appear on hover. */
+  .tabbrowser-tab:not(:hover) .tab-close-button {
+    opacity: 0;
+  }
+}
+
+#tabbrowser-tabs .tab-label {
+  font-size: 0.95em;
+}
+
+.tab-background {
+  transition: background-color 140ms var(--derp-ease) !important;
+}
+
+.tab-close-button {
+  list-style-image: url("icons/close.svg") !important;
+  border-radius: 999px !important;
+  transition: background-color 120ms var(--derp-ease), opacity 120ms var(--derp-ease) !important;
+}
+
+/* Tabs unloaded by Memory Saver (or by hand) fade back a little. */
+.tabbrowser-tab[pending]:not([selected]) :is(.tab-icon-image, .tab-label) {
+  opacity: 0.55;
+}
+
+#alltabs-button {
+  display: none !important;
+}
+
+/* Menus and panels: rounder, with pill-shaped rows to match the tabs. */
+:root {
+  --panel-border-radius: 14px !important;
+  --panel-menuitem-border-radius: 8px !important;
+}
+
+/* No "sign in" nag dot on the account button. */
+#fxa-toolbar-menu-button .toolbarbutton-badge {
+  display: none !important;
+}
+
+/* ── Toolbars ───────────────────────────────────────────────────────────── */
+
+#nav-bar {
+  border-top: 0 !important;
+  box-shadow: none !important;
+}
+
+#PersonalToolbar {
+  border-top: 0 !important;
+}
+
+/* Importing lives in Settings and the Bookmarks menu; keep the bar clean. */
+#import-button {
+  display: none !important;
+}
+
+/* Derp's own icon set. */
+#back-button { list-style-image: url("icons/back.svg") !important; }
+#forward-button { list-style-image: url("icons/forward.svg") !important; }
+#reload-button { list-style-image: url("icons/reload.svg") !important; }
+#stop-button { list-style-image: url("icons/stop.svg") !important; }
+#home-button { list-style-image: url("icons/home.svg") !important; }
+#sidebar-button { list-style-image: url("icons/sidebar.svg") !important; }
+#PanelUI-menu-button { list-style-image: url("icons/menu.svg") !important; }
+#downloads-button { list-style-image: url("icons/downloads.svg") !important; }
+:is(#new-tab-button, #tabs-newtab-button, #vertical-tabs-newtab-button) {
+  list-style-image: url("icons/plus.svg") !important;
+}
+#star-button { list-style-image: url("icons/star.svg") !important; }
+#star-button[starred] { list-style-image: url("icons/star-filled.svg") !important; }
+
+.toolbarbutton-1 > :is(.toolbarbutton-icon, .toolbarbutton-badge-stack, .toolbarbutton-text) {
+  transition: background-color 120ms var(--derp-ease), transform 140ms var(--derp-ease) !important;
+}
+
+.toolbarbutton-1:not([disabled]):active:hover > :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+  transform: scale(0.92);
+}
+
+/* ── Address bar ────────────────────────────────────────────────────────── */
+
+#urlbar .urlbar-background,
+#urlbar .urlbar-input-container {
+  transition: background-color 140ms var(--derp-ease), box-shadow 160ms var(--derp-ease) !important;
+}
+
+/* No pill at rest: the field fills in when you hover it or start typing, and
+ * the full dropdown takes over once results open. */
+#urlbar:not([open]) .urlbar-background {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+#urlbar:not([open]):is(:hover, [usertyping], [searchmode]) .urlbar-background {
+  background-color: color-mix(in srgb, currentColor 7%, transparent) !important;
+}
+
+/* The engine switcher waits until you type; the page buttons (bookmark,
+ * reader view, install as app) until you hover the bar. */
+#urlbar:not([usertyping], [searchmode], [open]) .searchmode-switcher {
+  display: none !important;
+}
+
+#page-action-buttons {
+  transition: opacity 160ms var(--derp-ease);
+}
+
+#urlbar:not(:hover, [focused]) #page-action-buttons {
+  opacity: 0;
+}
+
+#urlbar ::selection {
+  background-color: color-mix(in srgb, var(--focus-outline-color) 32%, transparent);
+  color: inherit;
+}
+
+/* ── Address bar dropdown: flat, with a soft drop ─────────────────────── */
+
+#urlbar {
+  --urlbar-background-box-shadow-open: 0 14px 30px -16px light-dark(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.65)) !important;
+  /* Results: a soft tint for the selected row instead of a solid fill. */
+  --urlbarview-background-color-selected: color-mix(in srgb, var(--focus-outline-color) 16%, transparent) !important;
+  --urlbarview-text-color-selected: var(--toolbar-field-text-color-focus, currentColor) !important;
+  --urlbarview-background-color-hover: color-mix(in srgb, currentColor 8%, transparent) !important;
+  --urlbarview-text-color-hover: var(--toolbar-field-text-color-focus, currentColor) !important;
+}
+
+/* …with a wash of Derp's lime and teal fading in from the left. */
+.urlbarView-row[selected] {
+  background-image: linear-gradient(
+    90deg,
+    light-dark(rgba(198, 245, 126, 0.45), rgba(198, 245, 126, 0.16)),
+    light-dark(rgba(47, 214, 190, 0.2), rgba(47, 214, 190, 0.1)) 30%,
+    transparent 65%
+  ) !important;
+}
+
+/* ── Derp's loading orb (replaces Firefox's spinner in tabs) ────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[sessionrestored] .tab-throbber[busy]::before {
+    background: url("icons/loading-wait.svg") center / 16px no-repeat !important;
+    width: 100% !important;
+    animation: none !important;
+    opacity: 1 !important;
+    fill: currentColor !important;
+  }
+
+  :root[sessionrestored] .tab-throbber[busy][progress]::before {
+    background-image: url("icons/loading.svg") !important;
+  }
+}
+
+/* ── Page progress: a Derp-gradient shimmer under the toolbar ───────────── */
+
+#nav-bar::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  width: 35%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--derp-gradient);
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 450ms var(--derp-ease);
+}
+
+:root:has(#tabbrowser-tabs .tabbrowser-tab[selected][busy]) #nav-bar::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(#tabbrowser-tabs .tabbrowser-tab[selected][busy]) #nav-bar::after {
+    animation: derp-progress 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+}
+
+@keyframes derp-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+/* Light/dark and focus changes fade instead of snapping. */
+body,
+#nav-bar,
+#PersonalToolbar {
+  transition: background-color 260ms var(--derp-ease) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tabbrowser-tab[fadein]:not([pinned]) > .tab-stack {
+    animation: derp-tab-in 220ms var(--derp-ease) both;
+  }
+
+  /* Switching tabs eases the page in. */
+  #tabbrowser-tabpanels > .deck-selected .browserStack {
+    animation: derp-page-in 180ms var(--derp-ease) both;
+  }
+
+  /* Buttons that act out what they do. */
+  .toolbarbutton-1 > .toolbarbutton-icon,
+  .tab-close-button {
+    transition:
+      background-color 120ms var(--derp-ease),
+      opacity 120ms var(--derp-ease),
+      transform 260ms var(--derp-spring) !important;
+  }
+
+  #back-button:not([disabled]):active:hover > .toolbarbutton-icon {
+    transform: translateX(-2px) scale(0.92);
+  }
+
+  #forward-button:not([disabled]):active:hover > .toolbarbutton-icon {
+    transform: translateX(2px) scale(0.92);
+  }
+
+  #reload-button:active:hover > .toolbarbutton-icon {
+    transform: rotate(-80deg) scale(0.92);
+  }
+
+  :is(#new-tab-button, #tabs-newtab-button):hover > .toolbarbutton-icon,
+  .tab-close-button:hover {
+    transform: rotate(90deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Starring a page makes the star pop (only right after you click it). */
+  #star-button-box:hover > #star-button[starred] {
+    animation: derp-star 480ms var(--derp-spring);
+  }
+}
+
+@keyframes derp-star {
+  from {
+    transform: scale(0.3) rotate(-40deg);
+  }
+}
+
+@keyframes derp-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes derp-page-in {
+  from {
+    opacity: 0.35;
+  }
+}

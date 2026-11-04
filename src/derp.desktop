@@ -1,0 +1,23 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Derp
+GenericName=Web Browser
+Comment=A fast, fluid web browser built on Firefox
+Exec=@BIN@/derp %u
+Icon=derp
+Terminal=false
+StartupNotify=true
+StartupWMClass=derp
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;application/xml;application/pdf;image/svg+xml;x-scheme-handler/http;x-scheme-handler/https;
+Keywords=web;browser;internet;derp;firefox;
+Actions=new-window;new-private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=@BIN@/derp --new-window %u
+
+[Desktop Action new-private-window]
+Name=New Private Window
+Exec=@BIN@/derp --private-window %u

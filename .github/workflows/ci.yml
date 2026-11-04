@@ -36,7 +36,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       # Test the portable Python that Macs without Apple's developer tools get.
-      DERP_FORCE_PORTABLE_PYTHON: ${{ runner.os == 'macOS' && '1' || '' }}
+      DERP_FORCE_PORTABLE_PYTHON: ${{ startsWith(matrix.os, 'macos') && '1' || '' }}
     steps:
       - uses: actions/checkout@v5
       - name: Install

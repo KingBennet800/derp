@@ -16,6 +16,10 @@ const PREF = "derp.dork";
 const WIDGET = "derp-dork-button";
 const VIEW = "PanelUI-derp-dork";
 const XHTML = "http://www.w3.org/1999/xhtml";
+
+// dork-art: begin. Everything down to "dork-art: end" is plain JavaScript
+// that the website (site/build.py) copies in, so dorks look the same there.
+
 const NAME_MAX = 24;
 
 // ── The parts ──────────────────────────────────────────────────────────────
@@ -407,37 +411,47 @@ function draw(dork, size) {
   );
 }
 
+/** A random dork: everyone starts with their own. */
+function randomDork(name = "") {
+  return {
+    name,
+    skin: pick(choices("skin")),
+    eyes: pick(["googly", "googly", "round", "happy", "wink", "startled"]),
+    mouth: pick(PARTS.mouth),
+    hair: pick(PARTS.hair),
+    hairColor: pick(choices("hairColor")),
+    extras: Math.random() < 0.5 ? "none" : pick(PARTS.extras.slice(1)),
+    backdrop: pick(choices("backdrop").filter(b => b !== "none")),
+  };
+}
+
+/** A saved dork with anything missing or unknown replaced. */
+function normalizeDork(saved) {
+  saved = saved && typeof saved === "object" ? saved : {};
+  const dork = { name: typeof saved.name === "string" ? saved.name.trim().slice(0, NAME_MAX) : "" };
+  for (const part of Object.keys(PARTS)) {
+    dork[part] = choices(part).includes(saved[part]) ? saved[part] : choices(part)[0];
+  }
+  return dork;
+}
+
+// dork-art: end
+
 // ── The dork ───────────────────────────────────────────────────────────────
 
 export const DerpDork = {
   PARTS,
   PREF,
 
-  /** A random dork: everyone starts with their own. */
-  random(name = "") {
-    return {
-      name,
-      skin: pick(choices("skin")),
-      eyes: pick(["googly", "googly", "round", "happy", "wink", "startled"]),
-      mouth: pick(PARTS.mouth),
-      hair: pick(PARTS.hair),
-      hairColor: pick(choices("hairColor")),
-      extras: Math.random() < 0.5 ? "none" : pick(PARTS.extras.slice(1)),
-      backdrop: pick(choices("backdrop").filter(b => b !== "none")),
-    };
-  },
+  random: randomDork,
 
-  /** This profile's dork, with anything unknown replaced. */
+  /** This profile's dork. */
   get() {
-    let saved = {};
     try {
-      saved = JSON.parse(Services.prefs.getStringPref(PREF, "{}")) || {};
-    } catch {}
-    const dork = { name: typeof saved.name === "string" ? saved.name.slice(0, NAME_MAX) : "" };
-    for (const part of Object.keys(PARTS)) {
-      dork[part] = choices(part).includes(saved[part]) ? saved[part] : choices(part)[0];
+      return normalizeDork(JSON.parse(Services.prefs.getStringPref(PREF, "{}")));
+    } catch {
+      return normalizeDork({});
     }
-    return dork;
   },
 
   set(changes) {

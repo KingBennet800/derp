@@ -2,6 +2,8 @@
 
 A fast, fluid web browser built on Firefox, with its own name, logo, look and defaults.
 
+**Website: https://kingbennet800.github.io/derp/**
+
 Derp is the official Mozilla Firefox engine, downloaded straight from Mozilla
 and verified, then rebranded and tuned on your machine. Derp never redistributes
 Firefox: the installer fetches it from ftp.mozilla.org and checks it the
@@ -172,6 +174,9 @@ autoconfig (`config/derp.cfg`).
   UI) and `derp-content.css` (built-in pages).
 - `config/`: default prefs, enterprise policies, distribution identity, and
   `derp.cfg`, which loads the theme and features at startup.
+- `site/`: the website. `build.py` fills `page.html` with the logo, version and
+  the dork drawing code from `DerpDork.sys.mjs` into one self-contained
+  `_site/index.html`; the Website workflow publishes it to GitHub Pages.
 - `tests/verify.py`: checks an installed Derp. CI installs, re-installs,
   verifies, launches, updates and uninstalls Derp on Linux, macOS and Windows
   (x64 and ARM) for every push.

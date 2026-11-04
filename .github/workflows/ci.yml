@@ -21,7 +21,9 @@ jobs:
       - name: shellcheck
         run: shellcheck -x install.sh uninstall.sh src/lib.sh src/derp src/derp-update
       - name: Python compiles
-        run: python3 -m py_compile src/derp-patch.py tests/verify.py brand/make-assets.py
+        run: python3 -m py_compile src/derp-patch.py tests/verify.py brand/make-assets.py site/build.py
+      - name: Website builds
+        run: python3 site/build.py
       - name: Release files are complete
         run: |
           grep -qxE '[0-9]+\.[0-9]+\.[0-9]+' VERSION

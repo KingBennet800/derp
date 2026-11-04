@@ -109,8 +109,8 @@ Windows) to delete it too.
   Mozilla's online services: no VPN, Relay email masks, Monitor breach alerts,
   online address-bar suggestions, weather, stories, Firefox Labs, "More from
   Mozilla", feedback or "report broken site" forms, and no crash reports sent to
-  Mozilla. Settings opens on **Import and backup** (the local half of what was
-  "Account and sync"). Still on, because they keep you safe or are what the
+  Mozilla. Derp has its own account instead: your dork (below). Still on,
+  because they keep you safe or are what the
   engine is: security updates to certificate revocation lists and blocklists,
   Safe Browsing, add-on installs and updates from addons.mozilla.org, and
   downloads of on-device translation models.
@@ -119,6 +119,20 @@ Windows) to delete it too.
   the updater window and the process name all say Derp. Where Mozilla's own
   services are named, they keep Mozilla's name. The engine still
   tells websites it is Firefox (user agent), so sites work normally.
+
+## Your dork
+
+Derp's account is **your dork**: a cartoon you design, like a Memoji, plus a
+name. It's your avatar at the top right of the tab strip. Click it to open the
+editor, where you pick a face color, eyes, mouth, hair or a hat (and its color),
+extras (taped nerd glasses, shades, headphones, freckles…) and a backdrop, or
+hit **Shuffle**. **Save picture** saves it as a 1024px PNG. Settings' first page,
+**You and your dork**, shows it too, along with importing data from other
+browsers and backups.
+
+Your dork is stored only on this device, in your profile's preferences
+(`derp.dork`). There's no sign-in and no server. Every new profile starts with
+a random dork of its own.
 
 ## Features Firefox users keep asking for
 

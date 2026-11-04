@@ -16,15 +16,18 @@
     document.getElementById("categories").append(button);
   }
 
-  // Mozilla accounts are off, so "Account and sync" keeps only import,
-  // profiles and backup: drop the "account unavailable" card and Mozilla's
-  // referral promo, and name the page for what's left.
+  // Mozilla accounts are off, so "Account and sync" becomes Derp's own
+  // account page: your dork first, then import and backup. Mozilla's account
+  // cards and referral promo go. The page's module is Derp's settings, which
+  // load the original account-sync module too.
+  const { DerpDork } = ChromeUtils.importESModule(window.derpURLs.dork);
   const accountsOff = !Services.prefs.getBoolPref("identity.fxaccounts.enabled", true);
   if (accountsOff && typeof CONFIG_PANES == "object" && CONFIG_PANES.sync) {
-    const hide = ["accountDisabled", "account", "sync", "referrals"];
-    CONFIG_PANES.sync.groupIds = CONFIG_PANES.sync.groupIds.filter(id => !hide.includes(id));
-    CONFIG_PANES.sync.l10nId = "derp-import-backup-section";
-    CONFIG_PANES.sync.iconSrc = "chrome://browser/skin/import.svg";
+    const mozilla = ["accountDisabled", "account", "sync", "referrals"];
+    CONFIG_PANES.sync.groupIds = ["derpDork", ...CONFIG_PANES.sync.groupIds.filter(id => !mozilla.includes(id))];
+    CONFIG_PANES.sync.l10nId = "derp-you-section";
+    CONFIG_PANES.sync.iconSrc = DerpDork.dataURL(undefined, 64);
+    CONFIG_PANES.sync.module = window.derpURLs.settings;
   }
   // Settings labels the nav button as it initializes, which happens in the
   // document's DOMContentLoaded listener; this one runs right after it.
@@ -32,10 +35,16 @@
     "DOMContentLoaded",
     () => {
       const nav = document.getElementById("category-sync");
-      if (nav && accountsOff) {
-        nav.setAttribute("data-l10n-id", "derp-pane-import-backup-title");
-        nav.iconSrc = "chrome://browser/skin/import.svg";
+      if (!nav || !accountsOff) {
+        return;
       }
+      nav.setAttribute("data-l10n-id", "derp-pane-you-title");
+      const paint = () => {
+        nav.iconSrc = DerpDork.dataURL(undefined, 64);
+      };
+      paint();
+      Services.prefs.addObserver(DerpDork.PREF, paint);
+      window.addEventListener("unload", () => Services.prefs.removeObserver(DerpDork.PREF, paint), { once: true });
     },
     { once: true }
   );
@@ -44,7 +53,7 @@
     l10nId: "derp-pane-header",
     iconSrc: "chrome://branding/content/about-logo.svg",
     groupIds: ["derpMemorySaver", "derpWebApps", "derpImages", "derpAi"],
-    module: `resource://derp/DerpSettings.mjs?v=${window.derpFeaturesVersion}`,
+    module: window.derpURLs.settings,
     visible: () => true,
   });
 }

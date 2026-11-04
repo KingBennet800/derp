@@ -40,6 +40,8 @@ def main():
     check((HOME / "VERSION").exists() and (HOME / "VERSION").read_text().strip() == version, f"Derp {version} installed")
     for folder in ("brand", "config", "features", "theme", "lib"):
         check((HOME / folder).is_dir(), f"{folder}/ copied")
+    dork = ("DerpDork.sys.mjs", "dork.css", "locales/en-US/derp/dork.ftl")
+    check(all((HOME / "features" / f).exists() for f in dork), "your dork installed")
 
     # Branding.
     omni = ENGINE / "browser/omni.ja"

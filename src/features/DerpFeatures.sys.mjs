@@ -6,6 +6,8 @@
  *   turns it on and, on Linux, points the desktop entries it writes at Derp's
  *   launcher.
  * - Memory Saver: unloads tabs you haven't looked at for a while.
+ * - Your dork: Derp's own account, an avatar you design, kept on this device
+ *   (DerpDork.sys.mjs).
  * - A "Derp" page in Settings for these, JPEG XL and AI controls.
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
  * Mozilla's account and online services are off by policy (config/). */
@@ -20,8 +22,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
 });
 
-// derp.cfg imports this module as ...?v=<mtime>; reuse it to version what we load.
-const VERSION = new URL(import.meta.url).searchParams.get("v") ?? "0";
+// resource://derp/<name>, versioned by the file's modification time so the
+// startup cache never serves an older copy after an update.
+function derpURL(name) {
+  const base = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler).getSubstitution("derp");
+  const file = base.QueryInterface(Ci.nsIFileURL).file.clone();
+  for (const part of name.split("/")) {
+    file.append(part);
+  }
+  return `resource://derp/${name}?v=${file.exists() ? file.lastModifiedTime : 0}`;
+}
 
 const PREFS = {
   memorySaver: "derp.memorySaver.enabled",
@@ -32,7 +42,7 @@ export const DerpFeatures = {
   init() {
     const onStartup = () => {
       Services.obs.removeObserver(onStartup, "final-ui-startup");
-      for (const feature of [WebApps, MemorySaver, SettingsSection, Layout]) {
+      for (const feature of [Strings, WebApps, MemorySaver, Dork, SettingsSection, Layout]) {
         try {
           feature.init();
         } catch (e) {
@@ -41,6 +51,21 @@ export const DerpFeatures = {
       }
     };
     Services.obs.addObserver(onStartup, "final-ui-startup");
+  },
+};
+
+// Derp's strings: resource://derp/locales/<locale>/derp/*.ftl
+const Strings = {
+  init() {
+    const source = new L10nFileSource("derp", "app", ["en-US"], "resource://derp/locales/{locale}/");
+    L10nRegistry.getInstance().registerSources([source]);
+  },
+};
+
+const Dork = {
+  init() {
+    const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
+    DerpDork.init({ cssURL: derpURL("dork.css") });
   },
 };
 
@@ -133,9 +158,6 @@ const MemorySaver = {
 
 const SettingsSection = {
   init() {
-    // Derp's strings: resource://derp/locales/<locale>/derp/settings.ftl
-    const source = new L10nFileSource("derp", "app", ["en-US"], "resource://derp/locales/{locale}/");
-    L10nRegistry.getInstance().registerSources([source]);
     Services.obs.addObserver(this, "document-element-inserted");
   },
 
@@ -153,8 +175,8 @@ const SettingsSection = {
   },
 
   addPane(win) {
-    win.derpFeaturesVersion = VERSION;
-    Services.scriptloader.loadSubScriptWithOptions(`resource://derp/derp-settings.js?v=${VERSION}`, {
+    win.derpURLs = { settings: derpURL("DerpSettings.mjs"), dork: derpURL("DerpDork.sys.mjs") };
+    Services.scriptloader.loadSubScriptWithOptions(derpURL("derp-settings.js"), {
       target: win,
       ignoreCache: true,
     });

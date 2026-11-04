@@ -5,11 +5,23 @@ pane-derp-title = Derp
 derp-pane-header =
     .heading = Derp
 
-# "Account and sync" without Mozilla accounts.
-derp-pane-import-backup-title = Import and backup
-    .title = Import and backup
-derp-import-backup-section =
-    .heading = Import and backup
+# "Account and sync" becomes Derp's own account page.
+derp-pane-you-title = You and your dork
+    .title = You and your dork
+derp-you-section =
+    .heading = You and your dork
+derp-dork-group =
+    .label = Your dork
+    .description = Derp’s account is a cartoon you design. It’s kept on this device and nowhere else: no sign-in, no servers.
+derp-dork-card =
+    .label = Your dork
+    .description = Give your dork a name in the editor.
+# $name: the name you gave your dork
+derp-dork-card-named =
+    .label = { $name }
+    .description = Your dork
+derp-dork-edit =
+    .label = Edit your dork
 
 derp-memory-saver-group =
     .label = Memory Saver

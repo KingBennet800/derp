@@ -41,6 +41,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
+      # GitHub's "latest release" link can lag a minute behind publishing.
+      - name: Wait until the release is the latest download
+        shell: bash
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsSL "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/SHA256SUMS" |
+              grep -q " derp-$(cat VERSION).tar.gz" && exit 0
+            sleep 10
+          done
+          echo "derp-$(cat VERSION) never became the latest release download" >&2
+          exit 1
       - name: Install (Linux, macOS)
         if: runner.os != 'Windows'
         working-directory: ${{ runner.temp }}

@@ -38,7 +38,7 @@ fi
 # shellcheck source=src/lib.sh
 source "$SRC/src/lib.sh"
 
-mode=install engine_now= ci=
+mode=install engine_now='' ci=''
 for arg in "$@"; do
   case $arg in
     --engine) engine_now=1 ;;

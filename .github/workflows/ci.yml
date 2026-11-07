@@ -24,6 +24,10 @@ jobs:
         run: python3 -m py_compile src/derp-patch.py tests/verify.py brand/make-assets.py site/build.py
       - name: Website builds
         run: python3 site/build.py
+      - name: Workflows are valid (actionlint)
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color -shellcheck= -pyflakes=
       - name: Release files are complete
         run: |
           grep -qxE '[0-9]+\.[0-9]+\.[0-9]+' VERSION

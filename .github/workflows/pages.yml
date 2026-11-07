@@ -12,6 +12,13 @@ on:
       - VERSION
       - .github/workflows/pages.yml
   workflow_dispatch:
+  # The weekly engine update calls this after releasing (for the new version).
+  workflow_call:
+    inputs:
+      ref:
+        description: What to build the site from (a tag); empty for the default
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -27,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
       - name: Build
         run: python3 site/build.py
       - uses: actions/upload-pages-artifact@v4

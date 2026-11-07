@@ -85,9 +85,14 @@ android {
     }
 }
 
+// The engine: the GeckoView release in android/geckoview-version.txt, which
+// the weekly "Engine update" workflow moves to Mozilla's newest (or pass
+// -PgeckoviewVersion=… to build with another).
+val geckoview = (findProperty("geckoviewVersion") as String?)?.takeIf { it.isNotBlank() }
+    ?: rootDir.resolve("geckoview-version.txt").readText().trim()
+
 dependencies {
-    // The newest GeckoView release at build time, like desktop Derp's engine.
-    implementation("org.mozilla.geckoview:geckoview:latest.release")
+    implementation("org.mozilla.geckoview:geckoview:$geckoview")
     // Draws your dork (SVG) for the toolbar.
     implementation("com.caverock:androidsvg-aar:1.4")
 }

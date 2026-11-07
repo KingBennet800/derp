@@ -1,0 +1,101 @@
+name: Engine update
+
+# Every week: if Mozilla has released a newer GeckoView (the Firefox engine
+# Derp for Android runs on), build Derp for Android with it and test it on an
+# emulator, then release a patch version of Derp with the new engine. Installed
+# copies of Derp update themselves from that release.
+#
+# Run it by hand with "test only" to try the newest GeckoView without releasing.
+on:
+  schedule:
+    - cron: "23 7 * * 1" # Mondays, 07:23 UTC
+  workflow_dispatch:
+    inputs:
+      test_only:
+        description: Build and test the newest GeckoView even if Derp already has it, and don't release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: engine-update
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{ steps.versions.outputs.latest }}
+      newer: ${{ steps.versions.outputs.newer }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compare Derp's GeckoView with Mozilla's newest
+        id: versions
+        run: |
+          metadata=https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview/maven-metadata.xml
+          latest=$(curl -fsSL "$metadata" | sed -n 's:.*<release>\(.*\)</release>.*:\1:p' | head -n1)
+          current=$(cat android/geckoview-version.txt)
+          if [ -z "$latest" ]; then
+            echo "::error::Couldn't read GeckoView's newest release from $metadata"
+            exit 1
+          fi
+          newer=false
+          if [ "$latest" != "$current" ] && [ "$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n1)" = "$latest" ]; then
+            newer=true
+          fi
+          echo "GeckoView: Derp has $current; Mozilla's newest is $latest (newer: $newer)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "latest=$latest" >>"$GITHUB_OUTPUT"
+          echo "newer=$newer" >>"$GITHUB_OUTPUT"
+
+  test:
+    needs: check
+    if: needs.check.outputs.newer == 'true' || inputs.test_only
+    uses: ./.github/workflows/android.yml
+    with:
+      geckoview: ${{ needs.check.outputs.latest }}
+
+  bump:
+    needs: [check, test]
+    if: needs.check.outputs.newer == 'true' && !inputs.test_only
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - name: Next patch version, with the new engine
+        id: bump
+        env:
+          GECKOVIEW: ${{ needs.check.outputs.latest }}
+        run: |
+          IFS=. read -r major minor patch <VERSION
+          version="$major.$minor.$((patch + 1))"
+          echo "$version" >VERSION
+          echo "$GECKOVIEW" >android/geckoview-version.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Derp $version: GeckoView $GECKOVIEW"
+          git tag -a "v$version" -m "Derp $version: GeckoView $GECKOVIEW"
+          git push origin HEAD:main "v$version"
+          echo "tag=v$version" >>"$GITHUB_OUTPUT"
+          echo "Released Derp $version with GeckoView $GECKOVIEW" >>"$GITHUB_STEP_SUMMARY"
+
+  # Pushes made with the workflow's own token don't start other workflows, so
+  # the release and the website update are called from here.
+  release:
+    needs: bump
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.bump.outputs.tag }}
+    secrets: inherit
+
+  website:
+    needs: [bump, release]
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ needs.bump.outputs.tag }}

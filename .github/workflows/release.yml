@@ -5,9 +5,19 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # The weekly engine update calls this with the tag it just made.
+  workflow_call:
+    inputs:
+      tag:
+        description: The tag to release
+        type: string
+        required: true
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   # Derp for Android, signed with Derp's release key (Android only installs
@@ -16,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - name: Signing key is set up
         env:
           KEY: ${{ secrets.ANDROID_KEYSTORE_B64 }}
@@ -59,8 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - name: Tag matches VERSION
-        run: test "v$(cat VERSION)" = "$GITHUB_REF_NAME"
+        run: test "v$(cat VERSION)" = "$TAG"
       - uses: actions/download-artifact@v4
         with:
           name: apks
@@ -76,7 +90,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" derp-*.tar.gz derp-*.zip derp-android-*.apk SHA256SUMS \
+          gh release create "$TAG" derp-*.tar.gz derp-*.zip derp-android-*.apk SHA256SUMS \
             --title "Derp $(cat VERSION)" --generate-notes --verify-tag
 
   # The website's Android buttons link straight to the latest release's APKs.
@@ -85,6 +99,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - name: APKs download from the latest release and match SHA256SUMS
         run: |
           latest=https://github.com/$GITHUB_REPOSITORY/releases/latest/download
@@ -108,6 +124,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       # GitHub's "latest release" link can lag a minute behind publishing.
       - name: Wait until the release is the latest download
         shell: bash
@@ -122,12 +140,12 @@ jobs:
       - name: Install (Linux, macOS)
         if: runner.os != 'Windows'
         working-directory: ${{ runner.temp }}
-        run: curl -fsSL "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/install.sh" | bash -s -- --ci
+        run: curl -fsSL "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$TAG/install.sh" | bash -s -- --ci
       - name: Install (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         working-directory: ${{ runner.temp }}
-        run: '& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/$env:GITHUB_REPOSITORY/$env:GITHUB_SHA/install.ps1"))) -CI'
+        run: '& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/$env:GITHUB_REPOSITORY/$env:TAG/install.ps1"))) -CI'
       - name: Verify
         shell: bash
         run: |

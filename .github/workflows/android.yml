@@ -19,12 +19,19 @@ on:
       - src/features/DerpDork.sys.mjs
       - .github/workflows/android.yml
   workflow_dispatch:
+  # The weekly engine update tests a new GeckoView with this before releasing.
+  workflow_call:
+    inputs:
+      geckoview:
+        description: GeckoView version to build with, instead of android/geckoview-version.txt
+        type: string
+        default: ""
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: android-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -40,7 +47,9 @@ jobs:
         with:
           gradle-version: "9.9.0"
       - name: Build
-        run: gradle --no-daemon -p android assembleRelease
+        env:
+          GECKOVIEW: ${{ inputs.geckoview }}
+        run: gradle --no-daemon -p android assembleRelease ${GECKOVIEW:+-PgeckoviewVersion=$GECKOVIEW}
       - name: Collect APKs
         run: bash android/ci/collect.sh apks
       - uses: actions/upload-artifact@v4
@@ -62,13 +71,15 @@ jobs:
         with:
           gradle-version: "9.9.0"
       - name: Build signed with a throwaway key
+        env:
+          GECKOVIEW: ${{ inputs.geckoview }}
         run: |
           key=$RUNNER_TEMP/test-key
           mkdir -p "$key"
           openssl req -x509 -newkey rsa:4096 -sha256 -days 30 -nodes -subj "/CN=Derp test" -keyout "$key/key.pem" -out "$key/cert.pem"
           openssl pkcs12 -export -inkey "$key/key.pem" -in "$key/cert.pem" -name derp -out "$key/test.p12" -passout pass:test-password
           openssl x509 -in "$key/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr 'A-F' 'a-f' > "$key/sha256"
-          DERP_KEYSTORE="$key/test.p12" DERP_KEYSTORE_PASSWORD=test-password gradle --no-daemon -p android assembleRelease
+          DERP_KEYSTORE="$key/test.p12" DERP_KEYSTORE_PASSWORD=test-password gradle --no-daemon -p android assembleRelease ${GECKOVIEW:+-PgeckoviewVersion=$GECKOVIEW}
           bash android/ci/collect.sh apks
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
           for apk in apks/*.apk; do

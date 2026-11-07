@@ -174,8 +174,13 @@ autoconfig (`config/derp.cfg`).
 
 Firefox for Android can't be rebranded on a phone the way desktop Derp
 rebrands Firefox, so Derp for Android is its own small browser built on
-**GeckoView**, the Firefox engine Mozilla publishes for apps. Each Derp
-release is built with the newest GeckoView.
+**GeckoView**, the Firefox engine Mozilla publishes for apps.
+
+Its engine stays current on its own: every Monday the **Engine update**
+workflow checks Mozilla for a newer GeckoView. If there is one, it builds
+Derp for Android with it, tests it on an emulator, and releases a patch
+version of Derp (for example 1.4.0 → 1.4.1), which installed copies then
+pick up. The version in use is `android/geckoview-version.txt`.
 
 - Derp's look on a phone: one bottom toolbar (address bar, tabs, your dork,
   menu), a tabs view, private tabs, and the lime-teal-blue loading bar.

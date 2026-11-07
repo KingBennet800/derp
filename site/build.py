@@ -3,11 +3,13 @@
 
     python3 site/build.py
 
-It fills site/page.html with Derp's logo and wordmark, the version, and the
-dork drawing code from src/features/DerpDork.sys.mjs, so dorks on the site
+It fills site/page.html with Derp's logo and wordmark, the version, real
+screenshots from site/screenshots/, and the dork drawing code from
+src/features/DerpDork.sys.mjs, so dorks on the site
 look exactly like the ones in the browser. The Pages workflow runs this and
 publishes _site/.
 """
+import base64
 import pathlib
 import re
 import sys
@@ -42,6 +44,14 @@ def wordmark():
     return svg.replace("<svg ", '<svg role="img" aria-label="derp" ', 1)
 
 
+def screenshot(name):
+    """A screenshot from site/screenshots/, embedded so the page stays one file."""
+    path = ROOT / "site/screenshots" / f"{name}.webp"
+    if not path.exists():
+        sys.exit(f"build.py: no screenshot {path.relative_to(ROOT)}")
+    return "data:image/webp;base64," + base64.b64encode(path.read_bytes()).decode()
+
+
 def build():
     page = read("site/page.html")
     values = {
@@ -56,6 +66,7 @@ def build():
         if key not in page:
             sys.exit(f"build.py: {key} isn't used in page.html")
         page = page.replace(key, value)
+    page = re.sub(r"\{\{SHOT:([a-z0-9-]+)\}\}", lambda m: screenshot(m.group(1)), page)
     left = re.findall(r"\{\{[A-Z_]+\}\}", page)
     if left:
         sys.exit(f"build.py: unfilled placeholders {sorted(set(left))}")

@@ -57,7 +57,11 @@ class MainActivity : Activity() {
     private var tabsPanel: LinearLayout? = null
     private var palette = Palette.LIGHT
     private var fullScreen = false
+    private var topInset = 0
     private var bottomInset = 0
+
+    /** Tablets keep the toolbar at the top, like other tablet browsers. */
+    private val tablet get() = resources.configuration.smallestScreenWidthDp >= 600
     private var permissionCallback: GeckoSession.PermissionDelegate.Callback? = null
     private var filesCallback: ((Int, Intent?) -> Unit)? = null
 
@@ -141,9 +145,7 @@ class MainActivity : Activity() {
         root = FrameLayout(this)
         column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         geckoView = GeckoView(this)
-        column.addView(geckoView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         progress = ProgressLine(this)
-        column.addView(progress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(3)))
 
         bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -212,7 +214,19 @@ class MainActivity : Activity() {
         menuButton = iconButton(R.drawable.ic_menu, "Menu") { showMenu() }
         bar.addView(menuButton, LinearLayout.LayoutParams(dp(44), dp(46)))
 
-        column.addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        // Phones: page, then the toolbar at the bottom. Tablets: toolbar on top.
+        val page = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+        val line = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(3))
+        val toolbar = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        if (tablet) {
+            column.addView(bar, toolbar)
+            column.addView(progress, line)
+            column.addView(geckoView, page)
+        } else {
+            column.addView(geckoView, page)
+            column.addView(progress, line)
+            column.addView(bar, toolbar)
+        }
         root.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         setContentView(root)
 
@@ -224,6 +238,7 @@ class MainActivity : Activity() {
                 @Suppress("DEPRECATION")
                 intArrayOf(insets.systemWindowInsetLeft, insets.systemWindowInsetTop, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             }
+            topInset = sides[1]
             bottomInset = sides[3]
             if (fullScreen) column.setPadding(0, 0, 0, 0) else column.setPadding(sides[0], sides[1], sides[2], sides[3])
             tabsPanel?.setPadding(sides[0], sides[1], sides[2], sides[3])
@@ -398,7 +413,11 @@ class MainActivity : Activity() {
         item("Check for updates") { Updater.check(this, manual = true) }
         item("About Derp") { about() }
 
-        popup.showAtLocation(root, Gravity.BOTTOM or Gravity.END, dp(8), bar.height + bottomInset + dp(6))
+        if (tablet) {
+            popup.showAtLocation(root, Gravity.TOP or Gravity.END, dp(8), topInset + bar.height + dp(6))
+        } else {
+            popup.showAtLocation(root, Gravity.BOTTOM or Gravity.END, dp(8), bar.height + bottomInset + dp(6))
+        }
     }
 
     private fun pickEngine() {
@@ -490,10 +509,12 @@ class MainActivity : Activity() {
     private fun fillTabs(panel: LinearLayout) {
         val base = Palette.of(this, false)
         panel.removeAllViews()
+        // On wide screens the list is a centered column.
+        val side = maxOf(0, (resources.displayMetrics.widthPixels - dp(720)) / 2)
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(20), dp(14), dp(12), dp(10))
+            setPadding(side + dp(20), dp(14), side + dp(12), dp(10))
         }
         header.addView(TextView(this).apply {
             text = "Tabs"
@@ -522,7 +543,7 @@ class MainActivity : Activity() {
 
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), 0, dp(14), dp(20))
+            setPadding(side + dp(14), 0, side + dp(14), dp(20))
         }
         for (tab in browser.tabs) {
             val colors = if (tab.private) Palette.PRIVATE else base

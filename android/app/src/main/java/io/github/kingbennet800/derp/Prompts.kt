@@ -18,13 +18,15 @@ import org.mozilla.geckoview.GeckoSession.PromptDelegate.PromptResponse
 import java.util.Calendar
 import java.util.Locale
 
-/** Answers a page's question exactly once, however the dialog closes. */
+/** Answers a page's question exactly once, however the dialog closes. The
+ * answer is only worked out if it's the first: GeckoView throws if a prompt is
+ * confirmed and then dismissed (a button press closes the dialog too). */
 private class Reply<T>(private val result: GeckoResult<T> = GeckoResult()) {
     private var done = false
-    fun send(value: T) {
+    fun send(value: () -> T) {
         if (!done) {
             done = true
-            result.complete(value)
+            result.complete(value())
         }
     }
     val future: GeckoResult<T> get() = result
@@ -46,7 +48,7 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         val reply = Reply<PromptResponse>()
         dialog(a, prompt.title, prompt.message)
             .setPositiveButton(android.R.string.ok, null)
-            .setOnDismissListener { reply.send(prompt.dismiss()) }
+            .setOnDismissListener { reply.send { prompt.dismiss() } }
             .show()
         return reply.future
     }
@@ -55,9 +57,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         val a = activity ?: return GeckoResult.fromValue(prompt.dismiss())
         val reply = Reply<PromptResponse>()
         dialog(a, prompt.title, prompt.message)
-            .setPositiveButton(android.R.string.ok) { _, _ -> reply.send(prompt.confirm(PromptDelegate.ButtonPrompt.Type.POSITIVE)) }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> reply.send(prompt.confirm(PromptDelegate.ButtonPrompt.Type.NEGATIVE)) }
-            .setOnDismissListener { reply.send(prompt.dismiss()) }
+            .setPositiveButton(android.R.string.ok) { _, _ -> reply.send { prompt.confirm(PromptDelegate.ButtonPrompt.Type.POSITIVE) } }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> reply.send { prompt.confirm(PromptDelegate.ButtonPrompt.Type.NEGATIVE) } }
+            .setOnDismissListener { reply.send { prompt.dismiss() } }
             .show()
         return reply.future
     }
@@ -71,9 +73,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         }
         dialog(a, prompt.title, prompt.message)
             .setView(padded(a, field))
-            .setPositiveButton(android.R.string.ok) { _, _ -> reply.send(prompt.confirm(field.text.toString())) }
+            .setPositiveButton(android.R.string.ok) { _, _ -> reply.send { prompt.confirm(field.text.toString()) } }
             .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener { reply.send(prompt.dismiss()) }
+            .setOnDismissListener { reply.send { prompt.dismiss() } }
             .show()
         return reply.future
     }
@@ -101,13 +103,13 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         dialog(a, prompt.title ?: "Sign in", prompt.message)
             .setView(padded(a, fields))
             .setPositiveButton("Sign in") { _, _ ->
-                reply.send(
+                reply.send {
                     if (onlyPassword) prompt.confirm(password.text.toString())
-                    else prompt.confirm(user.text.toString(), password.text.toString()),
-                )
+                    else prompt.confirm(user.text.toString(), password.text.toString())
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener { reply.send(prompt.dismiss()) }
+            .setOnDismissListener { reply.send { prompt.dismiss() } }
             .show()
         return reply.future
     }
@@ -125,18 +127,18 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         }
         flatten(prompt.choices)
         val labels = choices.map { it.label }.toTypedArray()
-        val builder = dialog(a, prompt.title, prompt.message).setOnDismissListener { reply.send(prompt.dismiss()) }
+        val builder = dialog(a, prompt.title, prompt.message).setOnDismissListener { reply.send { prompt.dismiss() } }
         if (prompt.type == PromptDelegate.ChoicePrompt.Type.MULTIPLE) {
             val checked = choices.map { it.selected }.toBooleanArray()
             builder.setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    reply.send(prompt.confirm(choices.filterIndexed { i, _ -> checked[i] }.toTypedArray()))
+                    reply.send { prompt.confirm(choices.filterIndexed { i, _ -> checked[i] }.toTypedArray()) }
                 }
                 .setNegativeButton(android.R.string.cancel, null)
         } else {
             val selected = choices.indexOfFirst { it.selected }
             builder.setSingleChoiceItems(labels, selected) { d, which ->
-                reply.send(prompt.confirm(choices[which]))
+                reply.send { prompt.confirm(choices[which]) }
                 d.dismiss()
             }
         }
@@ -156,13 +158,13 @@ class Prompts(private val browser: Browser) : PromptDelegate {
             val uris = mutableListOf<Uri>()
             data?.clipData?.let { clip -> for (i in 0 until clip.itemCount) uris += clip.getItemAt(i).uri }
             if (uris.isEmpty()) data?.data?.let { uris += it }
-            reply.send(
+            reply.send {
                 when {
                     resultCode != Activity.RESULT_OK || uris.isEmpty() -> prompt.dismiss()
                     uris.size == 1 -> prompt.confirm(a, uris[0])
                     else -> prompt.confirm(a, uris.toTypedArray())
-                },
-            )
+                }
+            }
         }
         return reply.future
     }
@@ -177,9 +179,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
                 val (y, m, d) = if (parts != null && parts.size == 3) parts
                 else listOf(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1, now.get(Calendar.DAY_OF_MONTH))
                 DatePickerDialog(a, { _, year, month, day ->
-                    reply.send(prompt.confirm(String.format(Locale.ROOT, "%04d-%02d-%02d", year, month + 1, day)))
+                    reply.send { prompt.confirm(String.format(Locale.ROOT, "%04d-%02d-%02d", year, month + 1, day)) }
                 }, y, m - 1, d).apply {
-                    setOnDismissListener { reply.send(prompt.dismiss()) }
+                    setOnDismissListener { reply.send { prompt.dismiss() } }
                     show()
                 }
             }
@@ -188,13 +190,13 @@ class Prompts(private val browser: Browser) : PromptDelegate {
                 val h = parts?.getOrNull(0) ?: now.get(Calendar.HOUR_OF_DAY)
                 val m = parts?.getOrNull(1) ?: now.get(Calendar.MINUTE)
                 TimePickerDialog(a, { _, hour, minute ->
-                    reply.send(prompt.confirm(String.format(Locale.ROOT, "%02d:%02d", hour, minute)))
+                    reply.send { prompt.confirm(String.format(Locale.ROOT, "%02d:%02d", hour, minute)) }
                 }, h, m, true).apply {
-                    setOnDismissListener { reply.send(prompt.dismiss()) }
+                    setOnDismissListener { reply.send { prompt.dismiss() } }
                     show()
                 }
             }
-            else -> reply.send(prompt.dismiss())
+            else -> reply.send { prompt.dismiss() }
         }
         return reply.future
     }
@@ -203,9 +205,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         val a = activity ?: return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
         val reply = Reply<PromptResponse>()
         dialog(a, "Leave this page?", "Changes you made may not be saved.")
-            .setPositiveButton("Leave") { _, _ -> reply.send(prompt.confirm(AllowOrDeny.ALLOW)) }
-            .setNegativeButton("Stay") { _, _ -> reply.send(prompt.confirm(AllowOrDeny.DENY)) }
-            .setOnDismissListener { reply.send(prompt.confirm(AllowOrDeny.DENY)) }
+            .setPositiveButton("Leave") { _, _ -> reply.send { prompt.confirm(AllowOrDeny.ALLOW) } }
+            .setNegativeButton("Stay") { _, _ -> reply.send { prompt.confirm(AllowOrDeny.DENY) } }
+            .setOnDismissListener { reply.send { prompt.confirm(AllowOrDeny.DENY) } }
             .show()
         return reply.future
     }
@@ -214,9 +216,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         val a = activity ?: return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
         val reply = Reply<PromptResponse>()
         dialog(a, "Send this form again?", "Reloading this page sends the information you entered again.")
-            .setPositiveButton("Send again") { _, _ -> reply.send(prompt.confirm(AllowOrDeny.ALLOW)) }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> reply.send(prompt.confirm(AllowOrDeny.DENY)) }
-            .setOnDismissListener { reply.send(prompt.confirm(AllowOrDeny.DENY)) }
+            .setPositiveButton("Send again") { _, _ -> reply.send { prompt.confirm(AllowOrDeny.ALLOW) } }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> reply.send { prompt.confirm(AllowOrDeny.DENY) } }
+            .setOnDismissListener { reply.send { prompt.confirm(AllowOrDeny.DENY) } }
             .show()
         return reply.future
     }
@@ -238,9 +240,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         val update = login.guid != null
         val reply = Reply<PromptResponse>()
         dialog(a, if (update) "Update your password for $site?" else "Save your password for $site?", login.username.ifBlank { null })
-            .setPositiveButton(if (update) "Update" else "Save") { _, _ -> reply.send(request.confirm(option)) }
-            .setNegativeButton("Not now") { _, _ -> reply.send(request.dismiss()) }
-            .setOnDismissListener { reply.send(request.dismiss()) }
+            .setPositiveButton(if (update) "Update" else "Save") { _, _ -> reply.send { request.confirm(option) } }
+            .setNegativeButton("Not now") { _, _ -> reply.send { request.dismiss() } }
+            .setOnDismissListener { reply.send { request.dismiss() } }
             .show()
         return reply.future
     }
@@ -257,9 +259,9 @@ class Prompts(private val browser: Browser) : PromptDelegate {
         AlertDialog.Builder(a)
             .setTitle("Sign in as")
             .setItems(options.map { it.value.username.ifBlank { "(no username)" } }.toTypedArray()) { _, which ->
-                reply.send(request.confirm(options[which]))
+                reply.send { request.confirm(options[which]) }
             }
-            .setOnDismissListener { reply.send(request.dismiss()) }
+            .setOnDismissListener { reply.send { request.dismiss() } }
             .show()
         return reply.future
     }

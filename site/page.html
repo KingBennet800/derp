@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Derp browser</title>
-<meta name="description" content="Derp is a fast, fluid web browser built on Firefox's engine: minimal, private by default, no accounts, and a little cartoon you. For Linux, macOS and Windows.">
+<meta name="description" content="Derp is a fast, fluid web browser built on Firefox's engine: minimal, private by default, no accounts, and a little cartoon you. For Linux, macOS, Windows and Android.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Derp browser">
-<meta property="og:description" content="A fast, fluid browser with a goofy streak. Built on Firefox's engine. For Linux, macOS and Windows.">
+<meta property="og:description" content="A fast, fluid browser with a goofy streak. Built on Firefox's engine. For Linux, macOS, Windows and Android.">
 <link rel="icon" href="{{LOGO}}">
 <style>
 :root {
@@ -435,6 +435,7 @@ h2 { margin: 0; font-size: clamp(1.9rem, 4.4vw, 2.9rem); line-height: 1.08; lett
   cursor: pointer;
 }
 .copy:hover { background: rgb(255 255 255 / 0.14); }
+.apk { padding: 14px 24px; font-size: 1.05rem; }
 .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 26px 0 0; padding: 0; list-style: none; }
 .notes li { color: var(--dim); font-size: 15px; }
 .notes b { display: block; color: var(--text); font-size: 15px; }
@@ -628,7 +629,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
           <span>Source on GitHub</span>
         </a>
       </div>
-      <p class="meta">Free and open source · Linux, macOS and Windows · Version {{VERSION}}</p>
+      <p class="meta">Free and open source · Linux, macOS, Windows and Android · Version {{VERSION}}</p>
 
       <div class="mock" aria-hidden="true">
         <div class="mock-tabs">
@@ -713,7 +714,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
         <article class="feature">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5S9.7 5.9 12 3.5z"/></svg></div>
           <h3>Firefox inside</h3>
-          <p>The installer gets Firefox straight from Mozilla and checks Mozilla’s signature before building Derp on your computer.</p>
+          <p>On computers the installer gets Firefox straight from Mozilla and checks Mozilla’s signature. On Android, Derp runs GeckoView, Mozilla’s engine for apps.</p>
         </article>
       </div>
 
@@ -751,6 +752,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
           <button role="tab" id="tab-linux" aria-controls="os-linux" data-os="linux">Linux</button>
           <button role="tab" id="tab-macos" aria-controls="os-macos" data-os="macos">macOS</button>
           <button role="tab" id="tab-windows" aria-controls="os-windows" data-os="windows">Windows</button>
+          <button role="tab" id="tab-android" aria-controls="os-android" data-os="android">Android</button>
         </div>
         <div class="os-panel" id="os-linux" role="tabpanel" aria-labelledby="tab-linux">
           <p>In a terminal:</p>
@@ -777,6 +779,18 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
             <li><b>Works on</b>Windows 10 and 11, x64 and ARM64.</li>
             <li><b>Then</b>Derp opens and has you make your dork. Later, find it in the Start menu.</li>
             <li><b>Make it default</b>in Settings → Apps → Default apps → Derp.</li>
+          </ul>
+        </div>
+        <div class="os-panel" id="os-android" role="tabpanel" aria-labelledby="tab-android" hidden>
+          <p>On your phone or tablet:</p>
+          <a class="btn primary apk" href="{{REPO_URL}}/releases/latest/download/derp-android-arm64.apk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            <span>Download Derp for Android</span>
+          </a>
+          <ul class="notes">
+            <li><b>Works on</b>Android 8 or newer. That download fits nearly every phone; for older 32-bit phones get <a href="{{REPO_URL}}/releases/latest/download/derp-android-arm.apk">ARM</a>, for Chromebooks <a href="{{REPO_URL}}/releases/latest/download/derp-android-x86_64.apk">x86-64</a>.</li>
+            <li><b>Then</b>open the download. Android asks to let your browser install apps once; allow it. Derp opens and has you make your dork.</li>
+            <li><b>Updates</b>Derp checks for new versions itself and offers them. It’s built on GeckoView, Mozilla’s Firefox engine for apps.</li>
           </ul>
         </div>
         <p class="more">Prefer to look first? <a href="{{REPO_URL}}/releases/latest">Download the latest release</a> and run its installer, or read <a href="{{REPO_URL}}#readme">how it works</a> and <a href="{{REPO_URL}}#uninstall">how to uninstall</a>.</p>
@@ -853,11 +867,12 @@ $("#lineup").append(
 // Install: pick the visitor's system.
 function detectOS() {
   const p = (navigator.userAgentData?.platform || navigator.platform || navigator.userAgent || "").toLowerCase();
+  if (/android/i.test(navigator.userAgent)) return "android";
   if (p.includes("win")) return "windows";
   if (p.includes("mac") || p.includes("iphone") || p.includes("ipad")) return "macos";
   return "linux";
 }
-const OS_NAMES = { linux: "Linux", macos: "macOS", windows: "Windows" };
+const OS_NAMES = { linux: "Linux", macos: "macOS", windows: "Windows", android: "Android" };
 function showOS(os) {
   for (const tab of document.querySelectorAll(".os-tabs [role=tab]")) {
     const on = tab.dataset.os === os;
@@ -868,8 +883,10 @@ function showOS(os) {
 }
 const os = detectOS();
 showOS(os);
-const mobile = /android|iphone|ipad|mobile/i.test(navigator.userAgent);
-$("#cta-install span").textContent = mobile ? "Get Derp for your computer" : `Get Derp for ${OS_NAMES[os]}`;
+const apple = /iphone|ipad/i.test(navigator.userAgent);
+$("#cta-install span").textContent = apple ? "Get Derp for your computer" : `Get Derp for ${OS_NAMES[os]}`;
+// On Android the button downloads Derp straight away.
+if (os === "android") $("#cta-install").href = "{{REPO_URL}}/releases/latest/download/derp-android-arm64.apk";
 const osTabs = [...document.querySelectorAll(".os-tabs [role=tab]")];
 for (const tab of osTabs) {
   tab.addEventListener("click", () => showOS(tab.dataset.os));

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Screenshots of Derp for Android for the website: the welcome dork editor,
-# a new tab, Derp's website, the tabs view (phones; tablets show a tab strip),
-# then the same in dark mode, the menu and address bar for a look, and Duck
-# mode's duck.
+# a new tab, Duck mode's duck, Derp's website, the tabs view (phones; tablets
+# show a tab strip), then the same in dark mode, and the menu and address bar
+# for a look.
 # Usage: showcase.sh <apk> <out dir> <name prefix>
 set -euo pipefail
 apk=$1 out=$2 name=$3 pkg=io.github.kingbennet800.derp
@@ -71,30 +71,6 @@ shot welcome 30
 new_tab
 shot newtab 8
 
-adb shell am start -W -a android.intent.action.VIEW -d https://kingbennet800.github.io/derp/ "$pkg"
-shot site 15
-
-if tap Tabs; then
-  shot tabs 3
-  adb shell input keyevent KEYCODE_BACK
-  sleep 2
-fi
-
-adb shell cmd uimode night yes
-shot site-dark 10
-new_tab
-shot newtab-dark 6
-
-# Last, since leaving the address bar takes an uncertain number of BACKs.
-tap Menu
-shot menu-dark 2
-adb shell input keyevent KEYCODE_BACK
-sleep 1
-tap "Address bar"
-shot typing-dark 3
-adb shell cmd uimode night no
-sleep 3
-
 # Duck mode (off by default): turn it on in the menu, then search until the
 # duck turns up (1 in 10 times) and eats the search instead. Animations back
 # on, or the duck's walk is skipped.
@@ -123,4 +99,28 @@ for try in $(seq 1 40); do
   sleep 2
 done
 rm -f "$out"/.duck-*.png
+adb shell settings put global animator_duration_scale 0
+
+adb shell am start -W -a android.intent.action.VIEW -d https://kingbennet800.github.io/derp/ "$pkg"
+shot site 15
+
+if tap Tabs; then
+  shot tabs 3
+  adb shell input keyevent KEYCODE_BACK
+  sleep 2
+fi
+
+adb shell cmd uimode night yes
+shot site-dark 10
+new_tab
+shot newtab-dark 6
+
+# Last, since leaving the address bar takes an uncertain number of BACKs.
+tap Menu
+shot menu-dark 2
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+tap "Address bar"
+shot typing-dark 3
+adb shell cmd uimode night no
 echo "Showcase screenshots: $(ls "$out" | tr '\n' ' ')"

@@ -4,9 +4,9 @@
     python3 site/build.py
 
 It fills site/page.html with Derp's logo and wordmark, the version, real
-screenshots from site/screenshots/, and the dork drawing code from
-src/features/DerpDork.sys.mjs, so dorks on the site
-look exactly like the ones in the browser. The Pages workflow runs this and
+screenshots from site/screenshots/, the dork drawing code from
+src/features/DerpDork.sys.mjs and the duck from src/features/DerpDuck.sys.mjs,
+so dorks and the duck on the site look exactly like the ones in the browser. The Pages workflow runs this and
 publishes _site/.
 """
 import base64
@@ -30,6 +30,13 @@ def dork_art():
     if not match:
         sys.exit("build.py: no dork-art section in DerpDork.sys.mjs")
     return re.sub(r"^export ", "", match.group(1), flags=re.M).strip()
+
+
+def duck():
+    match = re.search(r"encodeURIComponent\(`(<svg.*?</svg>)`\)", read("src/features/DerpDuck.sys.mjs"), re.S)
+    if not match:
+        sys.exit("build.py: no duck in DerpDuck.sys.mjs")
+    return svg_data_uri(match.group(1))
 
 
 def svg_data_uri(svg):
@@ -57,6 +64,7 @@ def build():
     values = {
         "{{LOGO}}": svg_data_uri(read("brand/derp.svg")),
         "{{WORDMARK}}": wordmark(),
+        "{{DUCK}}": duck(),
         "{{VERSION}}": read("VERSION").strip(),
         "{{REPO_URL}}": f"https://github.com/{REPO}",
         "{{REPO}}": REPO,

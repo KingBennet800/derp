@@ -279,6 +279,149 @@ h2 { margin: 0; font-size: clamp(1.9rem, 4.4vw, 2.9rem); line-height: 1.08; lett
 @keyframes bob { 50% { transform: translateY(-6px) rotate(-2deg); } }
 .hint { margin-top: 18px; color: var(--dim); font-size: 14px; font-style: italic; }
 
+/* ── Duck mode ───────────────────────────────────────────────────────────── */
+
+.duck-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 48px;
+}
+/* A slice of Derp's toolbar to try it in. */
+.duck-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--toolbar);
+  box-shadow: var(--shadow);
+}
+.duck-nav { display: flex; gap: 2px; color: var(--dim); }
+.duck-nav svg { width: 32px; height: 32px; padding: 8px; }
+.duck-field {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 4px 0 12px;
+  border-radius: 999px;
+  color: var(--dim);
+}
+.duck-field:focus-within { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.duck-field > svg { width: 16px; height: 16px; flex: none; }
+.duck-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+.duck-field input::placeholder { color: var(--dim); }
+.duck-field.eating input::placeholder { color: transparent; }
+.duck-go {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+}
+.duck-go:hover { background: var(--sunken); color: var(--text); }
+.duck-go svg { width: 16px; height: 16px; }
+.duck { position: absolute; top: 50%; left: 0; display: flex; align-items: center; gap: 4px; translate: 0 -55%; pointer-events: none; }
+.duck[hidden] { display: none; }
+.duck img { width: 28px; height: 28px; transform-origin: 50% 90%; animation: waddle 220ms ease-in-out infinite alternate; }
+.duck.done img { animation: hop 380ms var(--spring); }
+@keyframes waddle { from { rotate: -9deg; } to { rotate: 9deg; } }
+@keyframes hop { 40% { translate: 0 -5px; } }
+.duck-quack {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #ffd43b;
+  color: #3a2a00;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  translate: -4px 0;
+  transition: opacity 160ms ease, translate 200ms var(--spring);
+}
+.duck.done .duck-quack { opacity: 1; translate: 0 0; }
+.duck-try { margin: 16px 4px 0; color: var(--dim); font-size: 14px; }
+
+/* ── What's new ──────────────────────────────────────────────────────────── */
+
+.releases { display: grid; gap: 4px; max-width: 760px; margin: 36px 0 0; padding: 0; list-style: none; }
+.releases li { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 18px; padding-bottom: 22px; }
+/* The line joining the releases. */
+.releases li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 44px;
+  bottom: 0;
+  left: 31px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.releases .ver {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--text);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.releases li:first-child .ver { background: var(--accent); color: var(--accent-text); }
+.releases h3 { margin: 6px 0 2px; font-size: 1.08rem; letter-spacing: -0.01em; }
+.releases p { margin: 0; color: var(--dim); }
+.releases time { display: block; margin-top: 4px; color: var(--dim); font-size: 13px; }
+
+/* ── FAQ ─────────────────────────────────────────────────────────────────── */
+
+.faq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 36px; align-items: start; }
+.faq details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: no-repeat center / 12px 2px linear-gradient(currentColor, currentColor),
+    no-repeat center / 2px 12px linear-gradient(currentColor, currentColor);
+  color: var(--dim);
+  transition: rotate 200ms var(--spring);
+}
+.faq details[open] summary::after { rotate: 45deg; }
+.faq details p { margin: 0; padding: 0 20px 18px; color: var(--dim); }
+.faq details a { color: var(--accent); }
+
 /* ── Install ─────────────────────────────────────────────────────────────── */
 
 .install {
@@ -467,6 +610,8 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
 @media (max-width: 900px) {
   .features { grid-template-columns: repeat(2, 1fr); }
   .dorks { grid-template-columns: 1fr; gap: 32px; }
+  .duck-wrap { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .faq { grid-template-columns: 1fr; }
   .notes { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
@@ -479,6 +624,11 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
   .device.phone { border-radius: 20px; }
   .device.phone img { border-radius: 15px; }
   .install { padding: 20px 16px; }
+  .duck-toolbar { padding: 8px; }
+  .duck-nav svg:nth-child(2) { display: none; }
+  .releases li { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; }
+  .releases .ver { width: 52px; }
+  .releases li:not(:last-child)::before { left: 25px; }
   .os-tabs { display: flex; width: 100%; }
   .os-tabs button { flex: 1 1 0; min-width: 0; padding: 7px 4px; font-size: 14px; }
   .maker-inner { padding: 22px 16px; }
@@ -504,6 +654,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
     <nav aria-label="Main">
       <a href="#features">Features</a>
       <a href="#dork">Your dork</a>
+      <a href="#faq">FAQ</a>
       <a href="{{REPO_URL}}">GitHub</a>
       <a class="get" href="#install">Get Derp</a>
     </nav>
@@ -631,17 +782,62 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
           <picture>
             <source srcset="{{SHOT:android-tablet-dark}}" media="(prefers-color-scheme: dark)">
             <img src="{{SHOT:android-tablet-light}}" width="1600" height="845" loading="lazy"
-              alt="Derp for Android on a tablet, showing Derp's website with the toolbar at the bottom">
+              alt="Derp for Android on a tablet: desktop-style tabs and toolbar at the top, showing Derp's website">
           </picture>
         </figure>
         <figure class="shot device phone">
           <picture>
             <source srcset="{{SHOT:android-phone-dark}}" media="(prefers-color-scheme: dark)">
             <img src="{{SHOT:android-phone-light}}" width="540" height="1200" loading="lazy"
-              alt="Derp for Android on a phone, showing the new tab page with your dork">
+              alt="Derp for Android on a phone: the new tab page, with the toolbar and your dork at the bottom">
           </picture>
         </figure>
       </div>
+    </div>
+  </section>
+
+  <section id="duck">
+    <div class="wrap duck-wrap">
+      <div>
+        <p class="kicker">Just for fun</p>
+        <h2>Duck mode.</h2>
+        <p class="section-lede">Turn it on and, 1 time in 10 when you press Enter in the address bar, a duck waddles along it and eats what you typed. Quack.</p>
+        <p class="section-lede">It’s off unless you want it: Settings → Derp → Just for fun on computers, the ⋮ menu on Android.</p>
+      </div>
+      <div class="duck-demo">
+        <div class="duck-toolbar">
+          <span class="duck-nav" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.25 5.25 8 10 12.75"/></svg>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 3.25 4.75 4.75L6 12.75"/></svg>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.75 8.5a4.75 4.75 0 1 1-1.6-4.06"/><path d="M12.6 2.4v2.6H10"/></svg>
+          </span>
+          <form class="duck-field" id="duck-form">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.25" cy="7.25" r="4.25"/><path d="m10.4 10.4 2.6 2.6"/></svg>
+            <input id="duck-input" type="text" value="cute duck videos" placeholder="Search or enter address"
+              aria-label="Try Duck mode: type something and press Enter" autocomplete="off" spellcheck="false">
+            <button class="duck-go" type="submit" aria-label="Go"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h9.5M8.75 4.25 12.5 8l-3.75 3.75"/></svg></button>
+            <span class="duck" id="duck-bird" hidden><img src="{{DUCK}}" alt=""><span class="duck-quack">Quack!</span></span>
+          </form>
+        </div>
+        <p class="duck-try">Try it: type something and press Enter. In Derp it’s 1 in 10; this duck is hungry every time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="new">
+    <div class="wrap">
+      <p class="kicker">What’s new</p>
+      <h2>Fresh out of the egg.</h2>
+      <ol class="releases">
+        <li><span class="ver">1.6</span><div><h3>Duck mode</h3><p>A joke setting, off by default: now and then a duck eats what you typed in the address bar.</p><time datetime="2026-11-07">November 7, 2026</time></div></li>
+        <li><span class="ver">1.5</span><div><h3>Android looks like desktop Derp</h3><p>The same colors and icons, an address bar with no pill until you type, and the loading shimmer. Tablets get folder tabs.</p><time datetime="2026-11-07">November 7, 2026</time></div></li>
+        <li><span class="ver">1.4</span><div><h3>Derp for Android</h3><p>Derp on phones and tablets, with your dork, strict tracking protection and updates that install themselves.</p><time datetime="2026-11-07">November 7, 2026</time></div></li>
+        <li><span class="ver">1.3</span><div><h3>Start as you</h3><p>Installing Derp opens the dork editor first, so you make your dork before anything else.</p><time datetime="2026-11-04">November 4, 2026</time></div></li>
+        <li><span class="ver">1.2</span><div><h3>Your dork</h3><p>Derp’s own account: a cartoon you design, kept on your computer.</p><time datetime="2026-11-04">November 4, 2026</time></div></li>
+        <li><span class="ver">1.1</span><div><h3>No Mozilla account</h3><p>Sign-in, Sync and Mozilla’s online services are gone.</p><time datetime="2026-11-04">November 4, 2026</time></div></li>
+        <li><span class="ver">1.0</span><div><h3>Hello, Derp</h3><p>Installers for Linux, macOS and Windows, and updates that install themselves.</p><time datetime="2026-11-04">November 4, 2026</time></div></li>
+      </ol>
+      <p class="more">Every release is on <a href="{{REPO_URL}}/releases">GitHub</a>. Between them, patch releases like 1.6.1 bring Android’s engine up to date; on computers, Derp keeps Firefox’s engine up to date by itself.</p>
     </div>
   </section>
 
@@ -697,6 +893,46 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
           </ul>
         </div>
         <p class="more">Prefer to look first? <a href="{{REPO_URL}}/releases/latest">Download the latest release</a> and run its installer, or read <a href="{{REPO_URL}}#readme">how it works</a> and <a href="{{REPO_URL}}#uninstall">how to uninstall</a>.</p>
+      </div>
+    </div>
+  </section>
+  <section id="faq">
+    <div class="wrap">
+      <p class="kicker">Questions</p>
+      <h2>Good questions.</h2>
+      <div class="faq">
+        <details>
+          <summary>Is Derp just Firefox?</summary>
+          <p>Under the hood, yes. On computers, Derp’s installer downloads Firefox from Mozilla and checks Mozilla’s signature; on Android, Derp runs GeckoView, Mozilla’s engine for apps. Derp changes the look, the settings and the extras around the engine, so websites see Firefox and just work.</p>
+        </details>
+        <details>
+          <summary>Is it safe?</summary>
+          <p>Security fixes come from Mozilla, as they do for Firefox, and Derp updates itself, checking each download against the release’s checksums. Safe Browsing and uBlock Origin are on, and all of Derp’s code is on <a href="{{REPO_URL}}">GitHub</a> for anyone to read.</p>
+        </details>
+        <details>
+          <summary>Is it really free?</summary>
+          <p>Yes. Derp is free and open source (MPL 2.0), with no ads, nothing sponsored and nothing to sign up for.</p>
+        </details>
+        <details>
+          <summary>Can I bring my bookmarks and passwords?</summary>
+          <p>Yes. On computers, open Settings → You and your dork and import bookmarks, history and passwords from Chrome, Edge, Safari and other browsers.</p>
+        </details>
+        <details>
+          <summary>Does Derp sync between my devices?</summary>
+          <p>No, on purpose: Derp has no accounts, so your data and your dork stay on each device. Moving to a new computer? Import your bookmarks there, or use the backup in Settings → You and your dork.</p>
+        </details>
+        <details>
+          <summary>How do updates work?</summary>
+          <p>Derp checks for a new version once a day. On computers it downloads it in the background and switches over the next time you open Derp. On Android it offers the update and Android installs it. Every download is checked before it’s used.</p>
+        </details>
+        <details>
+          <summary>What’s this about a duck?</summary>
+          <p><a href="#duck">Duck mode</a>! A joke setting, off by default. Try it above.</p>
+        </details>
+        <details>
+          <summary>How do I uninstall it?</summary>
+          <p>On computers, run Derp’s uninstaller: see <a href="{{REPO_URL}}#uninstall">how to uninstall</a>. Your bookmarks and history are kept unless you ask for them to go too. On Android, uninstall it like any other app.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -765,6 +1001,50 @@ $("#lineup").append(
     return img;
   })
 );
+
+// Duck mode, to try: the same walk as Derp's duck (src/features/DerpDuck.sys.mjs),
+// except this duck is hungry every time.
+const duckForm = $("#duck-form");
+const duckInput = $("#duck-input");
+const duck = $("#duck-bird");
+let ducking = false;
+duckForm.addEventListener("submit", event => {
+  event.preventDefault();
+  const text = duckInput.value;
+  if (ducking || !text.trim()) {
+    return;
+  }
+  ducking = true;
+  duckForm.classList.add("eating");
+  // The duck stands at the end of what's left of the text.
+  const style = getComputedStyle(duckInput);
+  const ruler = document.createElement("canvas").getContext("2d");
+  ruler.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const room = duckForm.clientWidth - 40;
+  const at = kept => Math.min(room, duckInput.offsetLeft - duckInput.scrollLeft + ruler.measureText(text.slice(0, kept)).width);
+  duck.classList.remove("done");
+  duck.hidden = false;
+  const walk = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : Math.min(2400, 900 + text.length * 45);
+  const start = performance.now();
+  const step = now => {
+    const t = walk ? Math.min(1, (now - start) / walk) : 1;
+    const kept = Math.round(text.length * (1 - t));
+    duckInput.value = text.slice(0, kept);
+    duck.style.left = `${at(kept)}px`;
+    if (t < 1) {
+      requestAnimationFrame(step);
+      return;
+    }
+    duck.classList.add("done");
+    setTimeout(() => {
+      duck.hidden = true;
+      duckForm.classList.remove("eating");
+      ducking = false;
+      duckInput.focus();
+    }, 1100);
+  };
+  requestAnimationFrame(step);
+});
 
 // Install: pick the visitor's system.
 function detectOS() {

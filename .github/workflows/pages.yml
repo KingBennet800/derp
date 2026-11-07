@@ -8,6 +8,7 @@ on:
     paths:
       - site/**
       - src/features/DerpDork.sys.mjs
+      - src/features/DerpDuck.sys.mjs
       - brand/**
       - VERSION
       - .github/workflows/pages.yml

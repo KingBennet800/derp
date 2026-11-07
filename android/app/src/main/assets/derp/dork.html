@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your dork</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="dork">
+  <header id="welcome" hidden>
+    <h1>Welcome to Derp!</h1>
+    <p>First, make your dork: a little cartoon you. It’s your Derp profile, and it stays on this device.</p>
+  </header>
+  <header id="plain">
+    <h1>Your dork</h1>
+  </header>
+  <section class="you">
+    <img class="face" id="face" alt="Your dork">
+    <input class="name" id="name" type="text" maxlength="24" placeholder="Name your dork" aria-label="Name" autocomplete="off">
+  </section>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Parts"></nav>
+  <section class="grid" id="grid" role="radiogroup"></section>
+  <section class="colors" id="colors" role="radiogroup"></section>
+  <p class="note">Your dork is kept on this device and nowhere else.</p>
+  <footer class="actions">
+    <button id="shuffle" type="button">Shuffle</button>
+    <button id="save" type="button">Save picture</button>
+    <button id="done" class="primary" type="button">Done</button>
+  </footer>
+  <script src="dork-art.js"></script>
+  <script src="pages.js"></script>
+  <script src="dork.js"></script>
+</body>
+</html>

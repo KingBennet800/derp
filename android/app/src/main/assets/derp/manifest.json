@@ -1,0 +1,10 @@
+{
+  "manifest_version": 2,
+  "name": "Derp",
+  "version": "1.0",
+  "description": "Derp's own pages: the new tab and your dork.",
+  "browser_specific_settings": {
+    "gecko": { "id": "derp@kingbennet800.github.io" }
+  },
+  "permissions": ["nativeMessaging", "nativeMessagingFromContent", "geckoViewAddons"]
+}

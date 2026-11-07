@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>New tab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="newtab">
+  <header class="hello">
+    <div>
+      <p class="hi" id="hi">Hi there</p>
+      <p class="sub">Where to?</p>
+    </div>
+    <a class="me" href="dork.html" aria-label="Your dork"><img id="me" alt=""></a>
+  </header>
+  <main>
+    <div class="mark">
+      <img src="logo.svg" alt="">
+      <picture>
+        <source srcset="wordmark-dark.svg" media="(prefers-color-scheme: dark)">
+        <img class="wordmark" src="wordmark-light.svg" alt="derp">
+      </picture>
+    </div>
+    <button class="search" id="search" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      Search or enter address
+    </button>
+    <nav class="tiles" aria-label="Shortcuts">
+      <a href="https://en.m.wikipedia.org/"><b style="color:var(--text)">W</b>Wikipedia</a>
+      <a href="https://m.youtube.com/"><b style="color:#ff0033">▶</b>YouTube</a>
+      <a href="https://www.reddit.com/"><b style="color:#ff4500">r</b>Reddit</a>
+      <a href="https://kingbennet800.github.io/derp/"><b><img src="logo.svg" alt=""></b>Derp</a>
+    </nav>
+  </main>
+  <script src="dork-art.js"></script>
+  <script src="pages.js"></script>
+  <script src="newtab.js"></script>
+</body>
+</html>

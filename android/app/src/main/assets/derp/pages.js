@@ -6,7 +6,7 @@ async function derp(message) {
   try {
     return await browser.runtime.sendNativeMessage("derp", message);
   } catch (e) {
-    console.warn("Derp app didn't answer:", e);
+    console.warn(`Derp app didn't answer ${message.type}:`, e);
     return null;
   }
 }

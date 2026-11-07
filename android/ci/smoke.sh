@@ -9,6 +9,14 @@ mkdir -p "$out"
 shot() { sleep "$2"; adb exec-out screencap -p >"$out/$1.png"; }
 alive() { adb shell pidof "$pkg" >/dev/null || { echo "Derp isn't running after: $1"; adb logcat -d >"$out/logcat.txt"; exit 1; }; }
 ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml; }
+# Tap the view with this accessibility label (from a fresh UI dump).
+tap() {
+  local bounds
+  bounds=$(ui | grep -o "content-desc=\"$1\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
+  [[ $bounds ]] || { echo "Can't find '$1' to tap"; exit 1; }
+  read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
+  adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+}
 
 adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
@@ -31,12 +39,28 @@ adb shell am start -W -a android.intent.action.VIEW -d https://example.com "$pkg
 shot 2-link 15
 alive "opening a link"
 
-# Typing in the address bar searches or goes to the address.
-adb shell input keyevent KEYCODE_ESCAPE || true
+# The tabs view and the menu.
+tap Tabs
+shot 3-tabs 3
+adb shell input keyevent KEYCODE_BACK
+sleep 2
+tap Menu
+shot 4-menu 3
+adb shell input keyevent KEYCODE_BACK
+sleep 2
+alive "tabs view and menu"
+
+# Typing in the address bar searches.
+tap "Address bar"
+sleep 1
+adb shell input text "derp%sbrowser"
+adb shell input keyevent KEYCODE_ENTER
+shot 5-search 12
+alive "searching"
 
 # Dark mode.
 adb shell cmd uimode night yes
-shot 3-dark 12
+shot 6-dark 12
 alive "switching to dark mode"
 adb shell cmd uimode night no
 

@@ -67,9 +67,16 @@ class Browser(private val app: DerpApp) {
             pagesBase = extension.metaData.baseUrl
             tabs.forEach { it.session.webExtensionController.setMessageDelegate(extension, messages, "derp") }
             extension.setMessageDelegate(messages, "derp")
-            // Tabs restored or opened before Derp's pages were ready.
-            current?.let { tab -> tab.pending?.let { tab.pending = null; load(tab, resolve(it)) } }
-            if (!app.dork.made && intent?.data == null) openWelcome()
+            val welcome = !app.dork.made && intent?.data == null
+            val tab = current
+            if (welcome && tab != null && tab.url.isBlank() && tab.pending == "derp:newtab.html") {
+                tab.pending = null
+                load(tab, extension.metaData.baseUrl + "dork.html?welcome=1")
+            } else {
+                // Tabs restored or opened before Derp's pages were ready.
+                tab?.pending?.let { saved -> tab.pending = null; load(tab, resolve(saved)) }
+                if (welcome) openWelcome()
+            }
         }
         if (!handle(intent) && tabs.isEmpty()) newTab(null)
         (current ?: tabs.lastOrNull())?.let { select(it) }
@@ -154,7 +161,7 @@ class Browser(private val app: DerpApp) {
 
     fun home(tab: Tab) {
         val base = pagesBase
-        if (base != null) load(tab, base + "newtab.html") else app.withPages { load(tab, it.metaData.baseUrl + "newtab.html") }
+        if (base != null) load(tab, base + "newtab.html") else tab.pending = "derp:newtab.html"
     }
 
     fun openDork() {
@@ -349,29 +356,23 @@ class Browser(private val app: DerpApp) {
     // ── Messages from Derp's pages ─────────────────────────────────────────
 
     private inner class Messages : WebExtension.MessageDelegate {
-        override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
-            val msg = message as? JSONObject ?: return null
-            return when (msg.optString("type")) {
-                "getState" -> GeckoResult.fromValue<Any>(
-                    JSONObject()
-                        .put("dork", app.dork.json ?: JSONObject.NULL)
-                        .put("made", app.dork.made)
-                        .put("version", BuildConfig.VERSION_NAME),
-                )
-                "setDork" -> {
-                    app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"))
-                    GeckoResult.fromValue<Any>(true)
+        /** Answers are always JSON objects (GeckoView can't pass a JSON null). */
+        override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any> {
+            val reply = JSONObject().put("ok", true)
+            runCatching {
+                val msg = message as JSONObject
+                when (msg.optString("type")) {
+                    "getState" -> {
+                        app.dork.json?.let { reply.put("dork", it) }
+                        reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME)
+                    }
+                    "setDork" -> app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"))
+                    "made" -> app.dork.made = true
+                    "focusUrl" -> ui?.focusUrl()
+                    else -> reply.put("ok", false)
                 }
-                "made" -> {
-                    app.dork.made = true
-                    GeckoResult.fromValue<Any>(true)
-                }
-                "focusUrl" -> {
-                    ui?.focusUrl()
-                    GeckoResult.fromValue<Any>(true)
-                }
-                else -> null
-            }
+            }.onFailure { reply.put("ok", false).put("error", it.toString()) }
+            return GeckoResult.fromValue(reply)
         }
     }
 

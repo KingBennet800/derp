@@ -182,7 +182,8 @@ release is built with the newest GeckoView.
   Follows light and dark mode.
 - **Your dork** is here too, drawn by the same code as desktop Derp, and the
   first start has you make it.
-- Strict tracking protection, cookie banners rejected for you, no telemetry.
+- Strict tracking protection (social trackers too), tracking parameters
+  stripped from links, tracker cookies purged, no telemetry.
 - Downloads, file uploads, page dialogs, and camera, microphone and location
   only when you allow them. Can be your default browser.
 - **Updates itself**: once a day it checks this repo's latest release, and if

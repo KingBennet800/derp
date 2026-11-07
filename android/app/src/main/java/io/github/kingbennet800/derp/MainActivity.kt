@@ -433,7 +433,7 @@ class MainActivity : Activity() {
             .setMessage(
                 "A fast, fluid browser with a goofy streak.\n\n" +
                     "Engine: GeckoView ${engine ?: ""}, Mozilla's Firefox engine for apps.\n" +
-                    "Tracking protection: strict. Cookie banners: rejected for you. No telemetry.\n\n" +
+                    "Tracking protection: strict, with tracking parameters stripped from links. No telemetry.\n\n" +
                     "Derp is open source and isn't affiliated with Mozilla.",
             )
             .setPositiveButton("Website") { _, _ -> browser.newTab("https://kingbennet800.github.io/derp/") }

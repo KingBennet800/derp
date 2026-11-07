@@ -9,14 +9,18 @@ import org.mozilla.geckoview.WebExtension
 
 class DerpApp : Application() {
 
-    /** The engine: Mozilla's GeckoView, with strict tracking protection and
-     * cookie banners rejected for you. No telemetry: Derp never sets it up. */
+    /** The engine: Mozilla's GeckoView, with strict tracking protection,
+     * tracking parameters stripped from links, and tracker cookies purged.
+     * No telemetry: Derp never sets it up. */
     val runtime: GeckoRuntime by lazy {
         val blocking = ContentBlocking.Settings.Builder()
             .antiTracking(ContentBlocking.AntiTracking.STRICT)
             .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
+            .strictSocialTrackingProtection(true)
             .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS)
-            .cookieBannerHandlingMode(ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT)
+            .cookiePurging(true)
+            .queryParameterStrippingEnabled(true)
+            .queryParameterStrippingPrivateBrowsingEnabled(true)
             .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
             .build()
         GeckoRuntime.create(

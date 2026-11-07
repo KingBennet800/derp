@@ -3,6 +3,7 @@ package io.github.kingbennet800.derp
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.geckoview.AllowOrDeny
@@ -69,7 +70,8 @@ class Browser(private val app: DerpApp) {
             extension.setMessageDelegate(messages, "derp")
             val welcome = !app.dork.made && intent?.data == null
             val tab = current
-            if (welcome && tab != null && tab.url.isBlank() && tab.pending == "derp:newtab.html") {
+            // (A fresh tab still waiting for its new tab page; it may show about:blank.)
+            if (welcome && tab != null && tab.pending == "derp:newtab.html") {
                 tab.pending = null
                 load(tab, extension.metaData.baseUrl + "dork.html?welcome=1")
             } else {
@@ -356,11 +358,13 @@ class Browser(private val app: DerpApp) {
     // ── Messages from Derp's pages ─────────────────────────────────────────
 
     private inner class Messages : WebExtension.MessageDelegate {
-        /** Answers are always JSON objects (GeckoView can't pass a JSON null). */
+        /** Answers go back as JSON text (GeckoView can't pass a JSONObject to a
+         * page); pages.js parses it. */
         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any> {
             val reply = JSONObject().put("ok", true)
             runCatching {
                 val msg = message as JSONObject
+                Log.d("Derp", "page asks: ${msg.optString("type")}")
                 when (msg.optString("type")) {
                     "getState" -> {
                         app.dork.json?.let { reply.put("dork", it) }
@@ -372,7 +376,7 @@ class Browser(private val app: DerpApp) {
                     else -> reply.put("ok", false)
                 }
             }.onFailure { reply.put("ok", false).put("error", it.toString()) }
-            return GeckoResult.fromValue(reply)
+            return GeckoResult.fromValue(reply.toString())
         }
     }
 

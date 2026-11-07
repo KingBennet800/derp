@@ -4,7 +4,8 @@
 /** Ask the Derp app something; the app keeps your dork and settings. */
 async function derp(message) {
   try {
-    return await browser.runtime.sendNativeMessage("derp", message);
+    const answer = await browser.runtime.sendNativeMessage("derp", message);
+    return typeof answer === "string" ? JSON.parse(answer) : answer;
   } catch (e) {
     console.warn(`Derp app didn't answer ${message.type}:`, e);
     return null;

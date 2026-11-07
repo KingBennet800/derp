@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.KeyguardManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -18,6 +19,7 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.KeyEvent
@@ -43,6 +45,7 @@ import android.window.OnBackInvokedDispatcher
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
+import org.json.JSONObject
 import org.mozilla.geckoview.WebResponse
 import kotlin.math.PI
 import kotlin.math.roundToInt
@@ -65,6 +68,7 @@ class MainActivity : Activity() {
     private var tabsPanel: LinearLayout? = null
     private var palette = Palette.LIGHT
     private var fullScreen = false
+    private var topInset = 0
     private var bottomInset = 0
 
     /** Tablets look like desktop Derp: a tab strip with folder tabs, and the
@@ -279,6 +283,7 @@ class MainActivity : Activity() {
                 @Suppress("DEPRECATION")
                 intArrayOf(insets.systemWindowInsetLeft, insets.systemWindowInsetTop, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             }
+            topInset = sides[1]
             bottomInset = sides[3]
             if (fullScreen) column.setPadding(0, 0, 0, 0) else column.setPadding(sides[0], sides[1], sides[2], sides[3])
             tabsPanel?.setPadding(sides[0], sides[1], sides[2], sides[3])
@@ -604,7 +609,12 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(6), dp(6), dp(6), dp(6))
         }
-        val popup = PopupWindow(panel, dp(264), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+        // Scrolls when it's taller than the room on screen (a small phone, landscape).
+        val scroller = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            addView(panel)
+        }
+        val popup = PopupWindow(scroller, dp(264), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
             setBackgroundDrawable(rounded(palette.box, dpf(14), hairline, palette.line))
             elevation = dpf(8)
         }
@@ -624,6 +634,12 @@ class MainActivity : Activity() {
                 if (loading) tab.session.stop() else tab.session.reload()
             }
         }
+        val marked = browser.isWebPage(tab) && app.library.isBookmarked(tab.url)
+        quick(if (marked) R.drawable.ic_star_filled else R.drawable.ic_star, if (marked) "Remove bookmark" else "Bookmark this page", browser.isWebPage(tab)) {
+            val now = browser.toggleBookmark(tab)
+            Toast.makeText(this, if (now) "Bookmarked" else "Bookmark removed", Toast.LENGTH_SHORT).show()
+        }
+        if (marked) (row.getChildAt(row.childCount - 1) as ImageButton).imageTintList = ColorStateList.valueOf(palette.accent)
         quick(R.drawable.ic_share, "Share", !browser.isDerpPage(tab)) { share(tab.url, tab.title) }
         quick(R.drawable.ic_plus, "New tab") { browser.newTab(null) }
         panel.addView(row)
@@ -636,6 +652,7 @@ class MainActivity : Activity() {
             val line = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
+                contentDescription = label
                 setPadding(dp(14), 0, dp(14), 0)
                 background = rowRipple(palette.press, dpf(8))
                 isClickable = true
@@ -660,6 +677,11 @@ class MainActivity : Activity() {
         item("Desktop site", if (tab.desktop) "On" else "Off") { browser.toggleDesktop(tab) }
         item("Your dork") { browser.openDork() }
         divider()
+        item("Bookmarks") { browser.openPage("bookmarks.html") }
+        item("History") { browser.openPage("history.html") }
+        item("Passwords") { browser.openPage("passwords.html") }
+        item("Import data") { browser.openPage("import.html") }
+        divider()
         item("Search engine", browser.engine.label) { pickEngine() }
         item("Duck mode", if (duckMode) "On" else "Off") {
             duckMode = !duckMode
@@ -670,6 +692,17 @@ class MainActivity : Activity() {
         item("Check for updates") { Updater.check(this, manual = true) }
         item("About Derp") { about() }
 
+        panel.measure(
+            View.MeasureSpec.makeMeasureSpec(dp(264), View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+        )
+        val room = if (tablet) {
+            val at = IntArray(2).also { menuButton.getLocationInWindow(it) }
+            root.height - at[1] - menuButton.height - bottomInset - dp(12)
+        } else {
+            root.height - bar.height - bottomInset - topInset - dp(20)
+        }
+        if (panel.measuredHeight > room) popup.height = room
         if (tablet) {
             popup.showAsDropDown(menuButton, 0, dp(4), Gravity.END)
         } else {
@@ -691,9 +724,10 @@ class MainActivity : Activity() {
     private fun confirmClear() {
         AlertDialog.Builder(this)
             .setTitle("Clear browsing data?")
-            .setMessage("This deletes cookies, site data and the cache, so you'll be signed out of websites. Your tabs and your dork stay.")
+            .setMessage("This deletes your history, cookies, site data and the cache, so you'll be signed out of websites. Your tabs, bookmarks, passwords and your dork stay.")
             .setPositiveButton("Clear") { _, _ ->
                 app.runtime.storageController.clearData(StorageController.ClearFlags.ALL)
+                app.library.clearHistory()
                 Toast.makeText(this, "Browsing data cleared", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -943,10 +977,92 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_FILES) {
-            filesCallback?.invoke(resultCode, data)
-            filesCallback = null
+        when (requestCode) {
+            REQUEST_FILES -> {
+                filesCallback?.invoke(resultCode, data)
+                filesCallback = null
+            }
+            REQUEST_IMPORT -> {
+                importDone?.invoke(resultCode, data)
+                importDone = null
+            }
+            REQUEST_UNLOCK -> {
+                val ok = resultCode == RESULT_OK
+                if (ok) unlockedUntil = System.currentTimeMillis() + 2 * 60 * 1000
+                unlockDone?.invoke(ok)
+                unlockDone = null
+            }
         }
+    }
+
+    // ── Import data and passwords ──────────────────────────────────────────
+
+    private var importDone: ((Int, Intent?) -> Unit)? = null
+    private var unlockDone: ((Boolean) -> Unit)? = null
+    private var unlockedUntil = 0L
+
+    /** Import data: pick a bookmarks (.html) or passwords (.csv) file another
+     * browser exported, and add what's in it. */
+    fun importFile(kind: String, done: (JSONObject) -> Unit) {
+        val passwords = kind == "passwords"
+        importDone = { code, data ->
+            val uri = data?.data
+            if (code != RESULT_OK || uri == null) {
+                done(JSONObject().put("ok", true).put("cancelled", true))
+            } else {
+                Thread {
+                    val reply = runCatching {
+                        val bytes = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                        check(bytes.size < 50 * 1024 * 1024) { "That file is too big" }
+                        val text = bytes.toString(Charsets.UTF_8)
+                        if (passwords) {
+                            val logins = Imports.logins(text)
+                            val (added, updated) = app.logins.import(logins)
+                            JSONObject().put("ok", true).put("found", logins.size).put("added", added).put("updated", updated)
+                        } else {
+                            val marks = Imports.bookmarks(text)
+                            JSONObject().put("ok", true).put("found", marks.size).put("added", app.library.importBookmarks(marks))
+                        }
+                    }.getOrElse { JSONObject().put("ok", false).put("error", it.message ?: it.toString()) }
+                    runOnUiThread { done(reply) }
+                }.start()
+            }
+        }
+        val types = if (passwords) {
+            arrayOf("text/csv", "text/comma-separated-values", "text/plain", "application/csv", "application/vnd.ms-excel", "application/octet-stream")
+        } else {
+            arrayOf("text/html", "application/xhtml+xml", "text/plain", "application/octet-stream")
+        }
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+            .putExtra(Intent.EXTRA_MIME_TYPES, types)
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(pick, REQUEST_IMPORT)
+        } catch (e: ActivityNotFoundException) {
+            importDone = null
+            done(JSONObject().put("ok", false).put("error", "No app here can pick files"))
+        }
+    }
+
+    /** Your screen lock, before showing or copying a saved password (good for
+     * two minutes). Phones without a screen lock skip this. */
+    fun unlock(done: (Boolean) -> Unit) {
+        val keyguard = getSystemService(KeyguardManager::class.java)
+        if (keyguard == null || !keyguard.isDeviceSecure || System.currentTimeMillis() < unlockedUntil) return done(true)
+        @Suppress("DEPRECATION")
+        val confirm = keyguard.createConfirmDeviceCredentialIntent("Your passwords", "Confirm it’s you to see your saved passwords")
+            ?: return done(true)
+        unlockDone = done
+        @Suppress("DEPRECATION")
+        startActivityForResult(confirm, REQUEST_UNLOCK)
+    }
+
+    /** Copies a password, marked sensitive so Android doesn't show it in previews. */
+    fun copySecret(text: String) {
+        val clip = ClipData.newPlainText("Password", text)
+        clip.description.extras = PersistableBundle().apply { putBoolean("android.content.extra.IS_SENSITIVE", true) }
+        getSystemService(ClipboardManager::class.java)?.setPrimaryClip(clip)
+        if (Build.VERSION.SDK_INT < 33) Toast.makeText(this, "Password copied", Toast.LENGTH_SHORT).show()
     }
 
     fun share(text: String, title: String? = null) {
@@ -963,6 +1079,8 @@ class MainActivity : Activity() {
     companion object {
         private const val REQUEST_PERMISSIONS = 1
         private const val REQUEST_FILES = 2
+        private const val REQUEST_IMPORT = 3
+        private const val REQUEST_UNLOCK = 4
         /** Private tabs' mask on light backgrounds (their own accent is for dark ones). */
         private val VIOLET = Color.parseColor("#7C5CF5")
     }

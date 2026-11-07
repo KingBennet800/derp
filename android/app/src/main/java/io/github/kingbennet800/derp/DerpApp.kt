@@ -32,7 +32,10 @@ class DerpApp : Application() {
                 .aboutConfigEnabled(true)
                 .preferredColorScheme(colorScheme(resources.configuration))
                 .build(),
-        )
+        ).also {
+            // Saved passwords: the engine asks Logins for them, and hands new ones over.
+            it.setAutocompleteStorageDelegate(logins)
+        }
     }
     val runtime: GeckoRuntime by engine
 
@@ -51,6 +54,8 @@ class DerpApp : Application() {
         }
 
     val dork by lazy { Dork(this) }
+    val library by lazy { Library(this) }
+    val logins by lazy { Logins(this) }
     val browser by lazy { Browser(this) }
 
     private var pages: WebExtension? = null

@@ -50,6 +50,10 @@ jobs:
         env:
           GECKOVIEW: ${{ inputs.geckoview }}
         run: gradle --no-daemon -p android assembleRelease ${GECKOVIEW:+-PgeckoviewVersion=$GECKOVIEW}
+      - name: Unit tests
+        env:
+          GECKOVIEW: ${{ inputs.geckoview }}
+        run: gradle --no-daemon -p android testReleaseUnitTest ${GECKOVIEW:+-PgeckoviewVersion=$GECKOVIEW}
       - name: Collect APKs
         run: bash android/ci/collect.sh apks
       - uses: actions/upload-artifact@v4

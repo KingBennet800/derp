@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Smoke-test Derp for Android on an emulator: install, start, check it shows
-# the welcome dork editor, open a link, switch to dark mode; screenshots and
+# the welcome dork editor, open a link, bookmark it, check history, save a
+# password and get it offered back, switch to dark mode; screenshots and
 # logcat go to $2. Fails if Derp crashes or isn't running.
 set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
@@ -16,6 +17,19 @@ tap() {
   [[ $bounds ]] || { echo "Can't find '$1' to tap"; exit 1; }
   read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
   adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+}
+# Tap the view showing this text (a dialog's button).
+tap_text() {
+  local bounds
+  bounds=$(ui | grep -o "text=\"$1\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
+  [[ $bounds ]] || return 1
+  read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
+  adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+}
+# Fail unless Derp logged this (a pattern) since it started.
+logged() {
+  adb logcat -d >"$out/logcat.txt"
+  grep -qE "$1" "$out/logcat.txt" || { echo "$2"; exit 1; }
 }
 
 adb shell settings put global window_animation_scale 0
@@ -38,6 +52,64 @@ done
 adb shell am start -W -a android.intent.action.VIEW -d https://example.com "$pkg"
 shot 2-link 15
 alive "opening a link"
+
+# Bookmarks and history: star the page from the menu, then open both pages.
+tap Menu
+sleep 1
+tap "Bookmark this page"
+sleep 2
+tap Menu
+sleep 1
+tap Bookmarks
+shot 2b-bookmarks 6
+alive "the bookmarks page"
+logged "bookmarks.list -> 1" "The bookmark isn't on the Bookmarks page"
+tap Menu
+sleep 1
+tap History
+shot 2c-history 6
+alive "the history page"
+logged "history.list -> [1-9]" "Nothing in the history"
+
+# Passwords: sign in on a test page by typing; Derp offers to save the
+# password, and offers it back when the page comes again.
+site="$out/site"
+mkdir -p "$site"
+cat >"$site/index.html" <<'HTML'
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in</title>
+<style>body{margin:0}input,button{display:block;box-sizing:border-box;width:100%;height:28vh;font-size:6vh}</style>
+<form action="done.html" method="get">
+  <input name="user" autocomplete="username" placeholder="Username">
+  <input name="pass" type="password" autocomplete="current-password" placeholder="Password">
+  <button>Sign in</button>
+</form>
+HTML
+echo '<!doctype html><title>Signed in</title><p>Signed in.' >"$site/done.html"
+python3 -m http.server 8123 --bind 127.0.0.1 --directory "$site" >/dev/null 2>&1 &
+server=$!
+trap 'kill $server 2>/dev/null || true' EXIT
+adb reverse tcp:8123 tcp:8123
+adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/ "$pkg"
+sleep 10
+read -r w h < <(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -n1 | tr x ' ')
+# The username field fills the top quarter of the page.
+adb shell input tap $((w / 2)) $((h * 17 / 100))
+sleep 1
+adb shell input text tester
+# (The keyboard is up now and the page smaller, so Tab to the password field.)
+adb shell input keyevent KEYCODE_TAB
+adb shell input text hunter2hunter2
+adb shell input keyevent KEYCODE_ENTER
+shot 2d-save-password 6
+tap_text Save || { ui >"$out/ui-no-save.xml"; echo "Derp didn't offer to save the password"; exit 1; }
+sleep 2
+alive "saving a password"
+logged "Passwords: 1 saved" "The password wasn't saved"
+adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/ "$pkg"
+shot 2e-password-offered 8
+logged "Passwords for a site: 1" "The saved password wasn't offered to the sign-in page"
 
 # The tabs view and the menu.
 tap Tabs
@@ -69,4 +141,4 @@ if grep -E "FATAL EXCEPTION|E AndroidRuntime" "$out/logcat.txt" | grep -q .; the
   grep -A 20 "FATAL EXCEPTION" "$out/logcat.txt" | head -60
   exit 1
 fi
-echo "Derp ran: first start, a link, dark mode."
+echo "Derp ran: first start, a link, bookmarks, history, a saved password, dark mode."

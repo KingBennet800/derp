@@ -36,7 +36,7 @@ enum class Engine(val label: String, val template: String) {
 
 /** Derp's tabs and pages. Lives as long as the app, so tabs survive the
  * window being rebuilt; the current MainActivity draws them. */
-class Browser(private val app: DerpApp) {
+class Browser(val app: DerpApp) {
     val tabs = mutableListOf<Tab>()
     var current: Tab? = null
         private set
@@ -166,10 +166,28 @@ class Browser(private val app: DerpApp) {
         if (base != null) load(tab, base + "newtab.html") else tab.pending = "derp:newtab.html"
     }
 
-    fun openDork() {
+    fun openDork() = openPage("dork.html")
+
+    /** One of Derp's own pages (bookmarks.html, history.html…) in the current tab. */
+    fun openPage(name: String) {
         val tab = current ?: return
-        app.withPages { load(tab, it.metaData.baseUrl + "dork.html") }
+        app.withPages { load(tab, it.metaData.baseUrl + name) }
     }
+
+    /** Bookmarks the current page, or removes its bookmark; true if it's bookmarked now. */
+    fun toggleBookmark(tab: Tab): Boolean {
+        val url = tab.url
+        return if (app.library.isBookmarked(url)) {
+            app.library.unbookmark(url)
+            false
+        } else {
+            app.library.bookmark(url, tab.title.ifBlank { display(tab) })
+            true
+        }
+    }
+
+    /** Pages worth remembering in history and bookmarks: websites, not Derp's own. */
+    fun isWebPage(tab: Tab) = Imports.isWeb(tab.url) && !isDerpPage(tab)
 
     fun toggleDesktop(tab: Tab) {
         tab.desktop = !tab.desktop
@@ -253,6 +271,7 @@ class Browser(private val app: DerpApp) {
     private fun attach(tab: Tab) {
         val session = tab.session
         session.navigationDelegate = Navigation(tab)
+        session.historyDelegate = Visits(tab)
         session.progressDelegate = Progress(tab)
         session.contentDelegate = Content(tab)
         session.permissionDelegate = Permissions(this)
@@ -300,6 +319,19 @@ class Browser(private val app: DerpApp) {
         }
     }
 
+    /** History: the pages you go to, except in private tabs. */
+    private inner class Visits(val tab: Tab) : GeckoSession.HistoryDelegate {
+        override fun onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int): GeckoResult<Boolean>? {
+            val skip = GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE or
+                GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT or
+                GeckoSession.HistoryDelegate.VISIT_UNRECOVERABLE_ERROR
+            val topLevel = flags and GeckoSession.HistoryDelegate.VISIT_TOP_LEVEL != 0
+            if (tab.private || !topLevel || flags and skip != 0 || !Imports.isWeb(url)) return GeckoResult.fromValue(false)
+            app.library.visit(url)
+            return GeckoResult.fromValue(true)
+        }
+    }
+
     private inner class Progress(val tab: Tab) : GeckoSession.ProgressDelegate {
         override fun onPageStart(session: GeckoSession, url: String) {
             tab.progress = 5
@@ -320,6 +352,7 @@ class Browser(private val app: DerpApp) {
     private inner class Content(val tab: Tab) : GeckoSession.ContentDelegate {
         override fun onTitleChange(session: GeckoSession, title: String?) {
             tab.title = title.orEmpty()
+            if (!tab.private && Imports.isWeb(tab.url)) app.library.title(tab.url, tab.title)
             changed(tab)
         }
 
@@ -361,22 +394,66 @@ class Browser(private val app: DerpApp) {
         /** Answers go back as JSON text (GeckoView can't pass a JSONObject to a
          * page); pages.js parses it. */
         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any> {
+            val msg = message as? JSONObject ?: return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
+            val type = msg.optString("type")
+            Log.d("Derp", "page asks: $type")
+            later(type, msg)?.let { return it }
             val reply = JSONObject().put("ok", true)
-            runCatching {
-                val msg = message as JSONObject
-                Log.d("Derp", "page asks: ${msg.optString("type")}")
-                when (msg.optString("type")) {
-                    "getState" -> {
-                        app.dork.json?.let { reply.put("dork", it) }
-                        reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME)
-                    }
-                    "setDork" -> app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"))
-                    "made" -> app.dork.made = true
-                    "focusUrl" -> ui?.focusUrl()
-                    else -> reply.put("ok", false)
-                }
-            }.onFailure { reply.put("ok", false).put("error", it.toString()) }
+            runCatching { answer(type, msg, reply) }.onFailure { reply.put("ok", false).put("error", it.toString()) }
             return GeckoResult.fromValue(reply.toString())
+        }
+
+        private fun answer(type: String, msg: JSONObject, reply: JSONObject) {
+            val library = app.library
+            when (type) {
+                "getState" -> {
+                    app.dork.json?.let { reply.put("dork", it) }
+                    reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME)
+                }
+                "setDork" -> app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"))
+                "made" -> app.dork.made = true
+                "focusUrl" -> ui?.focusUrl()
+                "bookmarks.list" -> reply.put("items", library.bookmarks(msg.optString("query"), msg.optInt("limit", 500)))
+                "bookmarks.remove" -> library.unbookmark(msg.getString("url"))
+                "history.list" -> reply.put(
+                    "items",
+                    library.history(msg.optString("query"), msg.optLong("before", Long.MAX_VALUE), msg.optInt("limit", 200)),
+                )
+                "history.remove" -> library.forget(msg.getString("url"))
+                "history.clear" -> library.clearHistory()
+                "logins.list" -> reply.put("items", app.logins.list(msg.optString("query"))).put("save", app.logins.offerToSave)
+                "logins.remove" -> app.logins.remove(msg.getString("guid"))
+                "logins.offer" -> app.logins.offerToSave = msg.getBoolean("on")
+                else -> reply.put("ok", false)
+            }
+            (reply.opt("items") as? JSONArray)?.let { Log.d("Derp", "$type -> ${it.length()}") }
+        }
+
+        /** Questions answered later: ones that need you (a file to pick, your screen lock). */
+        private fun later(type: String, msg: JSONObject): GeckoResult<Any>? {
+            if (type != "import" && type != "logins.reveal" && type != "logins.copy") return null
+            val result = GeckoResult<Any>()
+            val ui = ui ?: return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
+            fun done(reply: JSONObject) = result.complete(reply.toString())
+            when (type) {
+                "import" -> ui.importFile(msg.optString("kind")) { done(it) }
+                else -> {
+                    val guid = msg.optString("guid")
+                    ui.unlock { unlocked ->
+                        val password = if (unlocked) runCatching { app.logins.password(guid) }.getOrNull() else null
+                        when {
+                            !unlocked -> done(JSONObject().put("ok", false).put("cancelled", true))
+                            password == null -> done(JSONObject().put("ok", false))
+                            type == "logins.copy" -> {
+                                ui.copySecret(password)
+                                done(JSONObject().put("ok", true))
+                            }
+                            else -> done(JSONObject().put("ok", true).put("password", password))
+                        }
+                    }
+                }
+            }
+            return result
         }
     }
 

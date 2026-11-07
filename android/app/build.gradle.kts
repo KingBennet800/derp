@@ -95,6 +95,7 @@ dependencies {
     implementation("org.mozilla.geckoview:geckoview:$geckoview")
     // Draws your dork (SVG) for the toolbar.
     implementation("com.caverock:androidsvg-aar:1.4")
+    testImplementation("junit:junit:4.13.2")
 }
 
 // Derp's logo, wordmark and dork drawing code, from the rest of the repo.

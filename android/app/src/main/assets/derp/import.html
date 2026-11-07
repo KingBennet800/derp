@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Import data</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="library">
+  <header class="lib-head">
+    <h1>Import data</h1>
+    <p class="lib-lede">Bring your bookmarks and passwords from another browser. Export them there as a file, get the file onto this device (email it to yourself, or use a cloud drive), then choose it here.</p>
+  </header>
+  <section class="lib-card">
+    <h2>Bookmarks</h2>
+    <ul class="lib-steps">
+      <li><b>Chrome</b> on a computer: Bookmark manager → ⋮ → Export bookmarks</li>
+      <li><b>Edge</b>: Favorites → ⋯ → Export favorites</li>
+      <li><b>Derp or Firefox</b> on a computer: Bookmarks → Manage bookmarks → Import and Backup → Export Bookmarks to HTML</li>
+      <li><b>Safari</b> on a Mac: File → Export → Bookmarks</li>
+    </ul>
+    <button class="lib-btn primary" type="button" data-kind="bookmarks">Choose bookmarks file (.html)</button>
+    <p class="lib-result" id="bookmarks-result" role="status"></p>
+  </section>
+  <section class="lib-card">
+    <h2>Passwords</h2>
+    <ul class="lib-steps">
+      <li><b>Chrome</b>: Password Manager → Settings → Export passwords</li>
+      <li><b>Edge</b>: Settings → Passwords → ⋯ → Export passwords</li>
+      <li><b>Derp or Firefox</b> on a computer: Passwords → ⋯ → Export passwords</li>
+      <li><b>Safari</b> on a Mac: File → Export → Passwords</li>
+    </ul>
+    <button class="lib-btn primary" type="button" data-kind="passwords">Choose passwords file (.csv)</button>
+    <p class="lib-result" id="passwords-result" role="status"></p>
+    <p class="lib-note">The exported file isn’t encrypted, so delete it once it’s imported. In Derp, your passwords are encrypted and stay on this device.</p>
+  </section>
+  <script src="pages.js"></script>
+  <script src="import.js"></script>
+</body>
+</html>

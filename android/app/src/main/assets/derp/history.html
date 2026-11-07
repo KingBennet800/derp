@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>History</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="library">
+  <header class="lib-head">
+    <h1>History</h1>
+    <label class="lib-search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7.25" cy="7.25" r="4.25"/><path d="m10.4 10.4 2.6 2.6"/></svg><input id="q" type="search" placeholder="Search history" aria-label="Search history" autocomplete="off"></label>
+  </header>
+  <ul class="lib-list" id="list"></ul>
+  <p class="lib-empty" id="empty" hidden></p>
+  <div class="lib-actions">
+    <button class="lib-btn" id="more" type="button" hidden>Show more</button>
+    <button class="lib-btn danger" id="clear" type="button">Clear history</button>
+  </div>
+  <p class="lib-note">Private tabs aren’t kept in your history.</p>
+  <script src="pages.js"></script>
+  <script src="history.js"></script>
+</body>
+</html>

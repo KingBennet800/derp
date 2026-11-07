@@ -10,6 +10,7 @@ import android.text.InputType
 import android.widget.EditText
 import android.widget.LinearLayout
 import org.mozilla.geckoview.AllowOrDeny
+import org.mozilla.geckoview.Autocomplete
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.PromptDelegate
@@ -30,7 +31,7 @@ private class Reply<T>(private val result: GeckoResult<T> = GeckoResult()) {
 }
 
 /** Pages' dialogs: alert/confirm/prompt, <select> menus, logins, file and
- * date pickers, "leave this page?", and sharing. */
+ * date pickers, "leave this page?", sharing, and saving passwords. */
 class Prompts(private val browser: Browser) : PromptDelegate {
     private val activity: MainActivity? get() = browser.ui
 
@@ -216,6 +217,49 @@ class Prompts(private val browser: Browser) : PromptDelegate {
             .setPositiveButton("Send again") { _, _ -> reply.send(prompt.confirm(AllowOrDeny.ALLOW)) }
             .setNegativeButton(android.R.string.cancel) { _, _ -> reply.send(prompt.confirm(AllowOrDeny.DENY)) }
             .setOnDismissListener { reply.send(prompt.confirm(AllowOrDeny.DENY)) }
+            .show()
+        return reply.future
+    }
+
+    /** You signed in somewhere: offer to save the password (or update it). Not
+     * in private tabs, and not if you turned it off on the Passwords page. */
+    override fun onLoginSave(
+        session: GeckoSession,
+        request: PromptDelegate.AutocompleteRequest<Autocomplete.LoginSaveOption>,
+    ): GeckoResult<PromptResponse>? {
+        val a = activity
+        val option = request.options.firstOrNull()
+        val tab = browser.tabs.firstOrNull { it.session === session }
+        if (a == null || option == null || tab == null || tab.private || !browser.app.logins.offerToSave) {
+            return GeckoResult.fromValue(request.dismiss())
+        }
+        val login = option.value
+        val site = Logins.host(login.origin)
+        val update = login.guid != null
+        val reply = Reply<PromptResponse>()
+        dialog(a, if (update) "Update your password for $site?" else "Save your password for $site?", login.username.ifBlank { null })
+            .setPositiveButton(if (update) "Update" else "Save") { _, _ -> reply.send(request.confirm(option)) }
+            .setNegativeButton("Not now") { _, _ -> reply.send(request.dismiss()) }
+            .setOnDismissListener { reply.send(request.dismiss()) }
+            .show()
+        return reply.future
+    }
+
+    /** More than one saved login fits this sign-in form: pick one. */
+    override fun onLoginSelect(
+        session: GeckoSession,
+        request: PromptDelegate.AutocompleteRequest<Autocomplete.LoginSelectOption>,
+    ): GeckoResult<PromptResponse>? {
+        val a = activity ?: return GeckoResult.fromValue(request.dismiss())
+        val options = request.options
+        if (options.isEmpty()) return GeckoResult.fromValue(request.dismiss())
+        val reply = Reply<PromptResponse>()
+        AlertDialog.Builder(a)
+            .setTitle("Sign in as")
+            .setItems(options.map { it.value.username.ifBlank { "(no username)" } }.toTypedArray()) { _, which ->
+                reply.send(request.confirm(options[which]))
+            }
+            .setOnDismissListener { reply.send(request.dismiss()) }
             .show()
         return reply.future
     }

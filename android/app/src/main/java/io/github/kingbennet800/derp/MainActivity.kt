@@ -1,5 +1,8 @@
 package io.github.kingbennet800.derp
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
@@ -23,6 +26,7 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -40,6 +44,10 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebResponse
+import kotlin.math.PI
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.random.Random
 
 class MainActivity : Activity() {
     private val app get() = application as DerpApp
@@ -500,7 +508,8 @@ class MainActivity : Activity() {
 
     private fun go(text: String) {
         val tab = browser.current ?: return
-        if (text.isBlank()) return
+        if (text.isBlank() || duckBusy) return
+        if (duckMode && Random.nextInt(10) == 0) return duck(text)
         url.clearFocus()
         hideKeyboard()
         browser.load(tab, browser.toUrl(text))
@@ -513,6 +522,77 @@ class MainActivity : Activity() {
 
     private fun hideKeyboard() {
         getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(url.windowToken, 0)
+    }
+
+    // ── Duck mode ──────────────────────────────────────────────────────────
+
+    /** Duck mode, a joke setting (off by default, in the menu): 1 in 10 times
+     * you press Enter in the address bar, a duck waddles along it and eats what
+     * you typed instead. Desktop Derp has the same duck. */
+    private var duckMode: Boolean
+        get() = getSharedPreferences("browser", MODE_PRIVATE).getBoolean("duck", false)
+        set(value) = getSharedPreferences("browser", MODE_PRIVATE).edit().putBoolean("duck", value).apply()
+    private var duckBusy = false
+
+    private fun duck(text: String) {
+        duckBusy = true
+        val size = dp(26)
+        val duck = ImageView(this).apply { setImageResource(R.drawable.ic_duck) }
+        val quack = TextView(this).apply {
+            this.text = "Quack!"
+            textSize = 13f
+            typeface = MEDIUM
+            setTextColor(Color.parseColor("#3A2A00"))
+            background = rounded(Color.parseColor("#FFD43B"), dpf(8))
+            setPadding(dp(8), dp(2), dp(8), dp(2))
+            alpha = 0f
+        }
+        root.addView(duck, FrameLayout.LayoutParams(size, size))
+        root.addView(quack, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        // The duck stands at the end of what's left of the text.
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val fieldAt = IntArray(2).also { url.getLocationInWindow(it) }
+        val left = (fieldAt[0] - rootAt[0]).toFloat()
+        val end = left + url.width - url.compoundPaddingRight - size
+        fun at(kept: Int) = minOf(end, left + url.compoundPaddingLeft - url.scrollX + url.paint.measureText(text, 0, kept))
+        duck.translationY = (fieldAt[1] - rootAt[1] + (url.height - size) / 2 - dp(2)).toFloat()
+        quack.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        quack.translationY = duck.translationY + (size - quack.measuredHeight) / 2
+        // The hint would show through the duck once the field is empty.
+        val hint = url.hint
+        url.hint = null
+
+        val walk = minOf(2400L, 900L + text.length * 45L)
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = walk
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                val t = it.animatedFraction
+                val kept = (text.length * (1 - t)).roundToInt()
+                url.setText(text.substring(0, kept))
+                url.setSelection(kept)
+                duck.translationX = at(kept)
+                duck.rotation = 9f * sin(t * walk / 220f * PI.toFloat())
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    url.setText("")
+                    duck.rotation = 0f
+                    quack.translationX = duck.translationX + size + dp(4)
+                    quack.animate().alpha(1f).setDuration(160).start()
+                    duck.animate().translationYBy(-dpf(5)).setDuration(150)
+                        .withEndAction { duck.animate().translationYBy(dpf(5)).setDuration(150).start() }.start()
+                    root.postDelayed({
+                        root.removeView(duck)
+                        root.removeView(quack)
+                        url.hint = hint
+                        duckBusy = false
+                    }, 1100)
+                }
+            })
+            start()
+        }
     }
 
     // ── Menu ───────────────────────────────────────────────────────────────
@@ -581,6 +661,10 @@ class MainActivity : Activity() {
         item("Your dork") { browser.openDork() }
         divider()
         item("Search engine", browser.engine.label) { pickEngine() }
+        item("Duck mode", if (duckMode) "On" else "Off") {
+            duckMode = !duckMode
+            Toast.makeText(this, if (duckMode) "Duck mode is on. Keep an eye on the address bar…" else "Duck mode is off", Toast.LENGTH_SHORT).show()
+        }
         item("Clear browsing data") { confirmClear() }
         divider()
         item("Check for updates") { Updater.check(this, manual = true) }

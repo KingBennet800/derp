@@ -58,3 +58,9 @@ derp-ai-group =
     .description = Derp starts with AI enhancements blocked. Translations still work, entirely on your device.
 derp-ai-controls-button =
     .label = Open AI controls
+
+derp-fun-group =
+    .label = Just for fun
+derp-duck =
+    .label = Duck mode
+    .description = 1 in 10 times you press Enter in the address bar, a duck waddles by and eats what you typed.

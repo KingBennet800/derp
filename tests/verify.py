@@ -42,6 +42,8 @@ def main():
         check((HOME / folder).is_dir(), f"{folder}/ copied")
     dork = ("DerpDork.sys.mjs", "dork.css", "locales/en-US/derp/dork.ftl")
     check(all((HOME / "features" / f).exists() for f in dork), "your dork installed")
+    duck = ("DerpDuck.sys.mjs", "duck.css", "locales/en-US/derp/duck.ftl")
+    check(all((HOME / "features" / f).exists() for f in duck), "duck mode installed")
 
     # Branding.
     omni = ENGINE / "browser/omni.ja"

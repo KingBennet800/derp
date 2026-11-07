@@ -8,6 +8,7 @@ import { SettingGroupManager } from "chrome://browser/content/preferences/config
 import "chrome://browser/content/preferences/config/account-sync.mjs";
 
 const { DerpDork } = ChromeUtils.importESModule(window.derpURLs.dork);
+const { DerpDuck, DUCK_URL } = ChromeUtils.importESModule(window.derpURLs.duck);
 
 const UNLOAD_AFTER_MINUTES = [15, 30, 60, 120, 240];
 
@@ -16,6 +17,7 @@ Preferences.addAll([
   { id: "derp.memorySaver.minutes", type: "int" },
   { id: "browser.taskbarTabs.enabled", type: "bool" },
   { id: "image.jxl.enabled", type: "bool" },
+  { id: DerpDuck.PREF, type: "bool" },
 ]);
 
 Preferences.addSetting({ id: "derpMemorySaver", pref: "derp.memorySaver.enabled" });
@@ -30,6 +32,7 @@ Preferences.addSetting({
 Preferences.addSetting({ id: "derpWebApps", pref: "browser.taskbarTabs.enabled" });
 Preferences.addSetting({ id: "derpJpegXL", pref: "image.jxl.enabled" });
 Preferences.addSetting({ id: "derpAiControls" });
+Preferences.addSetting({ id: "derpDuck", pref: DerpDuck.PREF });
 
 // Your dork: shown large, with its name; follows edits made in the editor.
 Preferences.addSetting({ id: "derpDorkBox" });
@@ -113,5 +116,11 @@ SettingGroupManager.registerGroups({
     headingLevel: 2,
     iconSrc: "chrome://global/skin/icons/highlights.svg",
     items: [{ id: "derpAiControls", control: "moz-box-button", l10nId: "derp-ai-controls-button", loadPane: "ai" }],
+  },
+  derpFun: {
+    l10nId: "derp-fun-group",
+    headingLevel: 2,
+    iconSrc: DUCK_URL,
+    items: [{ id: "derpDuck", l10nId: "derp-duck" }],
   },
 });

@@ -8,6 +8,8 @@
  * - Memory Saver: unloads tabs you haven't looked at for a while.
  * - Your dork: Derp's own account, an avatar you design, kept on this device
  *   (DerpDork.sys.mjs).
+ * - Duck mode (off by default): now and then a duck eats what you typed in
+ *   the address bar (DerpDuck.sys.mjs).
  * - A "Derp" page in Settings for these, JPEG XL and AI controls.
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
  * Mozilla's account and online services are off by policy (config/). */
@@ -42,7 +44,7 @@ export const DerpFeatures = {
   init() {
     const onStartup = () => {
       Services.obs.removeObserver(onStartup, "final-ui-startup");
-      for (const feature of [Strings, WebApps, MemorySaver, Dork, SettingsSection, Layout]) {
+      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, SettingsSection, Layout]) {
         try {
           feature.init();
         } catch (e) {
@@ -66,6 +68,13 @@ const Dork = {
   init() {
     const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
     DerpDork.init({ cssURL: derpURL("dork.css") });
+  },
+};
+
+const Duck = {
+  init() {
+    const { DerpDuck } = ChromeUtils.importESModule(derpURL("DerpDuck.sys.mjs"));
+    DerpDuck.init({ cssURL: derpURL("duck.css") });
   },
 };
 
@@ -175,7 +184,11 @@ const SettingsSection = {
   },
 
   addPane(win) {
-    win.derpURLs = { settings: derpURL("DerpSettings.mjs"), dork: derpURL("DerpDork.sys.mjs") };
+    win.derpURLs = {
+      settings: derpURL("DerpSettings.mjs"),
+      dork: derpURL("DerpDork.sys.mjs"),
+      duck: derpURL("DerpDuck.sys.mjs"),
+    };
     Services.scriptloader.loadSubScriptWithOptions(derpURL("derp-settings.js"), {
       target: win,
       ignoreCache: true,

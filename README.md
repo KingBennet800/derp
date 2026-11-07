@@ -109,6 +109,9 @@ Windows) to delete it too.
   back and forward nudge, reload twists, + and × spin. Switching tabs and
   light/dark fades smoothly. All motion is off when the system asks for reduced
   motion.
+- **Duck mode** (off by default; Settings → Derp → Just for fun): 1 in 10 times
+  you press Enter in the address bar, a duck waddles along it and eats what you
+  typed. Quack.
 - **Fluid**: spring-physics smooth scrolling with momentum, elastic overscroll and
   kinetic touchpad scrolling.
 - **Fast**: GPU canvas, shader pre-caching, more parallel connections, a bigger
@@ -186,7 +189,8 @@ pick up. The version in use is `android/geckoview-version.txt`.
   until you type, and the lime-teal-blue loading shimmer. Phones have one
   bottom toolbar (address bar, tabs, your dork, menu) and a tabs view;
   tablets have desktop's tab strip with folder tabs, and back, forward and
-  reload in the toolbar. Private tabs, and light and dark mode.
+  reload in the toolbar. Private tabs, and light and dark mode. Duck mode is in
+  the menu here too (off by default).
 - **Your dork** is here too, drawn by the same code as desktop Derp, and the
   first start has you make it.
 - Strict tracking protection (social trackers too), tracking parameters

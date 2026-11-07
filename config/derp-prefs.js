@@ -61,6 +61,7 @@ pref("browser.aboutwelcome.experimentsGate.enabled", false); // no first-run spl
 // ── Derp features (also in Settings → General → Derp) ────────────────────
 pref("derp.memorySaver.enabled", true); // unload tabs unused for…
 pref("derp.memorySaver.minutes", 30);
+pref("derp.duck.enabled", false); // Duck mode (Settings → Derp → Just for fun)
 pref("browser.taskbarTabs.enabled", true); // web apps: install sites as apps
 pref("image.jxl.enabled", true); // JPEG XL images
 

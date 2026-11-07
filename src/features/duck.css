@@ -1,0 +1,66 @@
+/* Duck mode's duck (DerpDuck.sys.mjs), walking along the address bar. */
+
+.derp-duck {
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  translate: 0 -55%;
+  pointer-events: none;
+}
+
+.derp-duck > img {
+  width: 26px;
+  height: 26px;
+  transform-origin: 50% 90%;
+}
+
+/* The empty address bar's placeholder would show through the duck. */
+#urlbar:has(> .derp-duck) input::placeholder {
+  color: transparent;
+}
+
+/* "Quack!", once the address bar is empty. */
+.derp-duck-quack {
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: #ffd43b;
+  color: #3a2a00;
+  font-size: 0.85em;
+  font-weight: 600;
+  opacity: 0;
+  translate: -4px 0;
+  transition: opacity 160ms ease, translate 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.derp-duck-done > .derp-duck-quack {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .derp-duck > img {
+    animation: derp-duck-waddle 220ms ease-in-out infinite alternate;
+  }
+
+  .derp-duck-done > img {
+    animation: derp-duck-hop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@keyframes derp-duck-waddle {
+  from {
+    rotate: -9deg;
+  }
+  to {
+    rotate: 9deg;
+  }
+}
+
+@keyframes derp-duck-hop {
+  40% {
+    translate: 0 -5px;
+  }
+}

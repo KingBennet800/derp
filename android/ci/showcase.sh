@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Screenshots of Derp for Android for the website: the welcome dork editor,
 # a new tab, Derp's website, the tabs view (phones; tablets show a tab strip),
-# then the same in dark mode, and the menu and address bar for a look.
+# then the same in dark mode, the menu and address bar for a look, and Duck
+# mode's duck.
 # Usage: showcase.sh <apk> <out dir> <name prefix>
 set -euo pipefail
 apk=$1 out=$2 name=$3 pkg=io.github.kingbennet800.derp
@@ -37,6 +38,17 @@ PY
   ) || true
   [[ $x ]] || { echo "Can't find '$1' to tap"; return 1; }
   adb shell input tap "$x" "$y"
+}
+# What the address bar says.
+address() {
+  ui >"$out/.ui.xml"
+  python3 - "$out/.ui.xml" <<'PY'
+import sys, xml.etree.ElementTree as ET
+for node in ET.parse(sys.argv[1]).getroot().iter("node"):
+    if node.get("content-desc") == "Address bar":
+        print(node.get("text", ""))
+        break
+PY
 }
 # Phones open a new tab from the tabs view; tablets from the tab strip.
 new_tab() {
@@ -81,4 +93,31 @@ sleep 1
 tap "Address bar"
 shot typing-dark 3
 adb shell cmd uimode night no
+sleep 3
+
+# Duck mode (off by default): turn it on in the menu, then search until the
+# duck turns up (1 in 10 times) and eats the search instead.
+tap Menu
+sleep 1
+tap "Duck mode"
+sleep 2
+for try in $(seq 1 40); do
+  tap "Address bar" || break
+  sleep 1
+  adb shell input text ducks
+  adb shell input keyevent KEYCODE_ENTER
+  sleep 0.7
+  adb exec-out screencap -p >"$out/.duck-walk.png"
+  sleep 0.9
+  adb exec-out screencap -p >"$out/.duck-quack.png"
+  # Without the duck Derp searches, and the address bar shows the search site.
+  if [[ $(address) != *google* ]]; then
+    echo "The duck came on try $try"
+    mv "$out/.duck-walk.png" "$out/$name-duck-walk.png"
+    mv "$out/.duck-quack.png" "$out/$name-duck-quack.png"
+    break
+  fi
+  sleep 2
+done
+rm -f "$out"/.duck-*.png
 echo "Showcase screenshots: $(ls "$out" | tr '\n' ' ')"

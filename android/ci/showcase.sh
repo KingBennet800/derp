@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Screenshots of Derp for Android for the website: the welcome dork editor,
 # a new tab, Derp's website, the tabs view (phones; tablets show a tab strip),
-# then the same in dark mode.
+# then the same in dark mode, and the menu and address bar for a look.
 # Usage: showcase.sh <apk> <out dir> <name prefix>
 set -euo pipefail
 apk=$1 out=$2 name=$3 pkg=io.github.kingbennet800.derp
@@ -72,5 +72,13 @@ adb shell cmd uimode night yes
 shot site-dark 10
 new_tab
 shot newtab-dark 6
+
+# Last, since leaving the address bar takes an uncertain number of BACKs.
+tap Menu
+shot menu-dark 2
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+tap "Address bar"
+shot typing-dark 3
 adb shell cmd uimode night no
 echo "Showcase screenshots: $(ls "$out" | tr '\n' ' ')"

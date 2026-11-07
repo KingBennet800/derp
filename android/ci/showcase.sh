@@ -96,7 +96,9 @@ adb shell cmd uimode night no
 sleep 3
 
 # Duck mode (off by default): turn it on in the menu, then search until the
-# duck turns up (1 in 10 times) and eats the search instead.
+# duck turns up (1 in 10 times) and eats the search instead. Animations back
+# on, or the duck's walk is skipped.
+adb shell settings put global animator_duration_scale 1
 tap Menu
 sleep 1
 tap "Duck mode"
@@ -104,11 +106,11 @@ sleep 2
 for try in $(seq 1 40); do
   tap "Address bar" || break
   sleep 1
-  adb shell input text ducks
+  adb shell input text "rubber%sducks"
   adb shell input keyevent KEYCODE_ENTER
-  sleep 0.7
+  sleep 0.4
   adb exec-out screencap -p >"$out/.duck-walk.png"
-  sleep 0.9
+  sleep 0.8
   adb exec-out screencap -p >"$out/.duck-quack.png"
   # Without the duck Derp searches, and the address bar shows the search site.
   if [[ $(address) != *google* ]]; then

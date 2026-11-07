@@ -193,6 +193,13 @@ pick up. The version in use is `android/geckoview-version.txt`.
   the menu here too (off by default).
 - **Your dork** is here too, drawn by the same code as desktop Derp, and the
   first start has you make it.
+- **Bookmarks, history and passwords**: ☆ in the menu bookmarks a page (your
+  newest show on the new tab page); history keeps the pages you visit, except
+  in private tabs; and Derp offers to save passwords when you sign in and fills
+  them in next time. Passwords are encrypted with a key in Android's keystore,
+  and showing or copying one asks for your screen lock. **Import data** brings
+  bookmarks (.html) and passwords (.csv) exported from Chrome, Edge, Firefox,
+  Safari or Derp on a computer. All of it stays on the device.
 - Strict tracking protection (social trackers too), tracking parameters
   stripped from links, tracker cookies purged, no telemetry.
 - Downloads, file uploads, page dialogs, and camera, microphone and location

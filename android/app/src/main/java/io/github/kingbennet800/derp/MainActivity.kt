@@ -12,7 +12,6 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -28,6 +27,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -51,17 +51,29 @@ class MainActivity : Activity() {
     private lateinit var progress: ProgressLine
     private lateinit var bar: LinearLayout
     private lateinit var url: EditText
-    private lateinit var tabCount: TextView
     private lateinit var avatar: ImageView
+    private lateinit var avatarButton: FrameLayout
     private lateinit var menuButton: ImageButton
     private var tabsPanel: LinearLayout? = null
     private var palette = Palette.LIGHT
     private var fullScreen = false
-    private var topInset = 0
     private var bottomInset = 0
 
-    /** Tablets keep the toolbar at the top, like other tablet browsers. */
+    /** Tablets look like desktop Derp: a tab strip with folder tabs, and the
+     * toolbar (with back, forward and reload) under it. Phones keep the
+     * toolbar at the bottom, with a tabs button. */
     private val tablet get() = resources.configuration.smallestScreenWidthDp >= 600
+    private var tabCount: TextView? = null
+    private var strip: LinearLayout? = null
+    private var stripTabs: LinearLayout? = null
+    private var stripScroll: HorizontalScrollView? = null
+    private var stripShown = ""
+    private var back: ImageButton? = null
+    private var forward: ImageButton? = null
+    private var reload: ImageButton? = null
+    /** The toolbar's icon buttons, recolored with the palette. */
+    private val toolbarButtons = mutableListOf<ImageButton>()
+    private val hairline get() = dp(1)
     private var permissionCallback: GeckoSession.PermissionDelegate.Callback? = null
     private var filesCallback: ((Int, Intent?) -> Unit)? = null
 
@@ -145,25 +157,40 @@ class MainActivity : Activity() {
         root = FrameLayout(this)
         column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         geckoView = GeckoView(this)
-        progress = ProgressLine(this)
+        progress = ProgressLine(this, lineAtTop = !tablet)
 
         bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(10), dp(6), dp(4), dp(6))
+            if (tablet) setPadding(dp(6), dp(4), dp(6), dp(4)) else setPadding(dp(6), dp(6), dp(2), dp(6))
+        }
+        if (tablet) {
+            val buttons = listOf(
+                toolbarButton(R.drawable.ic_back, "Back") { browser.current?.session?.goBack() },
+                toolbarButton(R.drawable.ic_forward, "Forward") { browser.current?.session?.goForward() },
+                toolbarButton(R.drawable.ic_reload, "Reload") {
+                    val tab = browser.current ?: return@toolbarButton
+                    if (tab.progress < 100) tab.session.stop() else tab.session.reload()
+                },
+            )
+            buttons.forEach { bar.addView(it, LinearLayout.LayoutParams(dp(40), dp(40))) }
+            back = buttons[0]
+            forward = buttons[1]
+            reload = buttons[2]
         }
         url = EditText(this).apply {
             id = View.generateViewId()
             contentDescription = "Address bar"
             setSingleLine()
             textSize = 15f
-            setPadding(dp(18), 0, dp(14), 0)
+            setPadding(dp(14), 0, dp(14), 0)
             gravity = Gravity.CENTER_VERTICAL
             imeOptions = EditorInfo.IME_ACTION_GO or EditorInfo.IME_FLAG_NO_EXTRACT_UI
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
             setSelectAllOnFocus(true)
             ellipsize = TextUtils.TruncateAt.END
-            compoundDrawablePadding = dp(8)
+            compoundDrawablePadding = dp(10)
+            hint = "Search or enter address"
             setOnEditorActionListener { _, action, event ->
                 val enter = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
                 if (action == EditorInfo.IME_ACTION_GO || enter) {
@@ -175,50 +202,56 @@ class MainActivity : Activity() {
                 val tab = browser.current
                 setText(if (tab == null) "" else if (focused) browser.address(tab) else browser.display(tab))
                 if (focused) selectAll()
+                paintUrl()
             }
         }
-        bar.addView(url, LinearLayout.LayoutParams(0, dp(44), 1f))
-
-        tabCount = TextView(this).apply {
-            gravity = Gravity.CENTER
-            textSize = 12f
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        val tabsButton = FrameLayout(this).apply {
-            contentDescription = "Tabs"
-            isClickable = true
-            setOnClickListener { if (tabsPanel == null) openTabs() else closeTabs() }
-            addView(tabCount, FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER))
-        }
-        bar.addView(tabsButton, LinearLayout.LayoutParams(dp(46), dp(46)).apply { marginStart = dp(6) })
+        bar.addView(url, LinearLayout.LayoutParams(0, dp(if (tablet) 40 else 44), 1f).apply {
+            if (tablet) marginStart = dp(6)
+        })
 
         avatar = ImageView(this).apply {
-            contentDescription = "Your dork"
             scaleType = ImageView.ScaleType.CENTER_CROP
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) = outline.setOval(0, 0, view.width, view.height)
             }
             clipToOutline = true
         }
-        val avatarButton = FrameLayout(this).apply {
+        avatarButton = FrameLayout(this).apply {
             contentDescription = "Your dork"
             isClickable = true
             setOnClickListener {
                 closeTabs()
                 browser.openDork()
             }
-            addView(avatar, FrameLayout.LayoutParams(dp(32), dp(32), Gravity.CENTER))
+            addView(avatar, FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
         }
-        bar.addView(avatarButton, LinearLayout.LayoutParams(dp(44), dp(46)))
 
-        menuButton = iconButton(R.drawable.ic_menu, "Menu") { showMenu() }
-        bar.addView(menuButton, LinearLayout.LayoutParams(dp(44), dp(46)))
+        if (!tablet) {
+            val count = TextView(this).apply {
+                gravity = Gravity.CENTER
+                textSize = 11f
+                typeface = MEDIUM
+            }
+            tabCount = count
+            val tabsButton = FrameLayout(this).apply {
+                id = View.generateViewId()
+                contentDescription = "Tabs"
+                isClickable = true
+                setOnClickListener { if (tabsPanel == null) openTabs() else closeTabs() }
+                addView(count, FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+            }
+            bar.addView(tabsButton, LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
+            bar.addView(avatarButton, LinearLayout.LayoutParams(dp(44), dp(44)))
+        }
+        menuButton = toolbarButton(R.drawable.ic_menu, "Menu") { showMenu() }
+        bar.addView(menuButton, LinearLayout.LayoutParams(dp(if (tablet) 40 else 44), dp(if (tablet) 40 else 44)))
 
-        // Phones: page, then the toolbar at the bottom. Tablets: toolbar on top.
+        // Phones: page, then the toolbar at the bottom. Tablets: tab strip and toolbar on top.
         val page = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-        val line = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(3))
+        val line = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2))
         val toolbar = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         if (tablet) {
+            column.addView(buildStrip(), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
             column.addView(bar, toolbar)
             column.addView(progress, line)
             column.addView(geckoView, page)
@@ -238,7 +271,6 @@ class MainActivity : Activity() {
                 @Suppress("DEPRECATION")
                 intArrayOf(insets.systemWindowInsetLeft, insets.systemWindowInsetTop, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             }
-            topInset = sides[1]
             bottomInset = sides[3]
             if (fullScreen) column.setPadding(0, 0, 0, 0) else column.setPadding(sides[0], sides[1], sides[2], sides[3])
             tabsPanel?.setPadding(sides[0], sides[1], sides[2], sides[3])
@@ -246,12 +278,51 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun iconButton(icon: Int, description: String, onClick: () -> Unit) = ImageButton(this).apply {
+    /** The tablet tab strip: your tabs and a new tab button, and your dork in the corner. */
+    private fun buildStrip(): LinearLayout {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(6), 0, 0, 0)
+        }
+        val scroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
+            addView(row, ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        }
+        val strip = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(scroll, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+            addView(avatarButton, LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginEnd = dp(4) })
+        }
+        this.strip = strip
+        stripTabs = row
+        stripScroll = scroll
+        return strip
+    }
+
+    /** A round icon button in desktop Derp's style, colored for [colors]. */
+    private fun iconButton(icon: Int, description: String, colors: Palette = palette, onClick: () -> Unit) = ImageButton(this).apply {
         setImageResource(icon)
         contentDescription = description
-        background = null
         scaleType = ImageView.ScaleType.CENTER
         setOnClickListener { onClick() }
+        paintButton(this, colors)
+    }
+
+    /** A toolbar button: recolored whenever the palette changes. */
+    private fun toolbarButton(icon: Int, description: String, onClick: () -> Unit) =
+        iconButton(icon, description, palette, onClick).also { toolbarButtons += it }
+
+    private fun paintButton(button: ImageButton, colors: Palette) {
+        button.imageTintList = ColorStateList.valueOf(colors.icon)
+        button.background = roundRipple(colors.press, dp(2))
+    }
+
+    private fun enable(button: ImageButton?, on: Boolean) {
+        button ?: return
+        button.isEnabled = on
+        button.alpha = if (on) 1f else 0.4f
     }
 
     // ── Showing tabs ───────────────────────────────────────────────────────
@@ -259,7 +330,7 @@ class MainActivity : Activity() {
     fun showTab(tab: Tab) {
         if (geckoView.session !== tab.session) {
             geckoView.releaseSession()
-            geckoView.coverUntilFirstPaint(Palette.of(this, tab.private).toolbar)
+            geckoView.coverUntilFirstPaint(Palette.of(this, tab.private).content)
             geckoView.setSession(tab.session)
         }
         render()
@@ -272,7 +343,7 @@ class MainActivity : Activity() {
     fun onTabsChanged() = render()
 
     fun onTabChanged(tab: Tab) {
-        if (tab === browser.current) render()
+        if (tab === browser.current) render() else fillStrip()
         tabsPanel?.let { fillTabs(it) }
     }
 
@@ -280,29 +351,131 @@ class MainActivity : Activity() {
     private fun render() {
         val tab = browser.current
         palette = Palette.of(this, tab?.private == true)
-        root.setBackgroundColor(palette.toolbar)
+        root.setBackgroundColor(if (tablet) palette.frame else palette.toolbar)
+        strip?.background = stripBackground(palette.frame, palette.line, hairline)
         bar.setBackgroundColor(palette.toolbar)
-        progress.setColors(palette.line)
-        progress.setProgress(tab?.progress ?: 100)
+        progress.setColors(palette.contentLine, palette.toolbar)
+        progress.setBusy((tab?.progress ?: 100) < 100)
+        toolbarButtons.forEach { paintButton(it, palette) }
+        avatarButton.background = roundRipple(palette.press, dp(4))
 
-        url.background = rounded(palette.field, dpf(22))
+        enable(back, tab?.canGoBack == true)
+        enable(forward, tab?.canGoForward == true)
+        val loading = (tab?.progress ?: 100) < 100
+        reload?.setImageResource(if (loading) R.drawable.ic_stop else R.drawable.ic_reload)
+        reload?.contentDescription = if (loading) "Stop" else "Reload"
+
+        paintUrl()
         url.setTextColor(palette.text)
         url.setHintTextColor(palette.dim)
-        url.hint = if (tab?.private == true) "Search privately" else "Search or type URL"
+        url.highlightColor = (palette.accent and 0xFFFFFF) or 0x55000000
         if (!url.hasFocus()) url.setText(tab?.let { browser.display(it) } ?: "")
-        val mask = if (tab?.private == true) getDrawable(R.drawable.ic_mask)?.mutate()?.apply {
-            setTint(palette.accent)
+        // Private tabs wear the mask; otherwise a quiet search glyph marks the address bar.
+        val glyph = getDrawable(if (tab?.private == true) R.drawable.ic_mask else R.drawable.ic_search)?.mutate()?.apply {
+            setTint(if (tab?.private == true) palette.accent else palette.dim)
             setBounds(0, 0, dp(18), dp(18))
-        } else null
-        url.setCompoundDrawablesRelative(mask, null, null, null)
+        }
+        url.setCompoundDrawablesRelative(glyph, null, null, null)
 
-        val count = browser.tabs.size
-        tabCount.text = if (count > 99) ":D" else count.toString()
-        tabCount.setTextColor(palette.text)
-        tabCount.background = rounded(Color.TRANSPARENT, dpf(6), dp(2), palette.text)
-        menuButton.imageTintList = ColorStateList.valueOf(palette.text)
+        tabCount?.let {
+            val count = browser.tabs.size
+            it.text = if (count > 99) ":D" else count.toString()
+            it.setTextColor(palette.icon)
+            it.background = rounded(Color.TRANSPARENT, dpf(5), (resources.displayMetrics.density * 1.5f).toInt(), palette.icon)
+            (it.parent as View).background = roundRipple(palette.press, dp(2))
+        }
         paintAvatar()
+        fillStrip()
         systemBarIcons(palette.dark)
+    }
+
+    /** No pill at rest, like desktop Derp; it fills in with an accent ring while you type. */
+    private fun paintUrl() {
+        val radius = dpf(if (tablet) 20 else 22)
+        url.background = if (url.hasFocus()) {
+            rounded(palette.fieldFocus, radius, (resources.displayMetrics.density * 1.5f).toInt(), palette.accent)
+        } else {
+            rounded(Color.TRANSPARENT, radius)
+        }
+    }
+
+    /** The tablet tab strip, rebuilt when a tab's title, address or place changes. */
+    private fun fillStrip() {
+        val row = stripTabs ?: return
+        val shown = browser.tabs.joinToString("\n") {
+            "${System.identityHashCode(it)} ${it.private} ${it === browser.current} ${browser.display(it)} ${it.title}"
+        } + palette.hashCode()
+        if (shown == stripShown) return
+        stripShown = shown
+        row.removeAllViews()
+
+        // Tabs share the room up to desktop's tab width; past that the strip scrolls.
+        val foot = dp(10)
+        val room = resources.displayMetrics.widthPixels - dp(6 + 48 + 44)
+        val body = (room / maxOf(1, browser.tabs.size) - foot).coerceIn(dp(112), dp(232))
+        var front: View? = null
+        browser.tabs.forEachIndexed { i, tab ->
+            val selected = tab === browser.current
+            val title = tab.title.ifBlank { browser.display(tab).ifBlank { "New tab" } }
+            val view = FolderTab(this, foot).apply {
+                paint(selected, palette.toolbar, palette.line, hairline)
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(foot + dp(10), dp(6), foot + dp(2), 0)
+                contentDescription = title
+                setOnClickListener { browser.select(tab) }
+            }
+            view.addView(ImageView(this).apply { tabIcon(this, tab, palette) }, LinearLayout.LayoutParams(dp(16), dp(16)))
+            view.addView(TextView(this).apply {
+                text = title
+                textSize = 14f
+                setTextColor(if (selected) palette.text else palette.dim)
+                typeface = if (selected) MEDIUM else Typeface.DEFAULT
+                setSingleLine()
+                ellipsize = TextUtils.TruncateAt.END
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(8) })
+            if (selected) {
+                view.addView(iconButton(R.drawable.ic_close, "Close tab") { browser.close(tab) }.apply {
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    setPadding(dp(7), dp(7), dp(7), dp(7))
+                    background = roundRipple(palette.press, 0)
+                }, LinearLayout.LayoutParams(dp(30), dp(30)))
+                front = view
+            }
+            row.addView(view, LinearLayout.LayoutParams(body + 2 * foot, ViewGroup.LayoutParams.MATCH_PARENT).apply {
+                if (i > 0) marginStart = -foot
+            })
+        }
+        row.addView(iconButton(R.drawable.ic_plus, "Open a new tab") { browser.newTab(null) },
+            LinearLayout.LayoutParams(dp(36), dp(36)).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                topMargin = dp(3)
+            })
+        // Keep the tab in front in view.
+        front?.let { tab ->
+            val scroll = stripScroll ?: return@let
+            scroll.post {
+                when {
+                    tab.left < scroll.scrollX -> scroll.smoothScrollTo(tab.left, 0)
+                    tab.right > scroll.scrollX + scroll.width -> scroll.smoothScrollTo(tab.right - scroll.width, 0)
+                }
+            }
+        }
+    }
+
+    /** A tab's icon: Derp's logo on Derp's pages, the mask for private tabs, a globe for websites. */
+    private fun tabIcon(view: ImageView, tab: Tab, colors: Palette) {
+        when {
+            tab.private -> {
+                view.setImageResource(R.drawable.ic_mask)
+                view.imageTintList = ColorStateList.valueOf(if (colors.dark) Palette.PRIVATE.accent else VIOLET)
+            }
+            browser.display(tab).isBlank() -> view.setImageResource(R.drawable.derp_logo)
+            else -> {
+                view.setImageResource(R.drawable.ic_globe)
+                view.imageTintList = ColorStateList.valueOf(colors.dim)
+            }
+        }
     }
 
     private fun paintAvatar() {
@@ -349,45 +522,42 @@ class MainActivity : Activity() {
         hideKeyboard()
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(6), 0, dp(8))
+            setPadding(dp(6), dp(6), dp(6), dp(6))
         }
-        val popup = PopupWindow(panel, dp(268), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
-            setBackgroundDrawable(rounded(palette.card, dpf(20), 1, palette.line))
-            elevation = dpf(14)
+        val popup = PopupWindow(panel, dp(264), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+            setBackgroundDrawable(rounded(palette.box, dpf(14), hairline, palette.line))
+            elevation = dpf(8)
         }
         fun run(action: () -> Unit) {
             popup.dismiss()
             action()
         }
 
-        // Forward, reload, share, new tab.
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(6), 0, dp(6), dp(4))
-        }
+        // Quick actions as round buttons (on tablets, forward and reload are in the toolbar).
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val loading = tab.progress < 100
-        listOf<Pair<Triple<Int, String, Boolean>, () -> Unit>>(
-            Triple(R.drawable.ic_forward, "Forward", tab.canGoForward) to { tab.session.goForward() },
-            Triple(if (loading) R.drawable.ic_stop else R.drawable.ic_reload, if (loading) "Stop" else "Reload", true) to {
+        fun quick(icon: Int, label: String, enabled: Boolean = true, action: () -> Unit) =
+            row.addView(iconButton(icon, label) { run(action) }.apply { enable(this, enabled) }, LinearLayout.LayoutParams(0, dp(44), 1f))
+        if (!tablet) {
+            quick(R.drawable.ic_forward, "Forward", tab.canGoForward) { tab.session.goForward() }
+            quick(if (loading) R.drawable.ic_stop else R.drawable.ic_reload, if (loading) "Stop" else "Reload") {
                 if (loading) tab.session.stop() else tab.session.reload()
-            },
-            Triple(R.drawable.ic_share, "Share", !browser.isDerpPage(tab)) to { share(tab.url, tab.title) },
-            Triple(R.drawable.ic_plus, "New tab", true) to { browser.newTab(null) },
-        ).forEach { (spec, action) ->
-            val (icon, label, enabled) = spec
-            row.addView(iconButton(icon, label) { run(action) }.apply {
-                isEnabled = enabled
-                imageTintList = ColorStateList.valueOf(if (enabled) palette.text else palette.line)
-            }, LinearLayout.LayoutParams(0, dp(48), 1f))
+            }
         }
+        quick(R.drawable.ic_share, "Share", !browser.isDerpPage(tab)) { share(tab.url, tab.title) }
+        quick(R.drawable.ic_plus, "New tab") { browser.newTab(null) }
         panel.addView(row)
-        panel.addView(View(this).apply { setBackgroundColor(palette.line) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1))
 
+        fun divider() = panel.addView(View(this).apply { setBackgroundColor(palette.line) },
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, hairline).apply {
+                setMargins(dp(8), dp(5), dp(8), dp(5))
+            })
         fun item(label: String, detail: String? = null, action: () -> Unit) {
             val line = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(20), 0, dp(20), 0)
+                setPadding(dp(14), 0, dp(14), 0)
+                background = rowRipple(palette.press, dpf(8))
                 isClickable = true
                 setOnClickListener { run(action) }
             }
@@ -403,18 +573,21 @@ class MainActivity : Activity() {
                     setTextColor(palette.dim)
                 })
             }
-            panel.addView(line, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)))
+            panel.addView(line, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
         }
+        divider()
         item("New private tab") { browser.newTab(null, private = true) }
         item("Desktop site", if (tab.desktop) "On" else "Off") { browser.toggleDesktop(tab) }
         item("Your dork") { browser.openDork() }
+        divider()
         item("Search engine", browser.engine.label) { pickEngine() }
         item("Clear browsing data") { confirmClear() }
+        divider()
         item("Check for updates") { Updater.check(this, manual = true) }
         item("About Derp") { about() }
 
         if (tablet) {
-            popup.showAtLocation(root, Gravity.TOP or Gravity.END, dp(8), topInset + bar.height + dp(6))
+            popup.showAsDropDown(menuButton, 0, dp(4), Gravity.END)
         } else {
             popup.showAtLocation(root, Gravity.BOTTOM or Gravity.END, dp(8), bar.height + bottomInset + dp(6))
         }
@@ -509,77 +682,66 @@ class MainActivity : Activity() {
     private fun fillTabs(panel: LinearLayout) {
         val base = Palette.of(this, false)
         panel.removeAllViews()
-        // On wide screens the list is a centered column.
-        val side = maxOf(0, (resources.displayMetrics.widthPixels - dp(720)) / 2)
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(side + dp(20), dp(14), side + dp(12), dp(10))
+            setPadding(dp(22), dp(14), dp(10), dp(8))
         }
         header.addView(TextView(this).apply {
             text = "Tabs"
-            textSize = 24f
-            typeface = Typeface.DEFAULT_BOLD
+            textSize = 22f
+            typeface = MEDIUM
             setTextColor(base.text)
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        fun pill(label: String, background: Int, foreground: Int, action: () -> Unit) = TextView(this).apply {
-            text = label
-            textSize = 14f
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            setTextColor(foreground)
-            this.background = rounded(background, dpf(20))
-            setPadding(dp(16), 0, dp(16), 0)
-            setOnClickListener {
-                closeTabs()
-                action()
-            }
-        }
-        header.addView(pill("Private", Palette.PRIVATE.field, Palette.PRIVATE.text) { browser.newTab(null, private = true) },
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(40)).apply { marginEnd = dp(8) })
-        header.addView(pill("+ New tab", base.accent, base.onAccent) { browser.newTab(null) },
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(40)))
+        header.addView(iconButton(R.drawable.ic_mask, "New private tab", base) {
+            closeTabs()
+            browser.newTab(null, private = true)
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
+        header.addView(iconButton(R.drawable.ic_plus, "Open a new tab", base) {
+            closeTabs()
+            browser.newTab(null)
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
         panel.addView(header)
 
+        // Like desktop's tabs: the one in front is a card the toolbar's color, the rest sit flat.
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(side + dp(14), 0, side + dp(14), dp(20))
+            setPadding(dp(10), dp(2), dp(10), dp(20))
         }
         for (tab in browser.tabs) {
-            val colors = if (tab.private) Palette.PRIVATE else base
             val selected = tab === browser.current
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                background = rounded(colors.card, dpf(16), if (selected) dp(2) else 1, if (selected) colors.accent else colors.line)
-                setPadding(dp(16), dp(12), dp(4), dp(12))
+                background = if (selected) rounded(base.toolbar, dpf(12), hairline, base.line) else null
+                foreground = rowRipple(base.press, dpf(12))
+                setPadding(dp(14), dp(10), dp(4), dp(10))
                 setOnClickListener {
                     browser.select(tab)
                     closeTabs()
                 }
             }
+            card.addView(ImageView(this).apply { tabIcon(this, tab, base) }, LinearLayout.LayoutParams(dp(18), dp(18)))
             val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
             words.addView(TextView(this).apply {
-                text = tab.title.ifBlank { if (browser.display(tab).isBlank()) "New tab" else browser.display(tab) }
+                text = tab.title.ifBlank { browser.display(tab).ifBlank { "New tab" } }
                 textSize = 15f
-                typeface = Typeface.DEFAULT_BOLD
-                setTextColor(colors.text)
+                if (selected) typeface = MEDIUM
+                setTextColor(base.text)
                 setSingleLine()
                 ellipsize = TextUtils.TruncateAt.END
             })
             words.addView(TextView(this).apply {
                 text = listOfNotNull(if (tab.private) "Private" else null, browser.display(tab).ifBlank { null }).joinToString(" · ").ifBlank { "Derp" }
                 textSize = 13f
-                setTextColor(colors.dim)
+                setTextColor(base.dim)
                 setSingleLine()
                 ellipsize = TextUtils.TruncateAt.END
             })
-            card.addView(words, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            card.addView(iconButton(R.drawable.ic_close, "Close tab") { browser.close(tab) }.apply {
-                imageTintList = ColorStateList.valueOf(colors.dim)
-            }, LinearLayout.LayoutParams(dp(44), dp(44)))
+            card.addView(words, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(14) })
+            card.addView(iconButton(R.drawable.ic_close, "Close tab", base) { browser.close(tab) }, LinearLayout.LayoutParams(dp(44), dp(44)))
             list.addView(card, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = dp(10)
+                bottomMargin = dp(4)
             })
         }
         panel.addView(ScrollView(this).apply { addView(list) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
@@ -591,6 +753,7 @@ class MainActivity : Activity() {
         fullScreen = on
         bar.visibility = if (on) View.GONE else View.VISIBLE
         progress.visibility = if (on) View.GONE else View.VISIBLE
+        strip?.visibility = if (on) View.GONE else View.VISIBLE
         if (Build.VERSION.SDK_INT >= 30) {
             window.insetsController?.let {
                 if (on) {
@@ -716,5 +879,7 @@ class MainActivity : Activity() {
     companion object {
         private const val REQUEST_PERMISSIONS = 1
         private const val REQUEST_FILES = 2
+        /** Private tabs' mask on light backgrounds (their own accent is for dark ones). */
+        private val VIOLET = Color.parseColor("#7C5CF5")
     }
 }

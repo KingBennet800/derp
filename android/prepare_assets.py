@@ -29,8 +29,8 @@ def main(out):
         encoding="utf-8",
     )
     shutil.copyfile(ROOT / "brand/derp.svg", assets / "logo.svg")
-    # The wordmark in the page's text color, for light and dark.
-    for scheme, color in (("light", "#18181b"), ("dark", "#f2f2f3")):
+    # The wordmark in desktop Derp's new tab colors, for light and dark.
+    for scheme, color in (("light", "#1f2328"), ("dark", "#e8eaed")):
         (assets / f"wordmark-{scheme}.svg").write_text(
             site.wordmark().replace('fill="currentColor"', f'fill="{color}"'), encoding="utf-8"
         )

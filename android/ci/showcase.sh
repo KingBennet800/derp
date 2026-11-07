@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Screenshots of Derp for Android for the website: the welcome dork editor,
-# a new tab, Derp's website, the tabs view, then the same in dark mode.
+# a new tab, Derp's website, the tabs view (phones; tablets show a tab strip),
+# then the same in dark mode.
 # Usage: showcase.sh <apk> <out dir> <name prefix>
 set -euo pipefail
 apk=$1 out=$2 name=$3 pkg=io.github.kingbennet800.derp
@@ -37,6 +38,11 @@ PY
   [[ $x ]] || { echo "Can't find '$1' to tap"; return 1; }
   adb shell input tap "$x" "$y"
 }
+# Phones open a new tab from the tabs view; tablets from the tab strip.
+new_tab() {
+  if tap Tabs; then sleep 2; fi
+  tap "Open a new tab"
+}
 
 adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
@@ -50,24 +56,21 @@ calm
 adb shell am start -W -n "$pkg/.MainActivity"
 shot welcome 30
 
-tap Tabs
-sleep 2
-tap "+ New tab"
+new_tab
 shot newtab 8
 
 adb shell am start -W -a android.intent.action.VIEW -d https://kingbennet800.github.io/derp/ "$pkg"
 shot site 15
 
-tap Tabs
-shot tabs 3
-adb shell input keyevent KEYCODE_BACK
-sleep 2
+if tap Tabs; then
+  shot tabs 3
+  adb shell input keyevent KEYCODE_BACK
+  sleep 2
+fi
 
 adb shell cmd uimode night yes
 shot site-dark 10
-tap Tabs
-sleep 2
-tap "New tab"
+new_tab
 shot newtab-dark 6
 adb shell cmd uimode night no
 echo "Showcase screenshots: $(ls "$out" | tr '\n' ' ')"

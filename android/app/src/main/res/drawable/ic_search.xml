@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Search, in the style of desktop Derp's icons. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <path android:pathData="M11,4.5 A6.5,6.5 0 1,1 10.99,4.5 M16,16 L20,20" android:strokeColor="#FF000000" android:strokeWidth="2"
+    android:width="20dp" android:height="20dp"
+    android:viewportWidth="16" android:viewportHeight="16">
+    <path android:pathData="M7.25,3 a4.25,4.25 0 1,1 0,8.5 a4.25,4.25 0 1,1 0,-8.5 Z M10.4,10.4 L13,13" android:strokeColor="#FF000000" android:strokeWidth="1.5"
         android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" />
 </vector>

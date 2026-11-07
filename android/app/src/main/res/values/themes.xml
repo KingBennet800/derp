@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Derp" parent="@android:style/Theme.Material.Light.NoActionBar">
+    <style name="Theme.Derp" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
         <item name="android:colorAccent">#2F6FEB</item>
+        <item name="android:alertDialogTheme">@style/Theme.Derp.Dialog</item>
         <item name="android:windowBackground">@color/derp_toolbar</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <!-- Dialogs: the system's own (rounded on newer Android), with Derp's accent. -->
+    <style name="Theme.Derp.Dialog" parent="@android:style/Theme.DeviceDefault.Light.Dialog.Alert">
+        <item name="android:colorAccent">#2F6FEB</item>
     </style>
     <color name="derp_toolbar">#FAFAFA</color>
     <color name="derp_icon_background">#F4F6FA</color>

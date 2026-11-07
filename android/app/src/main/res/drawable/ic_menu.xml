@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Desktop Derp's menu icon (theme/icons/menu.svg). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
+    android:width="20dp" android:height="20dp"
+    android:viewportWidth="16" android:viewportHeight="16">
     <path android:fillColor="#FF000000"
-        android:pathData="M12,3.8a1.7,1.7 0,1 1,0 3.4a1.7,1.7 0,1 1,0 -3.4z M12,10.3a1.7,1.7 0,1 1,0 3.4a1.7,1.7 0,1 1,0 -3.4z M12,16.8a1.7,1.7 0,1 1,0 3.4a1.7,1.7 0,1 1,0 -3.4z" />
+        android:pathData="M8,1.9 a1.35,1.35 0 1,1 0,2.7 a1.35,1.35 0 1,1 0,-2.7 Z M8,6.65 a1.35,1.35 0 1,1 0,2.7 a1.35,1.35 0 1,1 0,-2.7 Z M8,11.4 a1.35,1.35 0 1,1 0,2.7 a1.35,1.35 0 1,1 0,-2.7 Z" />
 </vector>

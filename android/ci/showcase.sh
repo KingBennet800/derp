@@ -39,14 +39,14 @@ PY
   [[ $x ]] || { echo "Can't find '$1' to tap"; return 1; }
   adb shell input tap "$x" "$y"
 }
-# What the address bar says.
+# What the address bar says, as "field:<text>"; nothing if it can't be read.
 address() {
-  ui >"$out/.ui.xml"
-  python3 - "$out/.ui.xml" <<'PY'
+  ui >"$out/.ui.xml" || return 0
+  python3 - "$out/.ui.xml" <<'PY' || true
 import sys, xml.etree.ElementTree as ET
 for node in ET.parse(sys.argv[1]).getroot().iter("node"):
     if node.get("content-desc") == "Address bar":
-        print(node.get("text", ""))
+        print("field:" + node.get("text", ""))
         break
 PY
 }
@@ -113,7 +113,8 @@ for try in $(seq 1 40); do
   sleep 0.8
   adb exec-out screencap -p >"$out/.duck-quack.png"
   # Without the duck Derp searches, and the address bar shows the search site.
-  if [[ $(address) != *google* ]]; then
+  bar=$(address)
+  if [[ $bar == field:* && $bar != *google* ]]; then
     echo "The duck came on try $try"
     mv "$out/.duck-walk.png" "$out/$name-duck-walk.png"
     mv "$out/.duck-quack.png" "$out/$name-duck-quack.png"

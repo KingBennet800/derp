@@ -1,18 +1,17 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 // Derp's version comes from the repo's VERSION file, like the desktop installers.
 val derpVersion = rootDir.resolve("../VERSION").readText().trim()
 val (major, minor, patch) = derpVersion.split(".").map { it.toInt() }
-val generated = layout.buildDirectory.dir("generated/derp")
+// Derp's shared assets, copied in at build time by prepare_assets.py.
+val generated = "build/generated/derp"
 
 android {
     namespace = "io.github.kingbennet800.derp"
-    compileSdk = 36
+    // GeckoView needs API 37 to compile against; the app still targets 36.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.kingbennet800.derp"
@@ -63,18 +62,14 @@ android {
         buildConfig = true
     }
 
-    sourceSets["main"].assets.srcDir(generated.map { it.dir("assets") })
-    sourceSets["main"].res.srcDir(generated.map { it.dir("res") })
+    sourceSets.getByName("main") {
+        assets.srcDir("$generated/assets")
+        res.srcDir("$generated/res")
+    }
 
     lint {
         checkReleaseBuilds = false
         abortOnError = false
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
@@ -92,7 +87,7 @@ val prepareDerpAssets by tasks.registering(Exec::class) {
     inputs.file(rootDir.resolve("../src/features/DerpDork.sys.mjs"))
     inputs.dir(rootDir.resolve("../brand"))
     outputs.dir(generated)
-    commandLine("python3", script.path, generated.get().asFile.path)
+    commandLine("python3", script.path, file(generated).path)
 }
 
 tasks.named("preBuild") {

@@ -25,6 +25,14 @@ curl -fsSL https://raw.githubusercontent.com/KingBennet800/derp/main/install.sh 
 irm https://raw.githubusercontent.com/KingBennet800/derp/main/install.ps1 | iex
 ```
 
+**Android** 8 or newer: download
+[Derp for Android](https://github.com/KingBennet800/derp/releases/latest/download/derp-android-arm64.apk)
+on your phone and open it (Android asks once to let your browser install apps).
+That APK fits nearly every phone; there are also
+[32-bit ARM](https://github.com/KingBennet800/derp/releases/latest/download/derp-android-arm.apk) and
+[x86-64](https://github.com/KingBennet800/derp/releases/latest/download/derp-android-x86_64.apk) builds.
+See [Derp for Android](#derp-for-android).
+
 The one-liners download the latest [release](https://github.com/KingBennet800/derp/releases),
 check it against the release's `SHA256SUMS`, and run its installer. When it's
 done, Derp opens and has you make your dork first. You can also
@@ -162,6 +170,37 @@ Picked from Mozilla Connect's top-voted ideas and Reddit threads; toggles are in
 Derp's features live in `src/features/` and load at startup through Firefox's
 autoconfig (`config/derp.cfg`).
 
+## Derp for Android
+
+Firefox for Android can't be rebranded on a phone the way desktop Derp
+rebrands Firefox, so Derp for Android is its own small browser built on
+**GeckoView**, the Firefox engine Mozilla publishes for apps. Each Derp
+release is built with the newest GeckoView.
+
+- Derp's look on a phone: one bottom toolbar (address bar, tabs, your dork,
+  menu), a tabs view, private tabs, and the lime-teal-blue loading bar.
+  Follows light and dark mode.
+- **Your dork** is here too, drawn by the same code as desktop Derp, and the
+  first start has you make it.
+- Strict tracking protection, cookie banners rejected for you, no telemetry.
+- Downloads, file uploads, page dialogs, and camera, microphone and location
+  only when you allow them. Can be your default browser.
+- **Updates itself**: once a day it checks this repo's latest release, and if
+  there's a newer Derp it downloads the APK, checks it against the release's
+  `SHA256SUMS`, and hands it to Android's installer.
+
+Release APKs are signed with Derp's key. Android only installs an update
+signed with the same key, so check a download with
+`apksigner verify --print-certs derp-android-arm64.apk`; the certificate's
+SHA-256 digest is
+`45628fb2c0f49ea29c903db5ebe59f71a9acb59c68de0d722ba6b14ffb22759d`
+(also in `android/ci/release-cert.sha256`).
+
+The app's code is in `android/` (Kotlin, no other UI libraries). CI builds the
+APKs and runs one on an emulator for every change; releases need the signing
+key in the `ANDROID_KEYSTORE_B64` and `ANDROID_KEYSTORE_PASSWORD` repo
+secrets.
+
 ## This repo
 
 - `install.sh`, `install.ps1`, `uninstall.sh`, `uninstall.ps1`: the installers.
@@ -180,6 +219,8 @@ autoconfig (`config/derp.cfg`).
 - `site/`: the website. `build.py` fills `page.html` with the logo, version and
   the dork drawing code from `DerpDork.sys.mjs` into one self-contained
   `_site/index.html`; the Website workflow publishes it to GitHub Pages.
+- `android/`: Derp for Android (see above). `prepare_assets.py` copies the
+  logo and the dork code into the app at build time.
 - `tests/verify.py`: checks an installed Derp. CI installs, re-installs,
   verifies, launches, updates and uninstalls Derp on Linux, macOS and Windows
   (x64 and ARM) for every push.

@@ -10,8 +10,12 @@ val generated = "build/generated/derp"
 
 android {
     namespace = "io.github.kingbennet800.derp"
-    // GeckoView needs API 37 to compile against; the app still targets 36.
-    compileSdk = 37
+    // GeckoView needs API 37.2 to compile against; the app still targets 36.
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "io.github.kingbennet800.derp"

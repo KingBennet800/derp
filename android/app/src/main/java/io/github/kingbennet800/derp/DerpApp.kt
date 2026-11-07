@@ -1,6 +1,7 @@
 package io.github.kingbennet800.derp
 
 import android.app.Application
+import android.content.res.Configuration
 import android.util.Log
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoRuntime
@@ -12,7 +13,7 @@ class DerpApp : Application() {
     /** The engine: Mozilla's GeckoView, with strict tracking protection,
      * tracking parameters stripped from links, and tracker cookies purged.
      * No telemetry: Derp never sets it up. */
-    val runtime: GeckoRuntime by lazy {
+    private val engine = lazy {
         val blocking = ContentBlocking.Settings.Builder()
             .antiTracking(ContentBlocking.AntiTracking.STRICT)
             .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
@@ -29,9 +30,25 @@ class DerpApp : Application() {
                 .contentBlocking(blocking)
                 .consoleOutput(false)
                 .aboutConfigEnabled(true)
+                .preferredColorScheme(colorScheme(resources.configuration))
                 .build(),
         )
     }
+    val runtime: GeckoRuntime by engine
+
+    /** Pages follow light and dark mode. Gecko is told each time the system
+     * switches, since on its own it doesn't always notice. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (engine.isInitialized()) runtime.settings.setPreferredColorScheme(colorScheme(newConfig))
+    }
+
+    private fun colorScheme(config: Configuration) =
+        if ((config.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES) {
+            GeckoRuntimeSettings.COLOR_SCHEME_DARK
+        } else {
+            GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
+        }
 
     val dork by lazy { Dork(this) }
     val browser by lazy { Browser(this) }

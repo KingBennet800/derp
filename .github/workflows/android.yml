@@ -48,6 +48,34 @@ jobs:
           name: apks
           path: apks/
 
+  # Release builds are signed with Derp's key from the repo secrets. This
+  # checks that path with a throwaway key made the same way (OpenSSL PKCS#12).
+  release-signing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.9.0"
+      - name: Build signed with a throwaway key
+        run: |
+          key=$RUNNER_TEMP/test-key
+          mkdir -p "$key"
+          openssl req -x509 -newkey rsa:4096 -sha256 -days 30 -nodes -subj "/CN=Derp test" -keyout "$key/key.pem" -out "$key/cert.pem"
+          openssl pkcs12 -export -inkey "$key/key.pem" -in "$key/cert.pem" -name derp -out "$key/test.p12" -passout pass:test-password
+          openssl x509 -in "$key/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr 'A-F' 'a-f' > "$key/sha256"
+          DERP_KEYSTORE="$key/test.p12" DERP_KEYSTORE_PASSWORD=test-password gradle --no-daemon -p android assembleRelease
+          bash android/ci/collect.sh apks
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          for apk in apks/*.apk; do
+            "$apksigner" verify --print-certs "$apk" | tee cert.txt
+            grep -qi "SHA-256 digest: $(cat "$key/sha256")" cert.txt || { echo "::error::$apk isn't signed with the test key"; exit 1; }
+          done
+
   emulator:
     needs: build
     runs-on: ubuntu-latest

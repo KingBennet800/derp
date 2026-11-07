@@ -273,7 +273,7 @@ class MainActivity : Activity() {
         url.background = rounded(palette.field, dpf(22))
         url.setTextColor(palette.text)
         url.setHintTextColor(palette.dim)
-        url.hint = if (tab?.private == true) "Search privately" else "Search or enter address"
+        url.hint = if (tab?.private == true) "Search privately" else "Search or type URL"
         if (!url.hasFocus()) url.setText(tab?.let { browser.display(it) } ?: "")
         val mask = if (tab?.private == true) getDrawable(R.drawable.ic_mask)?.mutate()?.apply {
             setTint(palette.accent)

@@ -146,6 +146,11 @@ img { display: block; }
 .actions button { padding: 11px 15px; border: 0; border-radius: 999px; background: var(--sunken); font-size: 0.95rem; font-weight: 600; white-space: nowrap; }
 .actions .primary { margin-left: auto; padding-inline: 20px; background: var(--accent); color: var(--on-accent); }
 .note { margin: 22px 0 0; color: var(--dim); font-size: 0.85rem; text-align: center; }
+@media (max-width: 360px) {
+  .actions { gap: 6px; padding-inline: 12px; }
+  .actions button { padding: 10px 12px; font-size: 0.9rem; }
+  .actions .primary { padding-inline: 14px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

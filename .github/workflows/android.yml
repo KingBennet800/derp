@@ -9,6 +9,8 @@ on:
     paths:
       - android/**
       - src/features/DerpDork.sys.mjs
+      - src/features/DerpFeatures.sys.mjs
+      - config/policies.json
       - site/build.py
       - brand/**
       - VERSION
@@ -17,6 +19,9 @@ on:
     paths:
       - android/**
       - src/features/DerpDork.sys.mjs
+      - src/features/DerpFeatures.sys.mjs
+      - config/policies.json
+      - brand/**
       - .github/workflows/android.yml
   workflow_dispatch:
   # The weekly engine update tests a new GeckoView with this before releasing.

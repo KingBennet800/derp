@@ -181,6 +181,9 @@ export const DerpPair = {
       await this.save();
     }
     await this.sync();
+    if (!this.timer) {
+      this.soon(EVERY);
+    }
   },
 
   /** Stop syncing: this computer leaves the pair (its bookmarks and passwords stay). */

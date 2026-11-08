@@ -361,6 +361,10 @@ h2 { margin: 0; font-size: clamp(1.9rem, 4.4vw, 2.9rem); line-height: 1.08; lett
 }
 .duck.done .duck-quack { opacity: 1; translate: 0 0; }
 .duck-try { margin: 16px 4px 0; color: var(--dim); font-size: 14px; }
+.gags { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+.gags li { color: var(--dim); }
+.gags b { display: block; color: var(--text); }
+.gags-where { margin: 18px 0 0; color: var(--dim); font-size: 15px; }
 
 /* ── What's new ──────────────────────────────────────────────────────────── */
 
@@ -800,9 +804,15 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
     <div class="wrap duck-wrap">
       <div>
         <p class="kicker">Just for fun</p>
-        <h2>Duck mode.</h2>
-        <p class="section-lede">Turn it on and, 1 time in 10 when you press Enter in the address bar, a duck waddles along it and eats what you typed. Quack.</p>
-        <p class="section-lede">It’s off unless you want it: Settings → Derp → Just for fun on computers, the ⋮ menu on Android.</p>
+        <h2>Duck mode, and friends.</h2>
+        <p class="section-lede">Turn on Duck mode and, 1 time in 10 when you press Enter in the address bar, a duck waddles along it and eats what you typed. Quack.</p>
+        <ul class="gags">
+          <li><b>Snail mode</b> A snail crawls along the loading bar when a page takes its time.</li>
+          <li><b>Peekaboo</b> Now and then, your dork peeks up when you open a new tab.</li>
+          <li><b>Party mode</b> Confetti when you bookmark a page.</li>
+          <li><b>Sleepy tabs</b> Tabs Memory Saver put to sleep snore. 💤 (On computers.)</li>
+        </ul>
+        <p class="gags-where">All off unless you want them: Settings → Derp → Just for fun on computers, ⋮ → Just for fun on Android.</p>
       </div>
       <div class="duck-demo">
         <div class="duck-toolbar">
@@ -829,6 +839,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
       <p class="kicker">What’s new</p>
       <h2>Fresh out of the egg.</h2>
       <ol class="releases">
+        <li><span class="ver">1.8</span><div><h3>Just for fun</h3><p>Snail mode, Peekaboo, Party mode and Sleepy tabs join Duck mode, all off by default. Derp for Android also looks for updates whenever you open it.</p><time datetime="2026-11-08">November 8, 2026</time></div></li>
         <li><span class="ver">1.7</span><div><h3>Bookmarks, history and passwords on Android</h3><p>Bookmark pages, look back through your history, and let Derp save and fill in your passwords, encrypted on your phone. Import data brings them over from another browser.</p><time datetime="2026-11-07">November 7, 2026</time></div></li>
         <li><span class="ver">1.6</span><div><h3>Duck mode</h3><p>A joke setting, off by default: now and then a duck eats what you typed in the address bar.</p><time datetime="2026-11-07">November 7, 2026</time></div></li>
         <li><span class="ver">1.5</span><div><h3>Android looks like desktop Derp</h3><p>The same colors and icons, an address bar with no pill until you type, and the loading shimmer. Tablets get folder tabs.</p><time datetime="2026-11-07">November 7, 2026</time></div></li>
@@ -928,7 +939,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
         </details>
         <details>
           <summary>What’s this about a duck?</summary>
-          <p><a href="#duck">Duck mode</a>! A joke setting, off by default. Try it above.</p>
+          <p><a href="#duck">Duck mode</a>! One of Derp’s joke settings, with Snail mode, Peekaboo, Party mode and Sleepy tabs. They’re all off by default. Try the duck above.</p>
         </details>
         <details>
           <summary>How do I uninstall it?</summary>

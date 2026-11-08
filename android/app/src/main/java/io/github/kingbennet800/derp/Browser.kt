@@ -370,7 +370,7 @@ class Browser(val app: DerpApp) {
     }
 
     private fun sleep(tab: Tab) {
-        tab.session.saveState().accept({ state ->
+        tab.session.saveState().accept({ state: GeckoSession.SessionState? ->
             if (state == null || tab === current || tab !in tabs || tab.asleep) return@accept
             tab.sleeping = state
             tab.page = null

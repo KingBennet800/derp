@@ -138,6 +138,13 @@ Windows) to delete it too.
   engine is: security updates to certificate revocation lists and blocklists,
   Safe Browsing, add-on installs and updates from addons.mozilla.org, and
   downloads of on-device translation models.
+- **Doodle**: Derp's own search engine, and the default instead of Google.
+  It has googly eyes for its oo's. Results come from DuckDuckGo, in Derp's
+  colors (and dark while Derp is dark), through DuckDuckGo's own settings;
+  its header and ads stay, as DuckDuckGo asks of apps. Type `@doodle` to use
+  it when another engine is the default. Doodle has a home page too, at
+  [kingbennet800.github.io/derp/doodle](https://kingbennet800.github.io/derp/doodle/),
+  which other browsers can add as a search engine.
 - **No Firefox branding**: name, logos, the fox mascot (about 90 illustrations,
   including the private-browsing mask), the first-run splash animation, UI text,
   the updater window and the process name all say Derp. Where Mozilla's own
@@ -159,6 +166,26 @@ Your dork is stored only on this device, in your profile's preferences
 a random dork of its own, and the first time Derp opens it welcomes you with
 the editor so you can make it yours. It asks again each time Derp starts (and
 a ring pulses around the avatar) until you press **That's me!**
+
+## Your devices
+
+Pair Derp on your computer with Derp on your phone, and your bookmarks,
+passwords and open tabs follow you between them. There's still no account:
+
+1. On the computer: **Settings → You and your dork → Your devices → Pair a
+   phone**. Derp shows a QR code (with your dork in the middle).
+2. Point the phone's camera at it, open the link in Derp, and tap **Pair**.
+
+The code holds a secret that only your devices ever have; from it they derive
+an encryption key (AES-256-GCM) and pass encrypted snapshots through a small
+relay, `relay/derp-relay.php` on bennettholland.com, which can't read them.
+Each device keeps a ledger of when every bookmark and password last changed,
+or was deleted, so the newest change wins everywhere; it keeps only a keyed
+hash of each password, never the password. Bookmarks from your phone land in
+**Mobile Bookmarks** on the computer. The panel and ⋮ → **Your devices** on
+the phone list your devices and their open tabs. **Stop syncing** leaves the
+pair (the bookmarks and passwords stay). `tests/pairing.py` has the protocol
+in Python.
 
 ## Features Firefox users keep asking for
 
@@ -200,7 +227,20 @@ pick up. The version in use is `android/geckoview-version.txt`.
   bottom toolbar (address bar, tabs, your dork, menu) and a tabs view;
   tablets have desktop's tab strip with folder tabs, and back, forward and
   reload in the toolbar. Private tabs, and light and dark mode. Just for fun is
-  in the menu here too (all of them but Sleepy tabs; all off by default).
+  in the menu here too (all off by default).
+- **Doodle** is the search engine here too; the address bar shows what you
+  searched for.
+- **Ad blocker**: uBlock Origin, built in like on desktop. Derp installs it
+  from addons.mozilla.org the first time it starts and keeps it up to date;
+  ⋮ → Ad blocker turns it off and on and opens its settings.
+- **Find in page**, **Reader view** (Mozilla's Readability, as Firefox uses,
+  showing only the article's text, links and pictures) and **Add to home
+  screen** (with the site's own icon), from the menu.
+- **Memory Saver**: tabs you haven't looked at for half an hour, or every tab
+  but the one you're on when Android runs short of memory, fall asleep and
+  wake up where they were, history and all. Tabs playing something stay
+  awake. Sleeping tabs fade, and snore with Sleepy tabs on.
+- **Your devices**: pair with Derp on your computer (above).
 - **Your dork** is here too, drawn by the same code as desktop Derp, and the
   first start has you make it.
 - **Bookmarks, history and passwords**: ☆ in the menu bookmarks a page (your
@@ -238,7 +278,7 @@ secrets.
   `derp-update` / `derp-update.ps1` (the updaters), `derp-patch.py` (the
   branding patcher; its rules for which text and images get rebranded are at the
   top), the Linux launcher and desktop entry, and `features/` (web apps, Memory
-  Saver, the Settings page).
+  Saver, your dork, Doodle, Your devices, Just for fun, the Settings page).
 - `brand/`: logo SVGs (regular, private, animated splash, single-color glyphs),
   brand strings and the About dialog style. `make-assets.py` regenerates the
   wordmark, PNGs, `.ico`, `.icns` and splash video in `brand/build/`.
@@ -248,9 +288,15 @@ secrets.
   `derp.cfg`, which loads the theme and features at startup.
 - `site/`: the website. `build.py` fills `page.html` with the logo, version and
   the dork drawing code from `DerpDork.sys.mjs` into one self-contained
-  `_site/index.html`; the Website workflow publishes it to GitHub Pages.
+  `_site/index.html`, and builds Doodle's home page (`doodle.html`) and the
+  page pairing codes open (`pair.html`); the Website workflow publishes them
+  to GitHub Pages.
+- `relay/derp-relay.php`: Your devices' relay (one PHP file; its data lives
+  outside the web root).
 - `android/`: Derp for Android (see above). `prepare_assets.py` copies the
   logo and the dork code into the app at build time.
+- `tests/pairing.py`: Your devices' protocol in Python, and a relay for
+  tests.
 - `tests/verify.py`: checks an installed Derp. CI installs, re-installs,
   verifies, launches, updates and uninstalls Derp on Linux, macOS and Windows
   (x64 and ARM) for every push.

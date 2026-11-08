@@ -714,6 +714,16 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
           <p>Derp’s account is a cartoon you design. It lives on your computer: no sign-in, no email, no servers.</p>
         </article>
         <article class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="2.5" y="5" width="13" height="10" rx="2"/><path d="M6 18.5h6" stroke-linecap="round"/><rect x="15.5" y="9" width="6" height="11" rx="1.6"/></svg></div>
+          <h3>Your devices</h3>
+          <p>Pair Derp on your phone by scanning a code, and bookmarks, passwords and open tabs follow you. End-to-end encrypted, still no account.</p>
+        </article>
+        <article class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="8" cy="12" r="4.5"/><circle cx="16" cy="12" r="4.5"/><circle cx="9.3" cy="13.3" r="1.4" fill="currentColor"/><circle cx="17.3" cy="13.3" r="1.4" fill="currentColor"/></svg></div>
+          <h3>Doodle</h3>
+          <p>Derp’s own search engine, with googly eyes. Results come from DuckDuckGo, in Derp’s colors. <a href="https://kingbennet800.github.io/derp/doodle/">Try it</a>.</p>
+        </article>
+        <article class="feature">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3 5 6v5.5c0 4.4 3 7.6 7 9.5 4-1.9 7-5.1 7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10" stroke-linecap="round"/></svg></div>
           <h3>Private by default</h3>
           <p>No telemetry, studies, sponsored tiles or Mozilla services. AI features start switched off; turn on only what you want.</p>
@@ -737,6 +747,11 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 10.5A7.5 7.5 0 0 0 6 6.6L4.5 8M4.5 4v4h4M4.5 13.5A7.5 7.5 0 0 0 18 17.4l1.5-1.4M19.5 20v-4h-4"/></svg></div>
           <h3>Updates itself</h3>
           <p>Derp and its engine update in the background, checked against their signatures, and swap in the next time you open it.</p>
+        </article>
+        <article class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14c0 3.5 3 5.5 7 5.5s7-2 7-5.5c0-2.5-1.5-3.8-3.5-4.2.4-.6.5-1.3.5-1.8 0-2.2-1.8-4-4-4S8 5.8 8 8c0 .5.1 1.2.5 1.8C6.5 10.2 5 11.5 5 14z"/><circle cx="10.6" cy="8" r=".6" fill="currentColor"/></svg></div>
+          <h3>Just for fun</h3>
+          <p>A duck that eats your searches, a snail on slow pages, confetti, ghosts and more. All off until you <a href="#duck">turn them on</a>.</p>
         </article>
         <article class="feature">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5S9.7 5.9 12 3.5z"/></svg></div>
@@ -773,7 +788,7 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
     <div class="wrap">
       <p class="kicker">On the go</p>
       <h2>Derp on your phone and tablet.</h2>
-      <p class="section-lede">Derp for Android brings the same calm look, your dork and strict tracking protection to Android 8 and newer, with bookmarks, history and saved passwords, and it keeps itself up to date.</p>
+      <p class="section-lede">Derp for Android brings the same calm look, your dork, Doodle and strict tracking protection to Android 8 and newer, with uBlock Origin built in, bookmarks, history and saved passwords, find in page, Reader view and Memory Saver. Pair it with Derp on your computer, and it keeps itself up to date.</p>
       <div class="android-get">
         <a class="btn primary" href="{{REPO_URL}}/releases/latest/download/derp-android-arm64.apk">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
@@ -936,7 +951,11 @@ footer .legal { flex-basis: 100%; margin: 0; max-width: 60em; }
         </details>
         <details>
           <summary>Does Derp sync between my devices?</summary>
-          <p>No, on purpose: Derp has no accounts, so your data and your dork stay on each device. Moving to a new computer? Import your bookmarks there, or use the backup in Settings → You and your dork.</p>
+          <p>Yes, without an account. On your computer, open Settings → You and your dork → Your devices and choose Pair a phone, then point your phone’s camera at the code and open it in Derp. Bookmarks, passwords and open tabs follow you, encrypted on your devices with a key only they have; the relay that passes them along can’t read them. Your dork stays on each device.</p>
+        </details>
+        <details>
+          <summary>What’s Doodle?</summary>
+          <p>Derp’s own search engine, and its default. Results come from DuckDuckGo, shown in Derp’s colors (and dark when Derp is). You can pick Google or another engine in Settings, or type @doodle to use Doodle once.</p>
         </details>
         <details>
           <summary>How do updates work?</summary>

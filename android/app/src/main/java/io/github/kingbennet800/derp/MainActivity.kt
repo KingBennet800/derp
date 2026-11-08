@@ -102,6 +102,11 @@ class MainActivity : Activity() {
         }
         browser.start(intent)
         render()
+    }
+
+    /** Every time Derp comes to the screen, it looks for a newer Derp (at most once an hour). */
+    override fun onResume() {
+        super.onResume()
         Updater.check(this, manual = false)
     }
 
@@ -751,12 +756,15 @@ class MainActivity : Activity() {
             .show()
     }
 
-    fun offerUpdate(version: String, install: () -> Unit) {
-        AlertDialog.Builder(this)
+    private var updateOffer: AlertDialog? = null
+
+    fun offerUpdate(version: String, later: () -> Unit, install: () -> Unit) {
+        if (updateOffer?.isShowing == true) return
+        updateOffer = AlertDialog.Builder(this)
             .setTitle("Derp $version is out")
-            .setMessage("Update now? Your tabs and your dork stay.")
+            .setMessage("Update now? Your tabs, bookmarks, passwords and your dork stay.")
             .setPositiveButton("Update") { _, _ -> install() }
-            .setNegativeButton("Later", null)
+            .setNegativeButton("Later") { _, _ -> later() }
             .show()
     }
 

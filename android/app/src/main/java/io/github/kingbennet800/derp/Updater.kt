@@ -13,14 +13,16 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
-/** Derp updates itself from its GitHub releases, like desktop Derp: at most
- * once a day it reads the latest release's SHA256SUMS (which names the
- * version), and if there's a newer Derp it offers it. The APK is checked
+/** Derp updates itself from its GitHub releases, like desktop Derp: whenever
+ * you open it (at most once an hour) it reads the latest release's SHA256SUMS
+ * (which names the version), and if there's a newer Derp it offers it. "Later"
+ * puts that version off for a day. The APK is checked
  * against SHA256SUMS before Android's installer gets it, and Android only
  * accepts it if it's signed with the same key as this Derp. */
 object Updater {
     private const val RELEASES = "https://github.com/KingBennet800/derp/releases"
-    private const val DAY = 24 * 60 * 60 * 1000L
+    private const val HOUR = 60 * 60 * 1000L
+    private const val DAY = 24 * HOUR
     const val INSTALL_STATUS = "io.github.kingbennet800.derp.INSTALL_STATUS"
 
     /** This device's APK flavor, as named in the releases. */
@@ -33,7 +35,7 @@ object Updater {
     fun check(activity: MainActivity, manual: Boolean) {
         val prefs = activity.getSharedPreferences("browser", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
-        if (!manual && now - prefs.getLong("updateChecked", 0) < DAY) return
+        if (!manual && now - prefs.getLong("updateChecked", 0) < HOUR) return
         if (manual) Toast.makeText(activity, "Checking for updates…", Toast.LENGTH_SHORT).show()
         Thread {
             val found = runCatching {
@@ -48,8 +50,17 @@ object Updater {
                 prefs.edit().putLong("updateChecked", now).apply()
                 found.onSuccess { (version, apk, hash) ->
                     when {
-                        newer(version, BuildConfig.VERSION_NAME) && hash != null ->
-                            activity.offerUpdate(version) { download(activity, version, "$RELEASES/download/v$version/$apk", hash) }
+                        newer(version, BuildConfig.VERSION_NAME) && hash != null -> {
+                            // You said "Later" to this version less than a day ago: wait (unless you asked).
+                            val putOff = prefs.getString("updateLater", null) == version &&
+                                now - prefs.getLong("updateLaterAt", 0) < DAY
+                            if (manual || !putOff) {
+                                activity.offerUpdate(
+                                    version,
+                                    later = { prefs.edit().putString("updateLater", version).putLong("updateLaterAt", now).apply() },
+                                ) { download(activity, version, "$RELEASES/download/v$version/$apk", hash) }
+                            }
+                        }
                         manual -> Toast.makeText(activity, "Derp is up to date (${BuildConfig.VERSION_NAME})", Toast.LENGTH_SHORT).show()
                     }
                 }.onFailure {

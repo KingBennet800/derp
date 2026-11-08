@@ -204,8 +204,9 @@ pick up. The version in use is `android/geckoview-version.txt`.
   stripped from links, tracker cookies purged, no telemetry.
 - Downloads, file uploads, page dialogs, and camera, microphone and location
   only when you allow them. Can be your default browser.
-- **Updates itself**: once a day it checks this repo's latest release, and if
-  there's a newer Derp it downloads the APK, checks it against the release's
+- **Updates itself**: whenever you open it (at most once an hour) it checks
+  this repo's latest release, and if there's a newer Derp it offers it ("Later"
+  waits a day), downloads the APK, checks it against the release's
   `SHA256SUMS`, and hands it to Android's installer.
 
 Release APKs are signed with Derp's key. Android only installs an update

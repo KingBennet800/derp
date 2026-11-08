@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reader view</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="reader">
+  <main>
+    <header id="head" hidden>
+      <a class="source" id="source"></a>
+      <h1 id="title"></h1>
+      <p class="byline" id="byline"></p>
+    </header>
+    <article id="article"></article>
+    <p class="reader-empty" id="empty" hidden>This page doesn't have an article to read.</p>
+  </main>
+  <script src="readability.js"></script>
+  <script src="pages.js"></script>
+  <script src="reader.js"></script>
+</body>
+</html>

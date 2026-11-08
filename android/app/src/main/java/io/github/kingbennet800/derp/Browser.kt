@@ -10,6 +10,7 @@ import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
+import org.mozilla.geckoview.MediaSession
 import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebResponse
 
@@ -24,6 +25,23 @@ class Tab(val private: Boolean) {
 
     /** Restored tabs load the first time you look at them. */
     var pending: String? = null
+
+    /** The page's side of Derp's built-in extension (page.js), while the page
+     * is open: whether it reads well in Reader view, and its icon. */
+    var page: WebExtension.Port? = null
+    var pageUrl = ""
+    var readable = false
+    var icon: String? = null
+
+    /** What Reader view shows (the page's address and HTML), once you open it. */
+    var reading: JSONObject? = null
+
+    /** Memory Saver: when you last looked at this tab, whether it's playing
+     * something, and while it's asleep, its pages and history. */
+    var seen = System.currentTimeMillis()
+    var playing = false
+    var sleeping: GeckoSession.SessionState? = null
+    val asleep get() = sleeping != null
 }
 
 // Doodle's DuckDuckGo settings: links and addresses in Derp's colors, light
@@ -83,6 +101,7 @@ class Browser(val app: DerpApp) {
             return
         }
         started = true
+        app.blocker.start()
         restore()
         app.withPages { extension ->
             pages = extension
@@ -149,9 +168,15 @@ class Browser(val app: DerpApp) {
 
     fun select(tab: Tab) {
         val old = current
-        if (old !== tab) old?.session?.setActive(false)
+        val now = System.currentTimeMillis()
+        if (old !== tab) {
+            old?.session?.setActive(false)
+            old?.seen = now
+        }
         current = tab
+        tab.seen = now
         if (!tab.session.isOpen) tab.session.open(app.runtime)
+        wake(tab)
         tab.pending?.let { saved ->
             if (!saved.startsWith("derp:") || pagesBase != null) {
                 tab.pending = null
@@ -238,10 +263,13 @@ class Browser(val app: DerpApp) {
     fun display(tab: Tab): String {
         val url = tab.pending ?: tab.url
         if (url.isBlank() || url.startsWith("derp:")) return ""
+        if (isReader(tab)) return tab.reading?.optString("url")?.let { host(it) }.orEmpty()
         pagesBase?.let { if (url.startsWith(it)) return "" }
         engine.terms(url)?.let { return it }
-        return runCatching { Uri.parse(url).host?.removePrefix("www.") }.getOrNull() ?: url
+        return host(url) ?: url
     }
+
+    private fun host(url: String) = runCatching { Uri.parse(url).host?.removePrefix("www.") }.getOrNull()
 
     /** The full address, or what you searched for, for editing. */
     fun address(tab: Tab): String {
@@ -261,7 +289,7 @@ class Browser(val app: DerpApp) {
     fun save() {
         val kept = tabs.filter { !it.private }
         val list = JSONArray()
-        kept.forEach { list.put(saved(it.pending ?: it.url)) }
+        kept.forEach { list.put(saved(if (isReader(it)) it.reading?.optString("url").orEmpty() else it.pending ?: it.url)) }
         prefs.edit()
             .putString("tabs", list.toString())
             .putInt("current", kept.indexOf(current).coerceAtLeast(0))
@@ -301,8 +329,79 @@ class Browser(val app: DerpApp) {
         session.contentDelegate = Content(tab)
         session.permissionDelegate = Permissions(this)
         session.promptDelegate = Prompts(this)
+        session.mediaSessionDelegate = Media(tab)
         pages?.let { session.webExtensionController.setMessageDelegate(it, messages, "derp") }
     }
+
+    /** Whether a tab is playing something (Memory Saver leaves those awake). */
+    private inner class Media(val tab: Tab) : MediaSession.Delegate {
+        override fun onPlay(session: GeckoSession, mediaSession: MediaSession) {
+            tab.playing = true
+        }
+
+        override fun onPause(session: GeckoSession, mediaSession: MediaSession) {
+            tab.playing = false
+        }
+
+        override fun onStop(session: GeckoSession, mediaSession: MediaSession) {
+            tab.playing = false
+        }
+
+        override fun onDeactivated(session: GeckoSession, mediaSession: MediaSession) {
+            tab.playing = false
+        }
+    }
+
+    // ── Memory Saver ───────────────────────────────────────────────────────
+
+    var memorySaver: Boolean
+        get() = prefs.getBoolean("memorySaver", true)
+        set(value) = prefs.edit().putBoolean("memorySaver", value).apply()
+
+    /** Memory Saver: tabs you haven't looked at for half an hour (or, when
+     * Android is short of memory, all but the one you're on) fall asleep. Their
+     * page is unloaded, and comes back, history and all, when you look at it.
+     * Tabs playing something stay awake. */
+    fun sleepIdleTabs(all: Boolean = false) {
+        if (!memorySaver) return
+        val idle = System.currentTimeMillis() - IDLE
+        tabs.filter { it !== current && !it.asleep && !it.playing && it.pending == null && it.session.isOpen && (all || it.seen < idle) }
+            .forEach { sleep(it) }
+    }
+
+    private fun sleep(tab: Tab) {
+        tab.session.saveState().accept({ state ->
+            if (state == null || tab === current || tab !in tabs || tab.asleep) return@accept
+            tab.sleeping = state
+            tab.page = null
+            tab.readable = false
+            tab.session.close()
+            Log.i("Derp", "Memory Saver: a tab fell asleep")
+            ui?.onTabsChanged()
+        }, { error -> Log.w("Derp", "Memory Saver: couldn't save a tab", error) })
+    }
+
+    /** A sleeping tab you look at again wakes up where it was. */
+    private fun wake(tab: Tab) {
+        val state = tab.sleeping ?: return
+        tab.sleeping = null
+        pages?.let { tab.session.webExtensionController.setMessageDelegate(it, messages, "derp") }
+        tab.session.restoreState(state)
+        Log.i("Derp", "Memory Saver: a tab woke up")
+        ui?.onTabsChanged()
+    }
+
+    // ── Reader view ────────────────────────────────────────────────────────
+
+    /** Whether the page in [tab] reads well as an article. */
+    fun canRead(tab: Tab) = tab.readable && tab.page != null && tab.pageUrl == tab.url
+
+    /** Asks the page for itself; Reader view opens when it answers. */
+    fun openReader(tab: Tab) {
+        if (canRead(tab)) tab.page?.postMessage(JSONObject().put("type", "reader"))
+    }
+
+    fun isReader(tab: Tab) = pagesBase?.let { tab.url.startsWith(it + "reader.html") } ?: false
 
     private inner class Navigation(val tab: Tab) : GeckoSession.NavigationDelegate {
         override fun onLocationChange(
@@ -419,16 +518,57 @@ class Browser(val app: DerpApp) {
         /** Answers go back as JSON text (GeckoView can't pass a JSONObject to a
          * page); pages.js parses it. */
         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any> {
-            val msg = message as? JSONObject ?: return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
+            val msg = message as? JSONObject
+            // Only Derp's own pages ask for things; scripts in web pages talk over a port.
+            if (msg == null || sender.environmentType != WebExtension.MessageSender.ENV_TYPE_EXTENSION) {
+                return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
+            }
             val type = msg.optString("type")
             Log.d("Derp", "page asks: $type")
             later(type, msg)?.let { return it }
             val reply = JSONObject().put("ok", true)
-            runCatching { answer(type, msg, reply) }.onFailure { reply.put("ok", false).put("error", it.toString()) }
+            val tab = tabs.firstOrNull { it.session === sender.session }
+            runCatching { answer(type, msg, reply, tab) }.onFailure { reply.put("ok", false).put("error", it.toString()) }
             return GeckoResult.fromValue(reply.toString())
         }
 
-        private fun answer(type: String, msg: JSONObject, reply: JSONObject) {
+        /** A web page's script (page.js) says hello: it tells Derp about the
+         * page, and hands the page over for Reader view when asked. */
+        override fun onConnect(port: WebExtension.Port) {
+            val tab = tabs.firstOrNull { it.session === port.sender.session }
+            if (tab == null || port.sender.environmentType != WebExtension.MessageSender.ENV_TYPE_CONTENT_SCRIPT) {
+                port.disconnect()
+                return
+            }
+            port.setDelegate(object : WebExtension.PortDelegate {
+                override fun onPortMessage(message: Any, port: WebExtension.Port) {
+                    val msg = message as? JSONObject ?: return
+                    when (msg.optString("type")) {
+                        "page" -> {
+                            tab.page = port
+                            tab.pageUrl = msg.optString("url")
+                            tab.readable = msg.optBoolean("readable")
+                            tab.icon = msg.optString("icon").ifBlank { null }
+                            if (tab.readable) Log.i("Derp", "Reader view: this page reads well")
+                        }
+                        "reader.page" -> {
+                            val base = pagesBase ?: return
+                            tab.reading = JSONObject().put("url", msg.optString("url")).put("html", msg.optString("html"))
+                            load(tab, base + "reader.html")
+                        }
+                    }
+                }
+
+                override fun onDisconnect(port: WebExtension.Port) {
+                    if (tab.page === port) {
+                        tab.page = null
+                        tab.readable = false
+                    }
+                }
+            })
+        }
+
+        private fun answer(type: String, msg: JSONObject, reply: JSONObject, tab: Tab?) {
             val library = app.library
             when (type) {
                 "getState" -> {
@@ -449,6 +589,7 @@ class Browser(val app: DerpApp) {
                 "logins.list" -> reply.put("items", app.logins.list(msg.optString("query"))).put("save", app.logins.offerToSave)
                 "logins.remove" -> app.logins.remove(msg.getString("guid"))
                 "logins.offer" -> app.logins.offerToSave = msg.getBoolean("on")
+                "reader.get" -> tab?.reading?.let { reply.put("url", it.optString("url")).put("html", it.optString("html")) }
                 else -> reply.put("ok", false)
             }
             (reply.opt("items") as? JSONArray)?.let { Log.d("Derp", "$type -> ${it.length()}") }
@@ -483,6 +624,8 @@ class Browser(val app: DerpApp) {
     }
 
     companion object {
+        /** Memory Saver puts tabs to sleep after half an hour unseen. */
+        private const val IDLE = 30 * 60 * 1000L
         val WEB_SCHEMES = setOf("http", "https", "about", "data", "blob", "file", "moz-extension", "resource", "javascript", "view-source")
     }
 }

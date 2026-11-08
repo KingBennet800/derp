@@ -1,10 +1,28 @@
 {
   "manifest_version": 2,
   "name": "Derp",
-  "version": "1.0",
-  "description": "Derp's own pages: the new tab and your dork.",
+  "version": "2.0",
+  "description": "Derp's own pages (the new tab, your dork, reader view…), and a little script in web pages for Reader view and Add to home screen.",
   "browser_specific_settings": {
-    "gecko": { "id": "derp@kingbennet800.github.io" }
+    "gecko": {
+      "id": "derp@kingbennet800.github.io"
+    }
   },
-  "permissions": ["nativeMessaging", "nativeMessagingFromContent", "geckoViewAddons"]
+  "permissions": [
+    "nativeMessaging",
+    "nativeMessagingFromContent",
+    "geckoViewAddons"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "page.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

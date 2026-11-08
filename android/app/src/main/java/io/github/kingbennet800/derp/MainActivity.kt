@@ -13,10 +13,18 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Outline
+import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +58,10 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import android.window.OnBackInvokedDispatcher
+import com.caverock.androidsvg.SVG
+import java.net.HttpURLConnection
+import java.net.URL
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
@@ -95,6 +107,9 @@ class MainActivity : Activity() {
     private val toolbarButtons = mutableListOf<ImageButton>()
     private val hairline get() = dp(1)
     private var permissionCallback: GeckoSession.PermissionDelegate.Callback? = null
+    private var findBar: LinearLayout? = null
+    private var findField: EditText? = null
+    private var findCount: TextView? = null
     private var filesCallback: ((Int, Intent?) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,6 +131,16 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         Updater.check(this, manual = false)
+        root.removeCallbacks(sweep)
+        root.postDelayed(sweep, SWEEP)
+    }
+
+    /** Memory Saver looks over your tabs every few minutes while Derp is on screen. */
+    private val sweep = object : Runnable {
+        override fun run() {
+            browser.sleepIdleTabs()
+            root.postDelayed(this, SWEEP)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -126,6 +151,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPause() {
+        root.removeCallbacks(sweep)
         browser.save()
         super.onPause()
     }
@@ -147,6 +173,10 @@ class MainActivity : Activity() {
         return when {
             fullScreen -> {
                 tab?.session?.exitFullScreen()
+                true
+            }
+            finding -> {
+                closeFind()
                 true
             }
             tabsPanel != null -> {
@@ -283,15 +313,18 @@ class MainActivity : Activity() {
         val page = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
         val line = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2))
         val toolbar = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val find = buildFindBar()
         if (tablet) {
             column.addView(buildStrip(), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
             column.addView(bar, toolbar)
+            column.addView(find, toolbar)
             column.addView(progress, line)
             column.addView(geckoView, page)
         } else {
             column.addView(geckoView, page)
             column.addView(progress, line)
             column.addView(bar, toolbar)
+            column.addView(find, toolbar)
         }
         root.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         setContentView(root)
@@ -310,6 +343,50 @@ class MainActivity : Activity() {
             tabsPanel?.setPadding(sides[0], sides[1], sides[2], sides[3])
             if (Build.VERSION.SDK_INT >= 30) WindowInsets.CONSUMED else insets
         }
+    }
+
+    /** Find in page: it takes the toolbar's place while you look for words. */
+    private fun buildFindBar(): LinearLayout {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            visibility = View.GONE
+            if (tablet) setPadding(dp(6), dp(4), dp(6), dp(4)) else setPadding(dp(6), dp(6), dp(2), dp(6))
+        }
+        val field = EditText(this).apply {
+            contentDescription = "Find in page"
+            hint = "Find in page"
+            setSingleLine()
+            textSize = 15f
+            setPadding(dp(14), 0, dp(14), 0)
+            gravity = Gravity.CENTER_VERTICAL
+            imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            setOnEditorActionListener { _, _, _ ->
+                findAgain(backwards = false)
+                true
+            }
+        }
+        field.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun afterTextChanged(s: Editable?) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (field.hasFocus()) findText(s?.toString().orEmpty())
+            }
+        })
+        row.addView(field, LinearLayout.LayoutParams(0, dp(if (tablet) 40 else 44), 1f))
+        val count = TextView(this).apply {
+            textSize = 13f
+            setPadding(dp(10), 0, dp(4), 0)
+        }
+        row.addView(count)
+        row.addView(toolbarButton(R.drawable.ic_up, "Previous match") { findAgain(backwards = true) }, LinearLayout.LayoutParams(dp(40), dp(40)))
+        row.addView(toolbarButton(R.drawable.ic_down, "Next match") { findAgain(backwards = false) }, LinearLayout.LayoutParams(dp(40), dp(40)))
+        row.addView(toolbarButton(R.drawable.ic_close, "Close find in page") { closeFind() }, LinearLayout.LayoutParams(dp(40), dp(40)))
+        findBar = row
+        findField = field
+        findCount = count
+        return row
     }
 
     /** The tablet tab strip: your tabs and a new tab button, and your dork in the corner. */
@@ -363,6 +440,7 @@ class MainActivity : Activity() {
 
     fun showTab(tab: Tab) {
         if (geckoView.session !== tab.session) {
+            closeFind()
             geckoView.releaseSession()
             geckoView.coverUntilFirstPaint(Palette.of(this, tab.private).content)
             geckoView.setSession(tab.session)
@@ -400,6 +478,15 @@ class MainActivity : Activity() {
         val loading = (tab?.progress ?: 100) < 100
         reload?.setImageResource(if (loading) R.drawable.ic_stop else R.drawable.ic_reload)
         reload?.contentDescription = if (loading) "Stop" else "Reload"
+
+        findBar?.setBackgroundColor(palette.toolbar)
+        findField?.apply {
+            setTextColor(palette.text)
+            setHintTextColor(palette.dim)
+            highlightColor = (palette.accent and 0xFFFFFF) or 0x55000000
+            background = rounded(palette.fieldFocus, dpf(if (tablet) 20 else 22), (resources.displayMetrics.density * 1.5f).toInt(), palette.accent)
+        }
+        findCount?.setTextColor(palette.dim)
 
         paintUrl()
         url.setTextColor(palette.text)
@@ -439,7 +526,7 @@ class MainActivity : Activity() {
     private fun fillStrip() {
         val row = stripTabs ?: return
         val shown = browser.tabs.joinToString("\n") {
-            "${System.identityHashCode(it)} ${it.private} ${it === browser.current} ${browser.display(it)} ${it.title}"
+            "${System.identityHashCode(it)} ${it.private} ${it === browser.current} ${it.asleep} ${browser.display(it)} ${it.title}"
         } + palette.hashCode()
         if (shown == stripShown) return
         stripShown = shown
@@ -452,7 +539,7 @@ class MainActivity : Activity() {
         var front: View? = null
         browser.tabs.forEachIndexed { i, tab ->
             val selected = tab === browser.current
-            val title = tab.title.ifBlank { browser.display(tab).ifBlank { "New tab" } }
+            val title = tabTitle(tab)
             val view = FolderTab(this, foot).apply {
                 paint(selected, palette.toolbar, palette.line, hairline)
                 orientation = LinearLayout.HORIZONTAL
@@ -460,6 +547,7 @@ class MainActivity : Activity() {
                 setPadding(foot + dp(10), dp(6), foot + dp(2), 0)
                 contentDescription = title
                 setOnClickListener { browser.select(tab) }
+                if (tab.asleep) alpha = ASLEEP
             }
             view.addView(ImageView(this).apply { tabIcon(this, tab, palette) }, LinearLayout.LayoutParams(dp(16), dp(16)))
             view.addView(TextView(this).apply {
@@ -502,6 +590,12 @@ class MainActivity : Activity() {
                 }
             }
         }
+    }
+
+    /** A tab's title; tabs Memory Saver has put to sleep snore, with Sleepy tabs on. */
+    private fun tabTitle(tab: Tab): String {
+        val title = tab.title.ifBlank { browser.display(tab).ifBlank { "New tab" } }
+        return if (tab.asleep && Gag.SLEEPY.on(this)) "💤 $title" else title
     }
 
     /** A tab's icon: Derp's logo on Derp's pages, the mask for private tabs, a globe for websites. */
@@ -928,15 +1022,16 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, hairline).apply {
                 setMargins(dp(8), dp(5), dp(8), dp(5))
             })
-        fun item(label: String, detail: String? = null, action: () -> Unit) {
+        fun item(label: String, detail: String? = null, enabled: Boolean = true, action: () -> Unit) {
             val line = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 contentDescription = label
                 setPadding(dp(14), 0, dp(14), 0)
                 background = rowRipple(palette.press, dpf(8))
-                isClickable = true
-                setOnClickListener { run(action) }
+                isClickable = enabled
+                isEnabled = enabled
+                if (enabled) setOnClickListener { run(action) } else alpha = 0.38f
             }
             line.addView(TextView(this).apply {
                 text = label
@@ -954,6 +1049,9 @@ class MainActivity : Activity() {
         }
         divider()
         item("New private tab") { browser.newTab(null, private = true) }
+        item("Find in page", enabled = browser.isWebPage(tab) || browser.isReader(tab)) { openFind() }
+        item("Reader view", enabled = browser.canRead(tab)) { browser.openReader(tab) }
+        item("Add to home screen", enabled = browser.isWebPage(tab)) { addToHome(tab) }
         item("Desktop site", if (tab.desktop) "On" else "Off") { browser.toggleDesktop(tab) }
         item("Your dork") { browser.openDork() }
         divider()
@@ -963,6 +1061,8 @@ class MainActivity : Activity() {
         item("Import data") { browser.openPage("import.html") }
         divider()
         item("Search engine", browser.engine.label) { pickEngine() }
+        item("Ad blocker", blockerState()) { adBlocker() }
+        item("Memory Saver", if (browser.memorySaver) "On" else "Off") { memorySaver() }
         item("Just for fun", Gag.values().count { it.on(this) }.let { if (it == 0) "Off" else "$it on" }) { justForFun() }
         item("Clear browsing data") { confirmClear() }
         divider()
@@ -985,6 +1085,185 @@ class MainActivity : Activity() {
         } else {
             popup.showAtLocation(root, Gravity.BOTTOM or Gravity.END, dp(8), bar.height + bottomInset + dp(6))
         }
+    }
+
+    // ── Find in page ───────────────────────────────────────────────────────
+
+    private val finding get() = findBar?.visibility == View.VISIBLE
+
+    private fun openFind() {
+        val field = findField ?: return
+        browser.current?.session?.finder?.displayFlags =
+            GeckoSession.FINDER_DISPLAY_HIGHLIGHT_ALL or GeckoSession.FINDER_DISPLAY_DRAW_LINK_OUTLINE
+        bar.visibility = View.GONE
+        findBar?.visibility = View.VISIBLE
+        findCount?.text = ""
+        field.setText("")
+        field.requestFocus()
+        getSystemService(InputMethodManager::class.java)?.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun closeFind() {
+        if (!finding) return
+        browser.current?.session?.finder?.clear()
+        findBar?.visibility = View.GONE
+        bar.visibility = View.VISIBLE
+        hideKeyboard()
+    }
+
+    private fun findText(text: String) {
+        val finder = browser.current?.session?.finder ?: return
+        if (text.isEmpty()) {
+            finder.clear()
+            findCount?.text = ""
+            return
+        }
+        showFound(finder.find(text, 0))
+    }
+
+    private fun findAgain(backwards: Boolean) {
+        val finder = browser.current?.session?.finder ?: return
+        if (findField?.text.isNullOrEmpty()) return
+        showFound(finder.find(null, if (backwards) GeckoSession.FINDER_FIND_BACKWARDS else 0))
+    }
+
+    private fun showFound(result: GeckoResult<GeckoSession.FinderResult>) {
+        result.accept({ found ->
+            if (found == null || !finding) return@accept
+            findCount?.text = if (found.found) "${found.current}/${found.total}" else "0/0"
+            findCount?.contentDescription = if (found.found) "Match ${found.current} of ${found.total}" else "No matches"
+            Log.i("Derp", "Find in page: ${found.current} of ${found.total}")
+        }, { error -> Log.w("Derp", "Find in page failed", error) })
+    }
+
+    // ── Add to home screen ─────────────────────────────────────────────────
+
+    /** Pins the page to the home screen, with the site's own icon when it has
+     * one (else its first letter); it opens in Derp. */
+    private fun addToHome(tab: Tab) {
+        val shortcuts = getSystemService(ShortcutManager::class.java)
+        if (shortcuts == null || !shortcuts.isRequestPinShortcutSupported) {
+            Toast.makeText(this, "Your home screen doesn't take shortcuts", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val address = tab.url
+        val name = tab.title.ifBlank { browser.display(tab) }.ifBlank { address }
+        val iconUrl = tab.icon?.takeIf { tab.pageUrl == address }
+        Thread {
+            val picture = iconUrl?.let { runCatching { fetchIcon(it) }.getOrNull() }
+            val icon = homeIcon(picture, name, address)
+            runOnUiThread {
+                val open = Intent(Intent.ACTION_VIEW, Uri.parse(address), this, MainActivity::class.java)
+                val info = ShortcutInfo.Builder(this, "site:" + address.hashCode())
+                    .setShortLabel(name.take(25))
+                    .setLongLabel(name.take(80))
+                    .setIcon(Icon.createWithAdaptiveBitmap(icon))
+                    .setIntent(open)
+                    .build()
+                shortcuts.requestPinShortcut(info, null)
+                Log.i("Derp", "Add to home screen: asked to pin ${Uri.parse(address).host} (${if (picture != null) "site icon" else "letter"})")
+            }
+        }.start()
+    }
+
+    /** A site's icon (PNG, JPEG, WebP, ICO or SVG), up to half a megabyte. */
+    private fun fetchIcon(address: String): Bitmap? {
+        val connection = URL(address).openConnection() as HttpURLConnection
+        connection.connectTimeout = 5000
+        connection.readTimeout = 5000
+        try {
+            if (connection.responseCode != 200) return null
+            val bytes = connection.inputStream.use { input ->
+                val out = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                while (out.size() < 512 * 1024) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    out.write(buffer, 0, read)
+                }
+                out.toByteArray()
+            }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.let { return it }
+            val text = bytes.toString(Charsets.UTF_8)
+            if (!text.contains("<svg")) return null
+            val svg = SVG.getFromString(text)
+            val bitmap = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
+            svg.setDocumentWidth(256f)
+            svg.setDocumentHeight(256f)
+            svg.renderToCanvas(Canvas(bitmap))
+            return bitmap
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /** An adaptive home screen icon: the site's icon on white, or its first
+     * letter on a color picked from its address (like the new tab page's tiles). */
+    private fun homeIcon(picture: Bitmap?, name: String, address: String): Bitmap {
+        val size = 432
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        if (picture != null && picture.width >= 16) {
+            canvas.drawColor(Color.WHITE)
+            val box = 224f
+            val scale = box / maxOf(picture.width, picture.height)
+            val w = picture.width * scale
+            val h = picture.height * scale
+            canvas.drawBitmap(picture, null, RectF((size - w) / 2, (size - h) / 2, (size + w) / 2, (size + h) / 2), paint)
+        } else {
+            val host = Uri.parse(address).host.orEmpty().removePrefix("www.")
+            var hash = 0
+            for (ch in host) hash = hash * 31 + ch.code
+            canvas.drawColor(Color.HSVToColor(floatArrayOf((Math.abs(hash) % 360).toFloat(), 0.55f, 0.78f)))
+            val letter = (name.trim().firstOrNull() ?: host.firstOrNull() ?: '?').uppercase()
+            paint.color = Color.WHITE
+            paint.textSize = 180f
+            paint.typeface = MEDIUM
+            paint.textAlign = Paint.Align.CENTER
+            canvas.drawText(letter, size / 2f, size / 2f - (paint.descent() + paint.ascent()) / 2, paint)
+        }
+        return bitmap
+    }
+
+    // ── Ad blocker and Memory Saver ────────────────────────────────────────
+
+    private fun blockerState() = when {
+        app.blocker.extension == null -> "…"
+        app.blocker.on -> "On"
+        else -> "Off"
+    }
+
+    private fun adBlocker() {
+        val blocker = app.blocker
+        if (blocker.extension == null) {
+            Toast.makeText(this, "The ad blocker is on its way. It needs an internet connection the first time.", Toast.LENGTH_LONG).show()
+            blocker.start()
+            return
+        }
+        val on = blocker.on
+        AlertDialog.Builder(this)
+            .setTitle("Ad blocker")
+            .setMessage(
+                if (on) "uBlock Origin is blocking ads and trackers on every site, private tabs too."
+                else "uBlock Origin is off, so ads and trackers aren't blocked.",
+            )
+            .setPositiveButton(if (on) "Turn off" else "Turn on") { _, _ ->
+                blocker.set(!on) { Toast.makeText(this, if (on) "Ad blocker off" else "Ad blocker on", Toast.LENGTH_SHORT).show() }
+            }
+            .setNeutralButton("Settings") { _, _ -> blocker.settingsUrl?.let { browser.newTab(it) } }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun memorySaver() {
+        val on = !browser.memorySaver
+        browser.memorySaver = on
+        Toast.makeText(
+            this,
+            if (on) "Memory Saver on: tabs you haven't looked at for half an hour fall asleep" else "Memory Saver off",
+            Toast.LENGTH_LONG,
+        ).show()
     }
 
     private fun pickEngine() {
@@ -1118,11 +1397,12 @@ class MainActivity : Activity() {
                     browser.select(tab)
                     closeTabs()
                 }
+                if (tab.asleep) alpha = ASLEEP
             }
             card.addView(ImageView(this).apply { tabIcon(this, tab, base) }, LinearLayout.LayoutParams(dp(18), dp(18)))
             val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
             words.addView(TextView(this).apply {
-                text = tab.title.ifBlank { browser.display(tab).ifBlank { "New tab" } }
+                text = tabTitle(tab)
                 textSize = 15f
                 if (selected) typeface = MEDIUM
                 setTextColor(base.text)
@@ -1153,6 +1433,7 @@ class MainActivity : Activity() {
     // ── Pages asking for things ────────────────────────────────────────────
 
     fun onFullScreen(on: Boolean) {
+        if (on) closeFind()
         fullScreen = on
         bar.visibility = if (on) View.GONE else View.VISIBLE
         progress.visibility = if (on) View.GONE else View.VISIBLE
@@ -1366,6 +1647,10 @@ class MainActivity : Activity() {
         private const val REQUEST_FILES = 2
         private const val REQUEST_IMPORT = 3
         private const val REQUEST_UNLOCK = 4
+        /** Memory Saver looks over your tabs this often. */
+        private const val SWEEP = 5 * 60 * 1000L
+        /** Sleeping tabs fade, like on desktop. */
+        private const val ASLEEP = 0.55f
         /** Private tabs' mask on light backgrounds (their own accent is for dark ones). */
         private val VIOLET = Color.parseColor("#7C5CF5")
     }

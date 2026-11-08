@@ -63,6 +63,16 @@ class DerpApp : Application() {
     val library by lazy { Library(this) }
     val logins by lazy { Logins(this) }
     val browser by lazy { Browser(this) }
+    val blocker by lazy { Blocker(this) }
+
+    /** Android is short of memory: Memory Saver puts every tab but the one
+     * you're on to sleep (a Derp in the background is the first to go). */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        @Suppress("DEPRECATION")
+        val short = level in TRIM_MEMORY_RUNNING_LOW until TRIM_MEMORY_UI_HIDDEN || level >= TRIM_MEMORY_BACKGROUND
+        if (short) browser.sleepIdleTabs(all = true)
+    }
 
     private var pages: WebExtension? = null
     private val waiting = mutableListOf<(WebExtension) -> Unit>()

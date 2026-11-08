@@ -332,3 +332,22 @@ a.lib-main:active { background: var(--hover); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ── Reader view: the article, in comfortable type ─────────────────────── */
+
+.reader main { max-width: 38rem; margin: 0 auto; padding: 28px 20px 72px; }
+.reader header { margin-bottom: 24px; }
+.reader .source { color: var(--accent); font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+.reader h1 { margin: 6px 0 8px; font-size: 1.75rem; line-height: 1.25; letter-spacing: -0.01em; }
+.reader .byline { margin: 0; color: var(--dim); font-size: 0.95rem; }
+.reader article { font-size: 1.125rem; line-height: 1.65; overflow-wrap: break-word; }
+.reader article img { max-width: 100%; height: auto; margin: 0 auto; border-radius: 10px; }
+.reader article a { color: var(--accent); }
+.reader article h2, .reader article h3 { line-height: 1.3; }
+.reader article pre { overflow-x: auto; padding: 12px 14px; border-radius: 10px; background: var(--sunken); font-size: 0.9rem; }
+.reader article blockquote { margin: 0; padding-inline-start: 16px; border-inline-start: 3px solid var(--line); color: var(--dim); }
+.reader article table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.95rem; }
+.reader article th, .reader article td { padding: 6px 10px; border: 1px solid var(--line); }
+.reader article figure { margin: 1.25em 0; }
+.reader article figcaption { margin-top: 6px; color: var(--dim); font-size: 0.9rem; }
+.reader .reader-empty { margin-top: 30vh; color: var(--dim); text-align: center; }

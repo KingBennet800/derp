@@ -20,6 +20,7 @@ enum class Gag(val key: String, val title: String, val about: String) {
     SNAIL("snail", "Snail mode", "When a page takes its time, a snail crawls along the loading bar."),
     PEEKABOO("peekaboo", "Peekaboo", "Now and then, your dork peeks up when you open a new tab."),
     PARTY("party", "Party mode", "Confetti when you bookmark a page."),
+    SLEEPY("sleepy", "Sleepy tabs", "Tabs Memory Saver has put to sleep snore. 💤"),
     POWER("power", "Power typing", "Sparks fly from the address bar as you type."),
     HICCUPS("hiccups", "Hiccups", "Now and then, a page gets the hiccups. Hic!"),
     GHOSTS("ghosts", "Tab ghosts", "A tab you close floats away as a little ghost."),

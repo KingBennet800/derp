@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Smoke-test Derp for Android on an emulator: install, start, check it shows
 # the welcome dork editor, open a link, bookmark it, check history, save a
-# password and get it offered back, the just-for-fun gags, dark mode;
+# password and get it offered back, the just-for-fun gags, the ad blocker,
+# find in page, Reader view, Add to home screen, Memory Saver, dark mode;
 # screenshots and logcat go to $2. Fails if Derp crashes or isn't running.
 set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
@@ -15,6 +16,14 @@ tap() {
   local bounds
   bounds=$(ui | grep -o "content-desc=\"$1\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
   [[ $bounds ]] || { echo "Can't find '$1' to tap"; exit 1; }
+  read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
+  adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+}
+# Tap the view whose text contains this.
+tap_has() {
+  local bounds
+  bounds=$(ui | grep -o "text=\"[^\"]*$1[^\"]*\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
+  [[ $bounds ]] || return 1
   read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
   adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
 }
@@ -143,7 +152,7 @@ tap Menu
 sleep 1
 tap "Just for fun"
 sleep 1
-for name in "Snail mode" "Peekaboo" "Party mode" "Power typing" "Hiccups" "Tab ghosts" "Rainbow mode"; do
+for name in "Snail mode" "Peekaboo" "Party mode" "Sleepy tabs" "Power typing" "Hiccups" "Tab ghosts" "Rainbow mode"; do
   gag "$name"
   sleep 0.5
 done
@@ -184,9 +193,73 @@ logged "A snail is crawling" "No snail on a slow page"
 sleep 8
 alive "Snail mode"
 
-# The tabs view and the menu.
+# The ad blocker: uBlock Origin, installed from addons.mozilla.org when Derp first started.
+for _ in $(seq 1 30); do
+  adb logcat -d | grep -q "Ad blocker ready" && break
+  sleep 2
+done
+logged "Ad blocker ready: uBlock Origin" "uBlock Origin didn't install"
+
+# Find in page and Reader view, on an article.
+{
+  echo '<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rubber ducks</title>'
+  echo '<nav class="menu"><a href="/">Home</a> <a href="/slow.html">Slow</a></nav><article><h1>Rubber ducks</h1>'
+  for word in quack honk quack splash quack float; do
+    echo "<p>Rubber ducks have floated in bathtubs for more than a century, and every one of them says $word now and then. They are made of vinyl these days, they come in every color you can think of, and they are very good listeners when your code won't work.</p>"
+  done
+  echo '</article><footer class="footer">Made for testing Derp</footer>'
+} >"$site/article.html"
+adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/article.html "$pkg"
+sleep 8
+logged "Reader view: this page reads well" "Derp didn't notice the article"
+tap Menu
+sleep 1
+tap "Find in page"
+sleep 1
+adb shell input text quack
+sleep 2
+logged "Find in page: 1 of 3" "Find in page didn't find the three quacks"
+tap "Next match"
+sleep 1
+logged "Find in page: 2 of 3" "Find in page didn't go to the next quack"
+shot 7-find 0.5
+tap "Close find in page"
+sleep 1
+tap Menu
+sleep 1
+tap "Reader view"
+shot 8-reader 6
+logged "page asks: reader.get" "Reader view didn't open"
+alive "find in page and Reader view"
+adb shell input keyevent KEYCODE_BACK
+sleep 3
+
+# Add to home screen asks the launcher to pin the page.
+tap Menu
+sleep 1
+tap "Add to home screen"
+shot 9-home-screen 4
+logged "Add to home screen: asked to pin localhost" "Add to home screen didn't ask the launcher"
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+alive "Add to home screen"
+
+# Memory Saver: Android says it's short of memory, so tabs you're not looking
+# at fall asleep (and snore, with Sleepy tabs on); one wakes up when you go back to it.
+adb shell am send-trim-memory "$pkg" RUNNING_LOW
+sleep 3
+logged "Memory Saver: a tab fell asleep" "Memory Saver didn't put tabs to sleep"
 tap Tabs
 shot 3-tabs 3
+ui | grep -q "💤" || { echo "Sleeping tabs don't snore"; exit 1; }
+tap_has "Example Domain" || { echo "Can't find the example.com tab"; exit 1; }
+sleep 5
+logged "Memory Saver: a tab woke up" "The sleeping tab didn't wake up"
+alive "Memory Saver"
+
+# The tabs view and the menu.
+tap Tabs
+shot 3b-tabs 3
 adb shell input keyevent KEYCODE_BACK
 sleep 2
 tap Menu
@@ -214,4 +287,4 @@ if grep -E "FATAL EXCEPTION|E AndroidRuntime" "$out/logcat.txt" | grep -q .; the
   grep -A 20 "FATAL EXCEPTION" "$out/logcat.txt" | head -60
   exit 1
 fi
-echo "Derp ran: first start, a link, bookmarks, history, a saved password, the gags, dark mode."
+echo "Derp ran: first start, a link, bookmarks, history, a saved password, the gags, the ad blocker, find in page, Reader view, Add to home screen, Memory Saver, dark mode."

@@ -666,9 +666,22 @@ class MainActivity : Activity() {
             row.addView(toggle)
             list.addView(row)
         }
+        // The title stays put above the switches, which scroll on small screens.
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(TextView(this@MainActivity).apply {
+                text = "Just for fun"
+                textSize = 20f
+                typeface = MEDIUM
+                setPadding(dp(24), dp(20), dp(24), dp(8))
+            })
+            addView(
+                ScrollView(this@MainActivity).apply { addView(list) },
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+        }
         AlertDialog.Builder(this)
-            .setTitle("Just for fun")
-            .setView(ScrollView(this).apply { addView(list) })
+            .setView(panel)
             .setPositiveButton("Done", null)
             .show()
     }

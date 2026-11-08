@@ -22,6 +22,10 @@ Preferences.addAll([
   { id: "derp.fun.peekaboo", type: "bool" },
   { id: "derp.fun.party", type: "bool" },
   { id: "derp.fun.sleepy", type: "bool" },
+  { id: "derp.fun.power", type: "bool" },
+  { id: "derp.fun.hiccups", type: "bool" },
+  { id: "derp.fun.ghosts", type: "bool" },
+  { id: "derp.fun.rainbow", type: "bool" },
 ]);
 
 Preferences.addSetting({ id: "derpMemorySaver", pref: "derp.memorySaver.enabled" });
@@ -41,6 +45,10 @@ Preferences.addSetting({ id: "derpSnail", pref: "derp.fun.snail" });
 Preferences.addSetting({ id: "derpPeekaboo", pref: "derp.fun.peekaboo" });
 Preferences.addSetting({ id: "derpParty", pref: "derp.fun.party" });
 Preferences.addSetting({ id: "derpSleepy", pref: "derp.fun.sleepy" });
+Preferences.addSetting({ id: "derpPower", pref: "derp.fun.power" });
+Preferences.addSetting({ id: "derpHiccups", pref: "derp.fun.hiccups" });
+Preferences.addSetting({ id: "derpGhosts", pref: "derp.fun.ghosts" });
+Preferences.addSetting({ id: "derpRainbow", pref: "derp.fun.rainbow" });
 
 // Your dork: shown large, with its name; follows edits made in the editor.
 Preferences.addSetting({ id: "derpDorkBox" });
@@ -135,6 +143,10 @@ SettingGroupManager.registerGroups({
       { id: "derpPeekaboo", l10nId: "derp-peekaboo" },
       { id: "derpParty", l10nId: "derp-party" },
       { id: "derpSleepy", l10nId: "derp-sleepy" },
+      { id: "derpPower", l10nId: "derp-power" },
+      { id: "derpHiccups", l10nId: "derp-hiccups" },
+      { id: "derpGhosts", l10nId: "derp-ghosts" },
+      { id: "derpRainbow", l10nId: "derp-rainbow" },
     ],
   },
 });

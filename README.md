@@ -118,6 +118,10 @@ Windows) to delete it too.
     bottom of the window and waves.
   - **Party mode**: confetti when you bookmark a page.
   - **Sleepy tabs**: tabs Memory Saver has put to sleep snore (💤).
+  - **Power typing**: sparks fly from the address bar as you type.
+  - **Hiccups**: now and then (1 in 12 pages) a page gets the hiccups. Hic!
+  - **Tab ghosts**: a tab you close drifts away as a little ghost.
+  - **Rainbow mode**: the loading bar is a rainbow.
 - **Fluid**: spring-physics smooth scrolling with momentum, elastic overscroll and
   kinetic touchpad scrolling.
 - **Fast**: GPU canvas, shader pre-caching, more parallel connections, a bigger
@@ -196,8 +200,7 @@ pick up. The version in use is `android/geckoview-version.txt`.
   bottom toolbar (address bar, tabs, your dork, menu) and a tabs view;
   tablets have desktop's tab strip with folder tabs, and back, forward and
   reload in the toolbar. Private tabs, and light and dark mode. Just for fun is
-  in the menu here too (Duck mode, Snail mode, Peekaboo and Party mode; all
-  off by default).
+  in the menu here too (all of them but Sleepy tabs; all off by default).
 - **Your dork** is here too, drawn by the same code as desktop Derp, and the
   first start has you make it.
 - **Bookmarks, history and passwords**: ☆ in the menu bookmarks a page (your

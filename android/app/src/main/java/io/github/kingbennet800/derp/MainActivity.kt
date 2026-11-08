@@ -21,6 +21,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.os.SystemClock
+import android.text.Editable
+import android.text.TextWatcher
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.KeyEvent
@@ -227,6 +230,14 @@ class MainActivity : Activity() {
                 paintUrl()
             }
         }
+        url.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun afterTextChanged(s: Editable?) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // A character or two typed (not the whole address set at once).
+                if (count in 1..2 && url.hasFocus()) sparks()
+            }
+        })
         bar.addView(url, LinearLayout.LayoutParams(0, dp(if (tablet) 40 else 44), 1f).apply {
             if (tablet) marginStart = dp(6)
         })
@@ -378,6 +389,7 @@ class MainActivity : Activity() {
         strip?.background = stripBackground(palette.frame, palette.line, hairline)
         bar.setBackgroundColor(palette.toolbar)
         progress.setColors(palette.contentLine, palette.toolbar)
+        progress.rainbow = Gag.RAINBOW.on(this)
         progress.setBusy((tab?.progress ?: 100) < 100)
         snailCheck((tab?.progress ?: 100) < 100)
         toolbarButtons.forEach { paintButton(it, palette) }
@@ -459,11 +471,16 @@ class MainActivity : Activity() {
                 ellipsize = TextUtils.TruncateAt.END
             }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(8) })
             if (selected) {
-                view.addView(iconButton(R.drawable.ic_close, "Close tab") { browser.close(tab) }.apply {
+                lateinit var close: ImageButton
+                close = iconButton(R.drawable.ic_close, "Close tab") {
+                    ghostFrom(close)
+                    browser.close(tab)
+                }.apply {
                     scaleType = ImageView.ScaleType.FIT_CENTER
                     setPadding(dp(7), dp(7), dp(7), dp(7))
                     background = roundRipple(palette.press, 0)
-                }, LinearLayout.LayoutParams(dp(30), dp(30)))
+                }
+                view.addView(close, LinearLayout.LayoutParams(dp(30), dp(30)))
                 front = view
             }
             row.addView(view, LinearLayout.LayoutParams(body + 2 * foot, ViewGroup.LayoutParams.MATCH_PARENT).apply {
@@ -665,7 +682,12 @@ class MainActivity : Activity() {
         if (loading == loadingNow) return
         loadingNow = loading
         root.removeCallbacks(slowPage)
-        if (loading) root.postDelayed(slowPage, 3000) else snailAway()
+        if (loading) {
+            root.postDelayed(slowPage, 3000)
+        } else {
+            snailAway()
+            maybeHiccup()
+        }
     }
 
     private fun snailCrawl() {
@@ -760,8 +782,88 @@ class MainActivity : Activity() {
         val at = IntArray(2).also { menuButton.getLocationInWindow(it) }
         val x = (at[0] - rootAt[0] + menuButton.width / 2).toFloat()
         val y = (at[1] - rootAt[1] + menuButton.height / 2).toFloat()
-        root.addView(Confetti(this, x, y), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        root.addView(Burst(this, x, y, Burst.CONFETTI), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         Log.d("Derp", "Confetti!")
+    }
+
+    // Power typing: a few sparks from the caret as you type (at most every 40ms).
+    private var sparkedAt = 0L
+    private var sparksLogged = false
+
+    private fun sparks() {
+        val now = SystemClock.uptimeMillis()
+        if (duckBusy || now - sparkedAt < 40 || !Gag.POWER.on(this) || !ValueAnimator.areAnimatorsEnabled()) return
+        val layout = url.layout ?: return
+        sparkedAt = now
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val at = IntArray(2).also { url.getLocationInWindow(it) }
+        val caret = layout.getPrimaryHorizontal(url.selectionEnd.coerceIn(0, url.length()))
+        val x = at[0] - rootAt[0] + url.compoundPaddingLeft - url.scrollX + caret
+        val y = (at[1] - rootAt[1] + url.height / 2).toFloat()
+        root.addView(Burst(this, x, y, Burst.SPARKS), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        if (!sparksLogged) {
+            sparksLogged = true
+            Log.d("Derp", "Sparks!")
+        }
+    }
+
+    /** Hiccups: now and then (1 in 12) a page that's done loading gets the hiccups. */
+    private fun maybeHiccup() {
+        val tab = browser.current ?: return
+        if (Gag.HICCUPS.on(this) && ValueAnimator.areAnimatorsEnabled() && browser.isWebPage(tab) && !fullScreen && Random.nextInt(12) == 0) {
+            hiccup()
+        }
+    }
+
+    private fun hiccup() {
+        val hop = dpf(14)
+        ObjectAnimator.ofFloat(geckoView, View.TRANSLATION_Y, 0f, -hop, 0f, -hop * 0.45f, 0f).setDuration(650).start()
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val at = IntArray(2).also { geckoView.getLocationInWindow(it) }
+        val hic = TextView(this).apply {
+            text = "hic!"
+            textSize = 15f
+            typeface = MEDIUM
+            setTextColor(Color.parseColor("#3A2A00"))
+            background = rounded(Color.parseColor("#FFD43B"), dpf(12))
+            setPadding(dp(10), dp(3), dp(10), dp(3))
+            alpha = 0f
+            elevation = dpf(4)
+        }
+        root.addView(hic, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        hic.translationX = (at[0] - rootAt[0] + dp(16)).toFloat()
+        hic.translationY = (at[1] - rootAt[1] + dp(14)).toFloat()
+        hic.animate().alpha(1f).setDuration(150).withEndAction {
+            hic.animate().translationYBy(-dpf(18)).alpha(0f).setStartDelay(700).setDuration(450)
+                .withEndAction { root.removeView(hic) }
+                .start()
+        }.start()
+        Log.d("Derp", "Hic!")
+    }
+
+    /** Tab ghosts: a closed tab floats up from its close button as a little ghost. */
+    private fun ghostFrom(from: View) {
+        if (!Gag.GHOSTS.on(this) || !ValueAnimator.areAnimatorsEnabled() || !from.isAttachedToWindow) return
+        val size = dp(36)
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val at = IntArray(2).also { from.getLocationInWindow(it) }
+        val ghost = ImageView(this).apply {
+            setImageResource(R.drawable.ic_ghost)
+            alpha = 0f
+            scaleX = 0.5f
+            scaleY = 0.5f
+            elevation = dpf(6)
+        }
+        root.addView(ghost, FrameLayout.LayoutParams(size, size))
+        ghost.translationX = (at[0] - rootAt[0] + from.width / 2 - size / 2).toFloat()
+        ghost.translationY = (at[1] - rootAt[1] + from.height / 2 - size / 2).toFloat()
+        ghost.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(180).withEndAction {
+            ObjectAnimator.ofFloat(ghost, View.ROTATION, 0f, -10f, 10f, -8f, 0f).setDuration(1300).start()
+            ghost.animate().translationYBy(-dpf(90)).alpha(0f).setDuration(1300)
+                .withEndAction { root.removeView(ghost) }
+                .start()
+        }.start()
+        Log.d("Derp", "Boo!")
     }
 
     // ── Menu ───────────────────────────────────────────────────────────────
@@ -1022,7 +1124,12 @@ class MainActivity : Activity() {
                 ellipsize = TextUtils.TruncateAt.END
             })
             card.addView(words, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(14) })
-            card.addView(iconButton(R.drawable.ic_close, "Close tab", base) { browser.close(tab) }, LinearLayout.LayoutParams(dp(44), dp(44)))
+            lateinit var close: ImageButton
+            close = iconButton(R.drawable.ic_close, "Close tab", base) {
+                ghostFrom(close)
+                browser.close(tab)
+            }
+            card.addView(close, LinearLayout.LayoutParams(dp(44), dp(44)))
             list.addView(card, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 bottomMargin = dp(4)
             })

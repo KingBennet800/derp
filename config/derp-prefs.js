@@ -66,6 +66,10 @@ pref("derp.fun.snail", false); // Snail mode: a snail on the loading bar of slow
 pref("derp.fun.peekaboo", false); // Peekaboo: your dork peeks up now and then
 pref("derp.fun.party", false); // Party mode: confetti when you bookmark a page
 pref("derp.fun.sleepy", false); // Sleepy tabs: unloaded tabs snore
+pref("derp.fun.power", false); // Power typing: sparks from the address bar
+pref("derp.fun.hiccups", false); // Hiccups: now and then a page hops ("hic!")
+pref("derp.fun.ghosts", false); // Tab ghosts: closed tabs drift away as ghosts
+pref("derp.fun.rainbow", false); // Rainbow mode: a rainbow loading bar
 pref("browser.taskbarTabs.enabled", true); // web apps: install sites as apps
 pref("image.jxl.enabled", true); // JPEG XL images
 

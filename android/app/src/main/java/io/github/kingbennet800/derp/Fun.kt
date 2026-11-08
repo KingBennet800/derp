@@ -19,7 +19,11 @@ enum class Gag(val key: String, val title: String, val about: String) {
     DUCK("duck", "Duck mode", "1 in 10 times you press Enter in the address bar, a duck eats what you typed."),
     SNAIL("snail", "Snail mode", "When a page takes its time, a snail crawls along the loading bar."),
     PEEKABOO("peekaboo", "Peekaboo", "Now and then, your dork peeks up when you open a new tab."),
-    PARTY("party", "Party mode", "Confetti when you bookmark a page.");
+    PARTY("party", "Party mode", "Confetti when you bookmark a page."),
+    POWER("power", "Power typing", "Sparks fly from the address bar as you type."),
+    HICCUPS("hiccups", "Hiccups", "Now and then, a page gets the hiccups. Hic!"),
+    GHOSTS("ghosts", "Tab ghosts", "A tab you close floats away as a little ghost."),
+    RAINBOW("rainbow", "Rainbow mode", "The loading bar is a rainbow.");
 
     fun on(context: Context) = prefs(context).getBoolean(key, false)
 
@@ -28,18 +32,22 @@ enum class Gag(val key: String, val title: String, val about: String) {
     private fun prefs(context: Context) = context.getSharedPreferences("browser", Context.MODE_PRIVATE)
 }
 
-/** Party mode's confetti: a burst in Derp's colors from ([x], [y]) that
- * falls away and then removes itself. */
-class Confetti(context: Context, x: Float, y: Float) : View(context) {
+/** A burst of little bits in Derp's colors from ([x], [y]), up and out, that
+ * gravity pulls away; it removes itself. Party mode's confetti and Power
+ * typing's sparks. */
+class Burst(context: Context, x: Float, y: Float, private val style: Style) : View(context) {
+    /** How many bits, how fast (dp/s), for how long (s), how heavy, and how big (dp). */
+    class Style(val count: Int, val speed: ClosedFloatingPointRange<Float>, val life: Float, val gravity: Float, val w: Float, val h: Float)
+
     private class Bit(var x: Float, var y: Float, var vx: Float, var vy: Float, var angle: Float, val spin: Float, val color: Int)
 
     private val density = context.resources.displayMetrics.density
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val colors = listOf("#C6F57E", "#2FD6BE", "#2F6FEB", "#FFD43B", "#FF6B9A", "#B8A4FF").map(Color::parseColor)
-    private val bits = List(70) { i ->
+    private val bits = List(style.count) { i ->
         // Up and out, then gravity takes over.
         val angle = Random.nextDouble(PI * 1.05, PI * 1.95)
-        val speed = (350 + Random.nextFloat() * 650) * density
+        val speed = (style.speed.start + Random.nextFloat() * (style.speed.endInclusive - style.speed.start)) * density
         Bit(x, y, (cos(angle) * speed).toFloat(), (sin(angle) * speed).toFloat(), Random.nextFloat() * 360, Random.nextFloat() * 900 - 450, colors[i % colors.size])
     }
     private var last = 0L
@@ -51,11 +59,12 @@ class Confetti(context: Context, x: Float, y: Float) : View(context) {
         last = now
         age += dt
         // Fades out over the last 40%.
-        val fade = (255 * (1 - (age - LIFE * 0.6f) / (LIFE * 0.4f))).toInt().coerceIn(0, 255)
-        val w = 8 * density
-        val h = 5 * density
+        val life = style.life
+        val fade = (255 * (1 - (age - life * 0.6f) / (life * 0.4f))).toInt().coerceIn(0, 255)
+        val w = style.w * density
+        val h = style.h * density
         for (bit in bits) {
-            bit.vy += 1500 * density * dt
+            bit.vy += style.gravity * density * dt
             bit.vx *= 1 - 0.8f * dt
             bit.x += bit.vx * dt
             bit.y += bit.vy * dt
@@ -67,10 +76,11 @@ class Confetti(context: Context, x: Float, y: Float) : View(context) {
             canvas.drawRect(bit.x - w / 2, bit.y - h / 2, bit.x + w / 2, bit.y + h / 2, paint)
             canvas.restore()
         }
-        if (age < LIFE) postInvalidateOnAnimation() else post { (parent as? ViewGroup)?.removeView(this) }
+        if (age < life) postInvalidateOnAnimation() else post { (parent as? ViewGroup)?.removeView(this) }
     }
 
     companion object {
-        private const val LIFE = 1.8f
+        val CONFETTI = Style(70, 350f..1000f, 1.8f, 1500f, 8f, 5f)
+        val SPARKS = Style(8, 80f..240f, 0.45f, 400f, 4f, 4f)
     }
 }

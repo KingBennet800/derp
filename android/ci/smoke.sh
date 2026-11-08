@@ -123,14 +123,28 @@ logged "Passwords for a site: 1" "The saved password wasn't offered to the sign-
 
 # Just for fun: switch on the gags (animations on for them), bookmark this page
 # (Party mode's confetti), open new tabs (Peekaboo: 1 in 6, so not checked),
-# and wait on a slow page (Snail mode).
+# type in the address bar (Power typing), close a tab (Tab ghosts), and wait
+# on a slow page (Snail mode). Hiccups (1 in 12) and Rainbow mode aren't checked.
 adb shell settings put global animator_duration_scale 1
+# A switch in the Just for fun panel, scrolling down to it if need be.
+gag() {
+  for _ in 1 2 3 4; do
+    if ui | grep -q "content-desc=\"$1\""; then
+      tap "$1"
+      return
+    fi
+    adb shell input swipe $((w / 2)) $((h * 65 / 100)) $((w / 2)) $((h * 35 / 100)) 300
+    sleep 1
+  done
+  echo "Can't find '$1' in Just for fun"
+  exit 1
+}
 tap Menu
 sleep 1
 tap "Just for fun"
 sleep 1
-for gag in "Snail mode" "Peekaboo" "Party mode"; do
-  tap "$gag"
+for name in "Snail mode" "Peekaboo" "Party mode" "Power typing" "Hiccups" "Tab ghosts" "Rainbow mode"; do
+  gag "$name"
   sleep 0.5
 done
 shot 2f-just-for-fun 1
@@ -148,6 +162,19 @@ for i in 1 2 3; do
   sleep 3
 done
 alive "Peekaboo"
+tap "Address bar"
+sleep 1
+adb shell input text sparkle
+sleep 1
+logged "Sparks!" "No sparks while typing"
+tap Tabs
+sleep 2
+tap "Close tab"
+sleep 1
+logged "Boo!" "No ghost for a closed tab"
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+alive "Power typing and Tab ghosts"
 # (Animations off again: the emulator's graphics have fallen over animating
 # during page loads. The snail still comes; it just doesn't crawl.)
 adb shell settings put global animator_duration_scale 0

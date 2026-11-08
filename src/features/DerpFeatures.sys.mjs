@@ -10,7 +10,8 @@
  *   (DerpDork.sys.mjs).
  * - Just for fun (all off by default): Duck mode, where now and then a duck
  *   eats what you typed in the address bar (DerpDuck.sys.mjs), and Snail
- *   mode, Peekaboo, Party mode and Sleepy tabs (DerpFun.sys.mjs).
+ *   mode, Peekaboo, Party mode, Sleepy tabs, Power typing, Hiccups, Tab ghosts
+ *   and Rainbow mode (DerpFun.sys.mjs).
  * - A "Derp" page in Settings for these, JPEG XL and AI controls.
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
  * Mozilla's account and online services are off by policy (config/). */

@@ -221,15 +221,37 @@ class ProgressLine(context: Context, private val lineAtTop: Boolean) : View(cont
         }
     }
 
+    /** Rainbow mode (Just for fun): the streak is a rainbow. */
+    var rainbow = false
+        set(value) {
+            if (field == value) return
+            field = value
+            paintStreak(width)
+            invalidate()
+        }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        paintStreak(w)
+    }
+
+    private fun paintStreak(w: Int) {
         // Faded in at both ends, like desktop's mask.
-        val length = if (ValueAnimator.areAnimatorsEnabled()) w * 0.35f else w.toFloat()
-        streak.shader = LinearGradient(
-            0f, 0f, length, 0f,
-            intArrayOf(0x00C6F57E, 0xFF72E4A2.toInt(), 0xFF2FD6BE.toInt(), 0xFF2F9ED7.toInt(), 0x002F6FEB),
-            floatArrayOf(0f, 0.25f, 0.45f, 0.75f, 1f), Shader.TileMode.CLAMP,
-        )
+        val length = (if (ValueAnimator.areAnimatorsEnabled()) w * 0.35f else w.toFloat()).coerceAtLeast(1f)
+        streak.shader = if (rainbow) {
+            LinearGradient(
+                0f, 0f, length, 0f,
+                intArrayOf(0x00FF5E5E, 0xFFFF5E5E.toInt(), 0xFFFFB84D.toInt(), 0xFFFFE14D.toInt(), 0xFF6EE36E.toInt(),
+                    0xFF4DC3FF.toInt(), 0xFF8A7DFF.toInt(), 0xFFE66EFF.toInt(), 0x00E66EFF),
+                floatArrayOf(0f, 0.12f, 0.25f, 0.38f, 0.5f, 0.62f, 0.75f, 0.88f, 1f), Shader.TileMode.CLAMP,
+            )
+        } else {
+            LinearGradient(
+                0f, 0f, length, 0f,
+                intArrayOf(0x00C6F57E, 0xFF72E4A2.toInt(), 0xFF2FD6BE.toInt(), 0xFF2F9ED7.toInt(), 0x002F6FEB),
+                floatArrayOf(0f, 0.25f, 0.45f, 0.75f, 1f), Shader.TileMode.CLAMP,
+            )
+        }
     }
 
     override fun onDetachedFromWindow() {

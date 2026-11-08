@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tab ghosts: a closed tab's ghost; the same as desktop Derp's
+     (src/features/DerpFun.sys.mjs). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp" android:height="36dp"
+    android:viewportWidth="32" android:viewportHeight="32">
+    <path android:fillColor="#FFFFFF" android:strokeColor="#C9CBD6" android:strokeWidth="1.2" android:strokeLineJoin="round"
+        android:pathData="M6,15 a10,10 0 0,1 20,0 v13 l-3.3,-2.5 -3.4,2.5 -3.3,-2.5 -3.3,2.5 -3.4,-2.5 L6,28 Z" />
+    <path android:fillColor="#222222" android:pathData="M10.7,15 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0 Z" />
+    <path android:fillColor="#222222" android:pathData="M17.7,15 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0 Z" />
+    <path android:fillColor="#222222" android:pathData="M14.4,20.2 a1.6,2 0 1,0 3.2,0 a1.6,2 0 1,0 -3.2,0 Z" />
+</vector>

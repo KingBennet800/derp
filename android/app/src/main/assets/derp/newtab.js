@@ -1,8 +1,17 @@
 "use strict";
 // Your dork lives in the toolbar; make sure there is one (a random one until you make yours).
 myDork();
-// The search box is a shortcut to the address bar.
+// The search box is a shortcut to the address bar. It names your search
+// engine; Doodle, Derp's own, shows its googly eyes.
 document.getElementById("search").addEventListener("click", () => derp({ type: "focusUrl" }));
+(async () => {
+  const engine = (await derp({ type: "getState" }))?.engine;
+  if (!engine) return;
+  document.getElementById("search-label").textContent = `Search with ${engine} or enter address`;
+  const doodle = engine === "Doodle";
+  document.getElementById("glass").toggleAttribute("hidden", doodle);
+  document.getElementById("doodle").hidden = !doodle;
+})();
 // Poke Derp and it wiggles, like on desktop.
 const mark = document.getElementById("mark");
 mark.addEventListener("click", () => {

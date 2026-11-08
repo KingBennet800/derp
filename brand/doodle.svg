@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="268" height="84" viewBox="6 6 268 84">
+  <defs>
+    <linearGradient id="ink" x1="10" y1="0" x2="270" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7CC242"/>
+      <stop offset=".45" stop-color="#1FB5A0"/>
+      <stop offset="1" stop-color="#2F6FEB"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#ink)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="30" cy="61" r="17"/>
+    <path d="M47 14V80"/>
+    <circle cx="170" cy="61" r="17"/>
+    <path d="M187 14V80M208 14V71q0 9 8 9"/>
+    <path d="M229 61H262A17 17 0 1 0 256 74"/>
+  </g>
+  <g class="eyes" stroke="#18181B" stroke-width="5">
+    <circle cx="78" cy="61" r="19" fill="#fff"/>
+    <circle cx="124" cy="61" r="19" fill="#fff"/>
+  </g>
+  <g class="pupils" fill="#18181B">
+    <circle class="pupil" cx="82" cy="66" r="8"/>
+    <circle class="pupil" cx="128" cy="66" r="8"/>
+  </g>
+</svg>

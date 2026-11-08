@@ -41,6 +41,20 @@
       "Install": [
         "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
       ]
+    },
+    "SearchEngines": {
+      "Add": [
+        {
+          "Name": "Doodle",
+          "Description": "Derp's search, with results from DuckDuckGo",
+          "URLTemplate": "https://duckduckgo.com/?q={searchTerms}&k9=2f6feb&kaa=7a52c7&kx=0f8a74&kt=system-ui&ka=system-ui",
+          "Method": "GET",
+          "SuggestURLTemplate": "https://duckduckgo.com/ac/?q={searchTerms}&type=list",
+          "IconURL": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iaW5rIiB4MT0iMiIgeTE9IjQiIHgyPSIzMCIgeTI9IjI4IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzdDQzI0MiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iIzFGQjVBMCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMyRjZGRUIiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjkiIGZpbGw9InVybCgjaW5rKSIvPgogIDxnIHN0cm9rZT0iIzE4MTgxQiIgc3Ryb2tlLXdpZHRoPSIxLjYiIGZpbGw9IiNmZmYiPgogICAgPGNpcmNsZSBjeD0iMTAuNSIgY3k9IjE3IiByPSI2LjYiLz4KICAgIDxjaXJjbGUgY3g9IjIxLjUiIGN5PSIxNyIgcj0iNi42Ii8+CiAgPC9nPgogIDxnIGZpbGw9IiMxODE4MUIiPgogICAgPGNpcmNsZSBjeD0iMTIiIGN5PSIxOSIgcj0iMyIvPgogICAgPGNpcmNsZSBjeD0iMjMiIGN5PSIxOSIgcj0iMyIvPgogIDwvZz4KPC9zdmc+Cg==",
+          "Alias": "@doodle"
+        }
+      ],
+      "Default": "Doodle"
     }
   }
 }

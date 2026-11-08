@@ -26,12 +26,33 @@ class Tab(val private: Boolean) {
     var pending: String? = null
 }
 
+// Doodle's DuckDuckGo settings: links and addresses in Derp's colors, light
+// and dark (DuckDuckGo stays light unless asked). Desktop Derp's are in
+// config/policies.json.
+internal const val DOODLE_LIGHT = "k9=2f6feb&kaa=7a52c7&kx=0f8a74"
+internal const val DOODLE_DARK = "kae=d&k9=86b1ff&kaa=a98bf0&kx=34c6a0"
+
 enum class Engine(val label: String, val template: String) {
+    DOODLE("Doodle", "https://duckduckgo.com/?q=%s&$DOODLE_LIGHT&kt=system-ui&ka=system-ui"),
     GOOGLE("Google", "https://www.google.com/search?q=%s"),
     DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=%s"),
     BING("Bing", "https://www.bing.com/search?q=%s"),
     STARTPAGE("Startpage", "https://www.startpage.com/do/search?q=%s"),
     ECOSIA("Ecosia", "https://www.ecosia.org/search?q=%s"),
+    ;
+
+    /** A search for [encoded] (already URL-encoded); Doodle's results are dark while Derp is. */
+    fun search(encoded: String, dark: Boolean): String {
+        val url = template.replace("%s", encoded)
+        return if (this == DOODLE && dark) url.replace(DOODLE_LIGHT, DOODLE_DARK) else url
+    }
+
+    /** The words searched for, if [url] is a search on this engine. */
+    fun terms(url: String): String? {
+        val start = template.substringBefore("%s")
+        if (!url.startsWith(start)) return null
+        return runCatching { Uri.parse(url).getQueryParameter("q") }.getOrNull()?.trim()?.ifBlank { null }
+    }
 }
 
 /** Derp's tabs and pages. Lives as long as the app, so tabs survive the
@@ -48,7 +69,7 @@ class Browser(val app: DerpApp) {
     private val messages = Messages()
 
     var engine: Engine
-        get() = runCatching { Engine.valueOf(prefs.getString("engine", "GOOGLE")!!) }.getOrDefault(Engine.GOOGLE)
+        get() = runCatching { Engine.valueOf(prefs.getString("engine", "DOODLE")!!) }.getOrDefault(Engine.DOODLE)
         set(value) = prefs.edit().putString("engine", value.name).apply()
 
     // ── Starting ───────────────────────────────────────────────────────────
@@ -208,23 +229,25 @@ class Browser(val app: DerpApp) {
             scheme.containsMatchIn(text) -> text
             !text.contains(' ') && Regex("^localhost(:\\d+)?(/.*)?$").matches(text) -> "http://$text"
             !text.contains(' ') && Regex("^[^/\\s]+\\.[a-zA-Z]{2,}(:\\d+)?(/.*)?$").matches(text) -> "https://$text"
-            else -> engine.template.replace("%s", Uri.encode(text))
+            else -> engine.search(Uri.encode(text), app.dark)
         }
     }
 
-    /** What the address bar shows: the site's name, or nothing on Derp's own pages. */
+    /** What the address bar shows: the site's name, what you searched for, or
+     * nothing on Derp's own pages. */
     fun display(tab: Tab): String {
         val url = tab.pending ?: tab.url
         if (url.isBlank() || url.startsWith("derp:")) return ""
         pagesBase?.let { if (url.startsWith(it)) return "" }
+        engine.terms(url)?.let { return it }
         return runCatching { Uri.parse(url).host?.removePrefix("www.") }.getOrNull() ?: url
     }
 
-    /** The full address, for editing. */
+    /** The full address, or what you searched for, for editing. */
     fun address(tab: Tab): String {
         val url = tab.pending ?: tab.url
         pagesBase?.let { if (url.startsWith(it)) return "" }
-        return if (url.startsWith("derp:")) "" else url
+        return if (url.startsWith("derp:")) "" else engine.terms(url) ?: url
     }
 
     fun isDerpPage(tab: Tab) = pagesBase?.let { tab.url.startsWith(it) } ?: false
@@ -410,7 +433,7 @@ class Browser(val app: DerpApp) {
             when (type) {
                 "getState" -> {
                     app.dork.json?.let { reply.put("dork", it) }
-                    reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME)
+                    reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME).put("engine", engine.label)
                 }
                 "setDork" -> app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"))
                 "made" -> app.dork.made = true

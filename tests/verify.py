@@ -65,6 +65,8 @@ def main():
         policies = {}
     check(policies.get("DisableAccounts") is True, "Mozilla accounts off")
     check(policies.get("IPProtectionAvailable") is False, "Mozilla VPN off")
+    search = policies.get("SearchEngines", {})
+    check(search.get("Default") == "Doodle" and any(e.get("Name") == "Doodle" for e in search.get("Add", [])), "Doodle is the search engine")
     for name in patch.WINDOW_ICONS:
         check((ENGINE / "browser/chrome/icons/default" / name).exists(), f"window icon {name}")
     check((ENGINE / ".derp-stamp").exists(), "branding stamp written")

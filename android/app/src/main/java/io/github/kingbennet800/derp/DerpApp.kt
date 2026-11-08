@@ -46,8 +46,14 @@ class DerpApp : Application() {
         if (engine.isInitialized()) runtime.settings.setPreferredColorScheme(colorScheme(newConfig))
     }
 
+    /** Whether Derp is in dark mode. */
+    val dark get() = night(resources.configuration)
+
+    private fun night(config: Configuration) =
+        (config.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
     private fun colorScheme(config: Configuration) =
-        if ((config.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES) {
+        if (night(config)) {
             GeckoRuntimeSettings.COLOR_SCHEME_DARK
         } else {
             GeckoRuntimeSettings.COLOR_SCHEME_LIGHT

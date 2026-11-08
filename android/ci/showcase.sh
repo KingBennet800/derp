@@ -92,9 +92,9 @@ for try in $(seq 1 40); do
   adb exec-out screencap -p >"$out/.duck-walk.png"
   sleep 0.8
   adb exec-out screencap -p >"$out/.duck-quack.png"
-  # Without the duck Derp searches, and the address bar shows the search site.
+  # Without the duck Derp searches, and the address bar shows what you searched for.
   bar=$(address)
-  if [[ $bar == field:* && $bar != *google* ]]; then
+  if [[ $bar == field:* && $bar != *rubber* ]]; then
     echo "The duck came on try $try"
     mv "$out/.duck-walk.png" "$out/$name-duck-walk.png"
     mv "$out/.duck-quack.png" "$out/$name-duck-quack.png"

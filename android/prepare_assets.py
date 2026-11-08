@@ -4,7 +4,8 @@
     python3 prepare_assets.py <out>
 
 Writes <out>/assets/derp/: the dork drawing code (from DerpDork.sys.mjs, the
-same code the browser and the website use), the logo and the wordmark; and
+same code the browser and the website use), the logo, the wordmark and
+Doodle's icon; and
 <out>/res/drawable-nodpi/derp_logo.png for the launcher icon.
 """
 import importlib.util
@@ -29,6 +30,7 @@ def main(out):
         encoding="utf-8",
     )
     shutil.copyfile(ROOT / "brand/derp.svg", assets / "logo.svg")
+    shutil.copyfile(ROOT / "brand/doodle-icon.svg", assets / "doodle.svg")
     # The wordmark in desktop Derp's new tab colors, for light and dark.
     for scheme, color in (("light", "#1f2328"), ("dark", "#e8eaed")):
         (assets / f"wordmark-{scheme}.svg").write_text(

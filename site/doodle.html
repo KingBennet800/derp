@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doodle</title>
+<meta name="description" content="Doodle: search with googly eyes. Derp's search engine, with results from DuckDuckGo.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="{{ICON}}">
+<link rel="search" type="application/opensearchdescription+xml" title="Doodle" href="{{PAGES}}/doodle/opensearch.xml">
+<style>
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #18181b;
+  --dim: #5f6068;
+  --line: #dedee3;
+  --accent: #2f6feb;
+  --accent-text: #ffffff;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 10px 32px rgb(15 23 42 / 0.09);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131314;
+    --surface: #1d1d1f;
+    --text: #f2f2f3;
+    --dim: #a1a1aa;
+    --line: #333336;
+    --accent: #86b1ff;
+    --accent-text: #0f1115;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 40px rgb(0 0 0 / 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131314;
+  --surface: #1d1d1f;
+  --text: #f2f2f3;
+  --dim: #a1a1aa;
+  --line: #333336;
+  --accent: #86b1ff;
+  --accent-text: #0f1115;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 40px rgb(0 0 0 / 0.4);
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+  gap: 32px;
+  padding: 24px 16px 14vh;
+}
+h1 { margin: 0; line-height: 0; }
+h1 svg { width: min(340px, 78vw); height: auto; overflow: visible; }
+.pupil { transition: transform 0.12s ease-out; }
+form { width: min(584px, 100%); }
+.box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 8px 0 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--dim);
+  cursor: text;
+}
+.box:focus-within { border-color: var(--accent); }
+.box svg { width: 18px; height: 18px; flex: none; }
+input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  outline: none;
+}
+input::-webkit-search-cancel-button { display: none; }
+button {
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { margin: 0; max-width: 34em; color: var(--dim); font-size: 14px; text-align: center; }
+a { color: var(--accent); }
+footer { padding: 16px; color: var(--dim); font-size: 13px; text-align: center; }
+@media (max-width: 480px) {
+  .box { padding-inline-start: 16px; }
+  button { padding: 0 14px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>{{LOGO}}</h1>
+  <form id="search" action="https://duckduckgo.com/" method="get" role="search">
+    <label class="box">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7.25" cy="7.25" r="4.25"/><path d="m10.4 10.4 2.6 2.6"/></svg>
+      <input id="q" name="q" type="search" placeholder="Search with Doodle" aria-label="Search with Doodle" autocomplete="off" autofocus required>
+      <button type="submit">Search</button>
+    </label>
+{{FIELDS}}
+  </form>
+  <p class="note">Doodle is the search engine of <a href="{{PAGES}}/">Derp</a>, the browser. Your results come from DuckDuckGo, in Doodle's colors.</p>
+</main>
+<footer>Doodle has googly eyes. They're watching. Nicely.</footer>
+<script>
+"use strict";
+// While the page is dark, ask DuckDuckGo for its dark theme in Derp's dark colors.
+const DARK = {{DARK}};
+const form = document.getElementById("search");
+const input = document.getElementById("q");
+form.addEventListener("submit", () => {
+  if (!matchMedia("(prefers-color-scheme: dark)").matches) return;
+  for (const [name, value] of Object.entries(DARK)) {
+    const field = form.elements[name] || form.appendChild(Object.assign(document.createElement("input"), { type: "hidden", name }));
+    field.value = value;
+  }
+});
+
+// The googly eyes follow your pointer, and look down at what you type,
+// jiggling with each key.
+const svg = document.querySelector("h1 svg");
+const eyes = [...svg.querySelectorAll(".eyes circle")];
+const pupils = [...svg.querySelectorAll(".pupil")];
+const still = matchMedia("(prefers-reduced-motion: reduce)");
+let typing = 0;
+function look(x, y, jiggle = 0) {
+  const box = svg.getBoundingClientRect();
+  const scale = box.width / svg.viewBox.baseVal.width;
+  eyes.forEach((eye, i) => {
+    const cx = eye.cx.baseVal.value, cy = eye.cy.baseVal.value;
+    const pupil = pupils[i];
+    const dx = x - (box.left + (cx - svg.viewBox.baseVal.x) * scale);
+    const dy = y - (box.top + (cy - svg.viewBox.baseVal.y) * scale);
+    const far = Math.hypot(dx, dy) || 1;
+    const reach = Math.min(far / (40 * scale), 1) * 8;
+    const ox = (dx / far) * reach + (Math.random() - 0.5) * jiggle;
+    const oy = (dy / far) * reach + (Math.random() - 0.5) * jiggle;
+    pupil.style.transform = `translate(${ox - (pupil.cx.baseVal.value - cx)}px, ${oy - (pupil.cy.baseVal.value - cy)}px)`;
+  });
+}
+addEventListener("pointermove", e => {
+  if (!typing) look(e.clientX, e.clientY);
+});
+input.addEventListener("input", () => {
+  const box = input.getBoundingClientRect();
+  look(box.left + Math.min(input.value.length * 9, box.width), box.top + box.height / 2, still.matches ? 0 : 4);
+  clearTimeout(typing);
+  typing = setTimeout(() => (typing = 0), 1200);
+});
+</script>
+</body>
+</html>

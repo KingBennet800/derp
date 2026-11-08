@@ -74,6 +74,8 @@ img { display: block; }
   text-align: start;
 }
 .search svg { width: 18px; height: 18px; flex: none; }
+.search img { width: 22px; height: 22px; margin-inline: -2px; flex: none; }
+.search [hidden] { display: none; }
 .tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
 .tiles a { display: grid; justify-items: center; gap: 8px; width: 68px; color: var(--text); font-size: 13px; text-decoration: none; }
 .tiles b {

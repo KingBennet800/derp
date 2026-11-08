@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Smoke-test Derp for Android on an emulator: install, start, check it shows
 # the welcome dork editor, open a link, bookmark it, check history, save a
-# password and get it offered back, switch to dark mode; screenshots and
-# logcat go to $2. Fails if Derp crashes or isn't running.
+# password and get it offered back, the just-for-fun gags, dark mode;
+# screenshots and logcat go to $2. Fails if Derp crashes or isn't running.
 set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
 mkdir -p "$out"
@@ -87,7 +87,17 @@ cat >"$site/index.html" <<'HTML'
 </form>
 HTML
 echo '<!doctype html><title>Signed in</title><p>Signed in.' >"$site/done.html"
-python3 -m http.server 8123 --bind 127.0.0.1 --directory "$site" >/dev/null 2>&1 &
+echo '<!doctype html><title>Slow</title><p>That took a while.' >"$site/slow.html"
+# A web server for these pages; /slow.html takes 9 seconds.
+python3 - "$site" >/dev/null 2>&1 <<'PY' &
+import functools, http.server, sys, time
+class Pages(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith("/slow"):
+            time.sleep(9)
+        super().do_GET()
+http.server.ThreadingHTTPServer(("127.0.0.1", 8123), functools.partial(Pages, directory=sys.argv[1])).serve_forever()
+PY
 server=$!
 trap 'kill $server 2>/dev/null || true' EXIT
 adb reverse tcp:8123 tcp:8123
@@ -110,6 +120,40 @@ logged "Passwords: 1 saved" "The password wasn't saved"
 adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/ "$pkg"
 shot 2e-password-offered 8
 logged "Passwords for a site: 1" "The saved password wasn't offered to the sign-in page"
+
+# Just for fun: switch on the gags (animations on for them), bookmark this page
+# (Party mode's confetti), open new tabs (Peekaboo: 1 in 6, so not checked),
+# and wait on a slow page (Snail mode).
+adb shell settings put global animator_duration_scale 1
+tap Menu
+sleep 1
+tap "Just for fun"
+sleep 1
+for gag in "Snail mode" "Peekaboo" "Party mode"; do
+  tap "$gag"
+  sleep 0.5
+done
+shot 2f-just-for-fun 1
+tap_text Done || { echo "No Done button on Just for fun"; exit 1; }
+sleep 1
+tap Menu
+sleep 1
+tap "Bookmark this page"
+shot 2g-confetti 0.4
+logged "Confetti!" "No confetti for a bookmark"
+for i in 1 2 3; do
+  tap Tabs
+  sleep 1
+  tap "Open a new tab"
+  sleep 3
+done
+alive "Peekaboo"
+adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/slow.html "$pkg"
+shot 2h-snail 5
+logged "A snail is crawling" "No snail on a slow page"
+sleep 8
+alive "Snail mode"
+adb shell settings put global animator_duration_scale 0
 
 # The tabs view and the menu.
 tap Tabs
@@ -141,4 +185,4 @@ if grep -E "FATAL EXCEPTION|E AndroidRuntime" "$out/logcat.txt" | grep -q .; the
   grep -A 20 "FATAL EXCEPTION" "$out/logcat.txt" | head -60
   exit 1
 fi
-echo "Derp ran: first start, a link, bookmarks, history, a saved password, dark mode."
+echo "Derp ran: first start, a link, bookmarks, history, a saved password, the gags, dark mode."

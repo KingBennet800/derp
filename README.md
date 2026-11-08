@@ -109,9 +109,15 @@ Windows) to delete it too.
   back and forward nudge, reload twists, + and × spin. Switching tabs and
   light/dark fades smoothly. All motion is off when the system asks for reduced
   motion.
-- **Duck mode** (off by default; Settings → Derp → Just for fun): 1 in 10 times
-  you press Enter in the address bar, a duck waddles along it and eats what you
-  typed. Quack.
+- **Just for fun** (all off by default; Settings → Derp → Just for fun):
+  - **Duck mode**: 1 in 10 times you press Enter in the address bar, a duck
+    waddles along it and eats what you typed. Quack.
+  - **Snail mode**: when a page takes more than 3 seconds, a snail crawls along
+    the loading bar, and zooms off once the page is there.
+  - **Peekaboo**: now and then (1 in 6 new tabs) your dork peeks up from the
+    bottom of the window and waves.
+  - **Party mode**: confetti when you bookmark a page.
+  - **Sleepy tabs**: tabs Memory Saver has put to sleep snore (💤).
 - **Fluid**: spring-physics smooth scrolling with momentum, elastic overscroll and
   kinetic touchpad scrolling.
 - **Fast**: GPU canvas, shader pre-caching, more parallel connections, a bigger
@@ -189,8 +195,9 @@ pick up. The version in use is `android/geckoview-version.txt`.
   until you type, and the lime-teal-blue loading shimmer. Phones have one
   bottom toolbar (address bar, tabs, your dork, menu) and a tabs view;
   tablets have desktop's tab strip with folder tabs, and back, forward and
-  reload in the toolbar. Private tabs, and light and dark mode. Duck mode is in
-  the menu here too (off by default).
+  reload in the toolbar. Private tabs, and light and dark mode. Just for fun is
+  in the menu here too (Duck mode, Snail mode, Peekaboo and Party mode; all
+  off by default).
 - **Your dork** is here too, drawn by the same code as desktop Derp, and the
   first start has you make it.
 - **Bookmarks, history and passwords**: ☆ in the menu bookmarks a page (your

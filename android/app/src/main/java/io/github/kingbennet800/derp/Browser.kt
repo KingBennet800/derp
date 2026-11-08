@@ -121,6 +121,8 @@ class Browser(val app: DerpApp) {
         if (select) select(tab)
         ui?.onTabsChanged()
         save()
+        // A fresh new tab (not a link's): Peekaboo might happen.
+        if (open && url == null && select) ui?.onBlankTab()
         return tab
     }
 

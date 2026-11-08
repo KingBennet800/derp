@@ -77,7 +77,11 @@ shot newtab 8
 adb shell settings put global animator_duration_scale 1
 tap Menu
 sleep 1
+tap "Just for fun"
+sleep 1
 tap "Duck mode"
+sleep 1
+tap Done
 sleep 2
 for try in $(seq 1 40); do
   tap "Address bar" || break

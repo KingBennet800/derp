@@ -44,6 +44,8 @@ def main():
     check(all((HOME / "features" / f).exists() for f in dork), "your dork installed")
     duck = ("DerpDuck.sys.mjs", "duck.css", "locales/en-US/derp/duck.ftl")
     check(all((HOME / "features" / f).exists() for f in duck), "duck mode installed")
+    fun = ("DerpFun.sys.mjs", "fun.css", "locales/en-US/derp/fun.ftl")
+    check(all((HOME / "features" / f).exists() for f in fun), "just-for-fun settings installed")
 
     # Branding.
     omni = ENGINE / "browser/omni.ja"

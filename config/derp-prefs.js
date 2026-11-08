@@ -62,6 +62,10 @@ pref("browser.aboutwelcome.experimentsGate.enabled", false); // no first-run spl
 pref("derp.memorySaver.enabled", true); // unload tabs unused for…
 pref("derp.memorySaver.minutes", 30);
 pref("derp.duck.enabled", false); // Duck mode (Settings → Derp → Just for fun)
+pref("derp.fun.snail", false); // Snail mode: a snail on the loading bar of slow pages
+pref("derp.fun.peekaboo", false); // Peekaboo: your dork peeks up now and then
+pref("derp.fun.party", false); // Party mode: confetti when you bookmark a page
+pref("derp.fun.sleepy", false); // Sleepy tabs: unloaded tabs snore
 pref("browser.taskbarTabs.enabled", true); // web apps: install sites as apps
 pref("image.jxl.enabled", true); // JPEG XL images
 

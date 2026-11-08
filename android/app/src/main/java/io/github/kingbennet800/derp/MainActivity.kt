@@ -2,6 +2,7 @@ package io.github.kingbennet800.derp
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.AlertDialog
@@ -28,7 +29,10 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.util.Log
+import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
+import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -39,6 +43,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import android.window.OnBackInvokedDispatcher
@@ -374,6 +379,7 @@ class MainActivity : Activity() {
         bar.setBackgroundColor(palette.toolbar)
         progress.setColors(palette.contentLine, palette.toolbar)
         progress.setBusy((tab?.progress ?: 100) < 100)
+        snailCheck((tab?.progress ?: 100) < 100)
         toolbarButtons.forEach { paintButton(it, palette) }
         avatarButton.background = roundRipple(palette.press, dp(4))
 
@@ -536,12 +542,10 @@ class MainActivity : Activity() {
 
     // ── Duck mode ──────────────────────────────────────────────────────────
 
-    /** Duck mode, a joke setting (off by default, in the menu): 1 in 10 times
-     * you press Enter in the address bar, a duck waddles along it and eats what
-     * you typed instead. Desktop Derp has the same duck. */
-    private var duckMode: Boolean
-        get() = getSharedPreferences("browser", MODE_PRIVATE).getBoolean("duck", false)
-        set(value) = getSharedPreferences("browser", MODE_PRIVATE).edit().putBoolean("duck", value).apply()
+    /** Duck mode, a joke setting (off by default, in ⋮ → Just for fun): 1 in 10
+     * times you press Enter in the address bar, a duck waddles along it and eats
+     * what you typed instead. Desktop Derp has the same duck. */
+    private val duckMode get() = Gag.DUCK.on(this)
     private var duckBusy = false
 
     private fun duck(text: String) {
@@ -605,6 +609,161 @@ class MainActivity : Activity() {
         }
     }
 
+    // ── Just for fun ───────────────────────────────────────────────────────
+
+    /** The gags' switches, each with a line about what it does. */
+    private fun justForFun() {
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(4), dp(8), 0)
+        }
+        for (gag in Gag.values()) {
+            val toggle = Switch(this).apply {
+                isChecked = gag.on(this@MainActivity)
+                isClickable = false
+                isFocusable = false
+            }
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                contentDescription = gag.title
+                setPadding(dp(16), dp(10), dp(12), dp(10))
+                background = rowRipple(0x24808080, dpf(12))
+                setOnClickListener {
+                    toggle.isChecked = !toggle.isChecked
+                    gag.set(this@MainActivity, toggle.isChecked)
+                }
+            }
+            val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            words.addView(TextView(this).apply {
+                text = gag.title
+                textSize = 16f
+                typeface = MEDIUM
+            })
+            words.addView(TextView(this).apply {
+                text = gag.about
+                textSize = 13f
+                alpha = 0.7f
+            })
+            row.addView(words, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(12) })
+            row.addView(toggle)
+            list.addView(row)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Just for fun")
+            .setView(ScrollView(this).apply { addView(list) })
+            .setPositiveButton("Done", null)
+            .show()
+    }
+
+    // Snail mode: a page loading for 3 seconds gets a snail on the loading bar.
+    private var snail: ImageView? = null
+    private var loadingNow = false
+    private val slowPage = Runnable { if (loadingNow && snail == null && !fullScreen && Gag.SNAIL.on(this)) snailCrawl() }
+
+    private fun snailCheck(loading: Boolean) {
+        if (loading == loadingNow) return
+        loadingNow = loading
+        root.removeCallbacks(slowPage)
+        if (loading) root.postDelayed(slowPage, 3000) else snailAway()
+    }
+
+    private fun snailCrawl() {
+        val size = dp(24)
+        val view = ImageView(this).apply { setImageResource(R.drawable.ic_snail) }
+        root.addView(view, FrameLayout.LayoutParams(size, size))
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val lineAt = IntArray(2).also { progress.getLocationInWindow(it) }
+        // Its body (the bottom fifth of the drawing is empty) rests on the line.
+        val line = lineAt[1] - rootAt[1] + if (tablet) progress.height else 0
+        view.translationY = (line - size * 26 / 32).toFloat()
+        view.translationX = (column.paddingLeft + dp(6)).toFloat()
+        view.animate()
+            .translationX((root.width - column.paddingRight - size - dp(6)).toFloat())
+            .setDuration(45_000)
+            .setInterpolator(LinearInterpolator())
+            .start()
+        snail = view
+        Log.d("Derp", "A snail is crawling")
+    }
+
+    /** The page is there: off the snail zooms. */
+    private fun snailAway() {
+        val view = snail ?: return
+        snail = null
+        view.animate().cancel()
+        view.animate()
+            .translationX((root.width + dp(30)).toFloat())
+            .alpha(0f)
+            .setDuration(450)
+            .setInterpolator(AccelerateInterpolator())
+            .withEndAction { root.removeView(view) }
+            .start()
+    }
+
+    /** Peekaboo: a new blank tab now and then (1 in 6) gets a visit from your dork. */
+    fun onBlankTab() {
+        if (Gag.PEEKABOO.on(this) && ValueAnimator.areAnimatorsEnabled() && Random.nextInt(6) == 0) root.post { peek() }
+    }
+
+    private fun peek() {
+        val face = app.dork.avatar(dp(192)) ?: return
+        val size = dp(96)
+        val height = dp(150)
+        // The stage's bottom edge hides your dork until it peeks up over it.
+        val stage = FrameLayout(this)
+        val group = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        group.addView(TextView(this).apply {
+            text = "Peekaboo!"
+            textSize = 14f
+            typeface = MEDIUM
+            setTextColor(if (palette.dark) Color.parseColor("#0F1115") else Color.WHITE)
+            background = rounded(palette.accent, dpf(10))
+            setPadding(dp(10), dp(3), dp(10), dp(3))
+        })
+        val dork = ImageView(this).apply {
+            setImageBitmap(face)
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) = outline.setOval(0, 0, view.width, view.height)
+            }
+            clipToOutline = true
+            pivotX = size / 2f
+            pivotY = size.toFloat()
+        }
+        group.addView(dork, LinearLayout.LayoutParams(size, size).apply { topMargin = dp(6) })
+        stage.addView(group, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,
+        ))
+        val above = bottomInset + if (tablet) 0 else bar.height + progress.height
+        root.addView(stage, FrameLayout.LayoutParams(dp(150), height, Gravity.BOTTOM or Gravity.START).apply {
+            bottomMargin = above
+            marginStart = dp(12)
+        })
+        group.translationY = height.toFloat()
+        group.animate().translationY(height * 0.3f).setDuration(500).setInterpolator(OvershootInterpolator(1.4f)).withEndAction {
+            ObjectAnimator.ofFloat(dork, View.ROTATION, 0f, -12f, 10f, -12f, 10f, 0f).setDuration(1000).start()
+            group.animate().translationY(height.toFloat()).setStartDelay(1400).setDuration(380)
+                .setInterpolator(AccelerateInterpolator())
+                .withEndAction { root.removeView(stage) }
+                .start()
+        }.start()
+        Log.d("Derp", "Peekaboo!")
+    }
+
+    /** Party mode: confetti from the menu button when you bookmark a page. */
+    private fun confetti() {
+        if (!Gag.PARTY.on(this) || !ValueAnimator.areAnimatorsEnabled()) return
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val at = IntArray(2).also { menuButton.getLocationInWindow(it) }
+        val x = (at[0] - rootAt[0] + menuButton.width / 2).toFloat()
+        val y = (at[1] - rootAt[1] + menuButton.height / 2).toFloat()
+        root.addView(Confetti(this, x, y), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        Log.d("Derp", "Confetti!")
+    }
+
     // ── Menu ───────────────────────────────────────────────────────────────
 
     private fun showMenu() {
@@ -643,6 +802,7 @@ class MainActivity : Activity() {
         quick(if (marked) R.drawable.ic_star_filled else R.drawable.ic_star, if (marked) "Remove bookmark" else "Bookmark this page", browser.isWebPage(tab)) {
             val now = browser.toggleBookmark(tab)
             Toast.makeText(this, if (now) "Bookmarked" else "Bookmark removed", Toast.LENGTH_SHORT).show()
+            if (now) confetti()
         }
         if (marked) (row.getChildAt(row.childCount - 1) as ImageButton).imageTintList = ColorStateList.valueOf(palette.accent)
         quick(R.drawable.ic_share, "Share", !browser.isDerpPage(tab)) { share(tab.url, tab.title) }
@@ -688,10 +848,7 @@ class MainActivity : Activity() {
         item("Import data") { browser.openPage("import.html") }
         divider()
         item("Search engine", browser.engine.label) { pickEngine() }
-        item("Duck mode", if (duckMode) "On" else "Off") {
-            duckMode = !duckMode
-            Toast.makeText(this, if (duckMode) "Duck mode is on. Keep an eye on the address bar…" else "Duck mode is off", Toast.LENGTH_SHORT).show()
-        }
+        item("Just for fun", Gag.values().count { it.on(this) }.let { if (it == 0) "Off" else "$it on" }) { justForFun() }
         item("Clear browsing data") { confirmClear() }
         divider()
         item("Check for updates") { Updater.check(this, manual = true) }

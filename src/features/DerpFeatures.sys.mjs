@@ -8,8 +8,9 @@
  * - Memory Saver: unloads tabs you haven't looked at for a while.
  * - Your dork: Derp's own account, an avatar you design, kept on this device
  *   (DerpDork.sys.mjs).
- * - Duck mode (off by default): now and then a duck eats what you typed in
- *   the address bar (DerpDuck.sys.mjs).
+ * - Just for fun (all off by default): Duck mode, where now and then a duck
+ *   eats what you typed in the address bar (DerpDuck.sys.mjs), and Snail
+ *   mode, Peekaboo, Party mode and Sleepy tabs (DerpFun.sys.mjs).
  * - A "Derp" page in Settings for these, JPEG XL and AI controls.
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
  * Mozilla's account and online services are off by policy (config/). */
@@ -44,7 +45,7 @@ export const DerpFeatures = {
   init() {
     const onStartup = () => {
       Services.obs.removeObserver(onStartup, "final-ui-startup");
-      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, SettingsSection, Layout]) {
+      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, SettingsSection, Layout]) {
         try {
           feature.init();
         } catch (e) {
@@ -75,6 +76,14 @@ const Duck = {
   init() {
     const { DerpDuck } = ChromeUtils.importESModule(derpURL("DerpDuck.sys.mjs"));
     DerpDuck.init({ cssURL: derpURL("duck.css") });
+  },
+};
+
+const Fun = {
+  init() {
+    const { DerpFun } = ChromeUtils.importESModule(derpURL("DerpFun.sys.mjs"));
+    const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
+    DerpFun.init({ cssURL: derpURL("fun.css"), dork: DerpDork });
   },
 };
 

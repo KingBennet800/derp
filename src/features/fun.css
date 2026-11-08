@@ -1,0 +1,121 @@
+/* Just for fun (DerpFun.sys.mjs): the snail, your dork's peekaboo, confetti
+ * and sleepy tabs. */
+
+/* ── Snail mode: crawling along the loading bar under the toolbar ───────── */
+
+/* Positioned by DerpFun: --from and --to are the toolbar's ends. */
+.derp-snail {
+  position: fixed;
+  left: var(--from);
+  z-index: 2147483647;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  animation:
+    derp-snail-crawl 60s linear forwards,
+    derp-snail-squish 900ms ease-in-out infinite alternate;
+}
+
+/* The page is there: off it zooms. */
+.derp-snail-done {
+  opacity: 0;
+  left: var(--away) !important;
+  transition:
+    left 550ms cubic-bezier(0.5, 0, 0.75, 0),
+    opacity 550ms ease-in;
+}
+
+@keyframes derp-snail-crawl {
+  to {
+    left: var(--to);
+  }
+}
+
+@keyframes derp-snail-squish {
+  to {
+    scale: 1.07 0.94;
+  }
+}
+
+/* ── Peekaboo: your dork, from the bottom of the window ─────────────────── */
+
+.derp-peek {
+  position: fixed;
+  inset-inline-start: 32px;
+  bottom: 0;
+  z-index: 2147483647;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none;
+  animation: derp-peek 2800ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.derp-peek > img {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
+  transform-origin: 50% 100%;
+  animation: derp-peek-wave 520ms 700ms ease-in-out 2;
+}
+
+.derp-peek-hi {
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: var(--derp-accent, #2f6feb);
+  color: light-dark(#fff, #0f1115);
+  font-weight: 600;
+}
+
+@keyframes derp-peek {
+  0% {
+    translate: 0 100%;
+  }
+  20%,
+  78% {
+    translate: 0 38%;
+  }
+  100% {
+    translate: 0 100%;
+  }
+}
+
+@keyframes derp-peek-wave {
+  25% {
+    rotate: -12deg;
+  }
+  75% {
+    rotate: 10deg;
+  }
+}
+
+/* ── Party mode: confetti ───────────────────────────────────────────────── */
+
+.derp-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.derp-confetti > span {
+  position: absolute;
+  width: 8px;
+  height: 5px;
+  margin: -2px -4px;
+  border-radius: 1px;
+}
+
+/* ── Sleepy tabs: napping tabs snore ────────────────────────────────────── */
+
+:root[derp-sleepy] .tabbrowser-tab[pending]:not([selected]) .tab-label::before {
+  content: "💤 ";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .derp-snail {
+    animation: none;
+  }
+}

@@ -18,6 +18,10 @@ Preferences.addAll([
   { id: "browser.taskbarTabs.enabled", type: "bool" },
   { id: "image.jxl.enabled", type: "bool" },
   { id: DerpDuck.PREF, type: "bool" },
+  { id: "derp.fun.snail", type: "bool" },
+  { id: "derp.fun.peekaboo", type: "bool" },
+  { id: "derp.fun.party", type: "bool" },
+  { id: "derp.fun.sleepy", type: "bool" },
 ]);
 
 Preferences.addSetting({ id: "derpMemorySaver", pref: "derp.memorySaver.enabled" });
@@ -33,6 +37,10 @@ Preferences.addSetting({ id: "derpWebApps", pref: "browser.taskbarTabs.enabled" 
 Preferences.addSetting({ id: "derpJpegXL", pref: "image.jxl.enabled" });
 Preferences.addSetting({ id: "derpAiControls" });
 Preferences.addSetting({ id: "derpDuck", pref: DerpDuck.PREF });
+Preferences.addSetting({ id: "derpSnail", pref: "derp.fun.snail" });
+Preferences.addSetting({ id: "derpPeekaboo", pref: "derp.fun.peekaboo" });
+Preferences.addSetting({ id: "derpParty", pref: "derp.fun.party" });
+Preferences.addSetting({ id: "derpSleepy", pref: "derp.fun.sleepy" });
 
 // Your dork: shown large, with its name; follows edits made in the editor.
 Preferences.addSetting({ id: "derpDorkBox" });
@@ -121,6 +129,12 @@ SettingGroupManager.registerGroups({
     l10nId: "derp-fun-group",
     headingLevel: 2,
     iconSrc: DUCK_URL,
-    items: [{ id: "derpDuck", l10nId: "derp-duck" }],
+    items: [
+      { id: "derpDuck", l10nId: "derp-duck" },
+      { id: "derpSnail", l10nId: "derp-snail" },
+      { id: "derpPeekaboo", l10nId: "derp-peekaboo" },
+      { id: "derpParty", l10nId: "derp-party" },
+      { id: "derpSleepy", l10nId: "derp-sleepy" },
+    ],
   },
 });

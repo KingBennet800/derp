@@ -148,12 +148,14 @@ for i in 1 2 3; do
   sleep 3
 done
 alive "Peekaboo"
+# (Animations off again: the emulator's graphics have fallen over animating
+# during page loads. The snail still comes; it just doesn't crawl.)
+adb shell settings put global animator_duration_scale 0
 adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/slow.html "$pkg"
 shot 2h-snail 5
 logged "A snail is crawling" "No snail on a slow page"
 sleep 8
 alive "Snail mode"
-adb shell settings put global animator_duration_scale 0
 
 # The tabs view and the menu.
 tap Tabs

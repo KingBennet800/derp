@@ -37,9 +37,11 @@ class Tab(val private: Boolean) {
     var reading: JSONObject? = null
 
     /** Memory Saver: when you last looked at this tab, whether it's playing
-     * something, and while it's asleep, its pages and history. */
+     * something, its pages and history as the engine last reported them, and
+     * while it's asleep, what it wakes up to. */
     var seen = System.currentTimeMillis()
     var playing = false
+    var state: GeckoSession.SessionState? = null
     var sleeping: GeckoSession.SessionState? = null
     val asleep get() = sleeping != null
 }
@@ -102,6 +104,7 @@ class Browser(val app: DerpApp) {
         }
         started = true
         app.blocker.start()
+        app.pairing.start()
         restore()
         app.withPages { extension ->
             pages = extension
@@ -132,6 +135,11 @@ class Browser(val app: DerpApp) {
             Intent.ACTION_WEB_SEARCH -> intent.getStringExtra("query")?.let { toUrl(it) }
             else -> null
         } ?: return false
+        // A pairing code from your computer (your camera opened its link here).
+        if (url.startsWith(Pairing.LINK)) {
+            ui?.confirmPair(url)
+            return true
+        }
         newTab(url)
         return true
     }
@@ -225,6 +233,7 @@ class Browser(val app: DerpApp) {
     /** Bookmarks the current page, or removes its bookmark; true if it's bookmarked now. */
     fun toggleBookmark(tab: Tab): Boolean {
         val url = tab.url
+        app.pairing.changed()
         return if (app.library.isBookmarked(url)) {
             app.library.unbookmark(url)
             false
@@ -370,15 +379,13 @@ class Browser(val app: DerpApp) {
     }
 
     private fun sleep(tab: Tab) {
-        tab.session.saveState().accept({ state: GeckoSession.SessionState? ->
-            if (state == null || tab === current || tab !in tabs || tab.asleep) return@accept
-            tab.sleeping = state
-            tab.page = null
-            tab.readable = false
-            tab.session.close()
-            Log.i("Derp", "Memory Saver: a tab fell asleep")
-            ui?.onTabsChanged()
-        }, { error -> Log.w("Derp", "Memory Saver: couldn't save a tab", error) })
+        val state = tab.state ?: return
+        tab.sleeping = state
+        tab.page = null
+        tab.readable = false
+        tab.session.close()
+        Log.i("Derp", "Memory Saver: a tab fell asleep")
+        ui?.onTabsChanged()
     }
 
     /** A sleeping tab you look at again wakes up where it was. */
@@ -436,6 +443,10 @@ class Browser(val app: DerpApp) {
             session: GeckoSession,
             request: GeckoSession.NavigationDelegate.LoadRequest,
         ): GeckoResult<AllowOrDeny>? {
+            if (request.uri.startsWith(Pairing.LINK)) {
+                ui?.confirmPair(request.uri)
+                return GeckoResult.fromValue(AllowOrDeny.DENY)
+            }
             val scheme = Uri.parse(request.uri).scheme?.lowercase() ?: return null
             if (scheme in WEB_SCHEMES) return null
             ui?.openExternal(request.uri, tab)
@@ -470,6 +481,11 @@ class Browser(val app: DerpApp) {
         override fun onPageStop(session: GeckoSession, success: Boolean) {
             tab.progress = 100
             changed(tab)
+        }
+
+        /** The tab's pages and history, kept for Memory Saver. */
+        override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+            tab.state = sessionState
         }
     }
 
@@ -579,7 +595,10 @@ class Browser(val app: DerpApp) {
                 "made" -> app.dork.made = true
                 "focusUrl" -> ui?.focusUrl()
                 "bookmarks.list" -> reply.put("items", library.bookmarks(msg.optString("query"), msg.optInt("limit", 500)))
-                "bookmarks.remove" -> library.unbookmark(msg.getString("url"))
+                "bookmarks.remove" -> {
+                    library.unbookmark(msg.getString("url"))
+                    app.pairing.changed()
+                }
                 "history.list" -> reply.put(
                     "items",
                     library.history(msg.optString("query"), msg.optLong("before", Long.MAX_VALUE), msg.optInt("limit", 200)),
@@ -587,7 +606,11 @@ class Browser(val app: DerpApp) {
                 "history.remove" -> library.forget(msg.getString("url"))
                 "history.clear" -> library.clearHistory()
                 "logins.list" -> reply.put("items", app.logins.list(msg.optString("query"))).put("save", app.logins.offerToSave)
-                "logins.remove" -> app.logins.remove(msg.getString("guid"))
+                "logins.remove" -> {
+                    app.logins.remove(msg.getString("guid"))
+                    app.pairing.changed()
+                }
+                "devices.get" -> reply.put("devices", app.pairing.summary)
                 "logins.offer" -> app.logins.offerToSave = msg.getBoolean("on")
                 "reader.get" -> tab?.reading?.let { reply.put("url", it.optString("url")).put("html", it.optString("html")) }
                 else -> reply.put("ok", false)
@@ -597,12 +620,17 @@ class Browser(val app: DerpApp) {
 
         /** Questions answered later: ones that need you (a file to pick, your screen lock). */
         private fun later(type: String, msg: JSONObject): GeckoResult<Any>? {
-            if (type != "import" && type != "logins.reveal" && type != "logins.copy") return null
+            if (type !in setOf("import", "logins.reveal", "logins.copy", "devices.sync", "devices.leave")) return null
             val result = GeckoResult<Any>()
             val ui = ui ?: return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
             fun done(reply: JSONObject) = result.complete(reply.toString())
             when (type) {
-                "import" -> ui.importFile(msg.optString("kind")) { done(it) }
+                "devices.sync" -> app.pairing.syncNow { done(JSONObject().put("ok", true).put("devices", app.pairing.summary)) }
+                "devices.leave" -> app.pairing.leave { done(JSONObject().put("ok", true).put("devices", app.pairing.summary)) }
+                "import" -> ui.importFile(msg.optString("kind")) {
+                    done(it)
+                    app.pairing.changed()
+                }
                 else -> {
                     val guid = msg.optString("guid")
                     ui.unlock { unlocked ->

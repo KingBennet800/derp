@@ -24,7 +24,7 @@
   const accountsOff = !Services.prefs.getBoolPref("identity.fxaccounts.enabled", true);
   if (accountsOff && typeof CONFIG_PANES == "object" && CONFIG_PANES.sync) {
     const mozilla = ["accountDisabled", "account", "sync", "referrals"];
-    CONFIG_PANES.sync.groupIds = ["derpDork", ...CONFIG_PANES.sync.groupIds.filter(id => !mozilla.includes(id))];
+    CONFIG_PANES.sync.groupIds = ["derpDork", "derpDevices", ...CONFIG_PANES.sync.groupIds.filter(id => !mozilla.includes(id))];
     CONFIG_PANES.sync.l10nId = "derp-you-section";
     CONFIG_PANES.sync.iconSrc = DerpDork.dataURL(undefined, 64);
     CONFIG_PANES.sync.module = window.derpURLs.settings;

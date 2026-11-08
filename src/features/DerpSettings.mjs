@@ -9,6 +9,7 @@ import "chrome://browser/content/preferences/config/account-sync.mjs";
 
 const { DerpDork } = ChromeUtils.importESModule(window.derpURLs.dork);
 const { DerpDuck, DUCK_URL } = ChromeUtils.importESModule(window.derpURLs.duck);
+const { DerpPair } = ChromeUtils.importESModule(window.derpURLs.pair);
 
 const UNLOAD_AFTER_MINUTES = [15, 30, 60, 120, 240];
 
@@ -75,6 +76,32 @@ Preferences.addSetting({
   onUserClick: () => DerpDork.openEditor(window.browsingContext.topChromeWindow),
 });
 
+// Your devices: who you're paired with, and the panel to pair or see their tabs.
+Preferences.addSetting({ id: "derpDevicesBox" });
+Preferences.addSetting({
+  id: "derpDevicesCard",
+  setup(emitChange) {
+    Services.obs.addObserver(emitChange, "derp-pair-changed");
+    return () => Services.obs.removeObserver(emitChange, "derp-pair-changed");
+  },
+  getControlConfig(config) {
+    const names = Object.values(DerpPair.state?.devices ?? {}).map(d => d.name);
+    if (!DerpPair.paired) {
+      config.l10nId = "derp-devices-none";
+    } else if (!names.length) {
+      config.l10nId = "derp-devices-alone-card";
+    } else {
+      config.l10nId = "derp-devices-some";
+      config.l10nArgs = { names: new Intl.ListFormat(undefined, { type: "conjunction" }).format(names) };
+    }
+    return config;
+  },
+});
+Preferences.addSetting({
+  id: "derpDevicesOpen",
+  onUserClick: () => DerpPair.open(window.browsingContext.topChromeWindow, { pair: !DerpPair.paired }),
+});
+
 SettingGroupManager.registerGroups({
   derpDork: {
     l10nId: "derp-dork-group",
@@ -92,6 +119,21 @@ SettingGroupManager.registerGroups({
             controlAttrs: { layout: "large-icon" },
           },
           { id: "derpDorkEdit", control: "moz-box-button", l10nId: "derp-dork-edit" },
+        ],
+      },
+    ],
+  },
+  derpDevices: {
+    l10nId: "derp-devices-group",
+    headingLevel: 2,
+    iconSrc: "chrome://browser/skin/device-phone.svg",
+    items: [
+      {
+        id: "derpDevicesBox",
+        control: "moz-box-group",
+        items: [
+          { id: "derpDevicesCard", control: "moz-box-item", l10nId: "derp-devices-none" },
+          { id: "derpDevicesOpen", control: "moz-box-button", l10nId: "derp-devices-open" },
         ],
       },
     ],

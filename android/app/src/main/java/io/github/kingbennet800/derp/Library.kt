@@ -46,6 +46,19 @@ class Library(context: Context) : SQLiteOpenHelper(context, "derp.db", null, 1) 
         writableDatabase.delete("bookmarks", "url = ?", arrayOf(url))
     }
 
+    /** Every bookmark, address to title (for syncing with your other devices). */
+    fun allBookmarks(): Map<String, String> {
+        val all = LinkedHashMap<String, String>()
+        readableDatabase.rawQuery("SELECT url, title FROM bookmarks ORDER BY added", null).use { c ->
+            while (c.moveToNext()) all[c.getString(0)] = c.getString(1).orEmpty()
+        }
+        return all
+    }
+
+    fun retitle(url: String, title: String) {
+        writableDatabase.update("bookmarks", ContentValues().apply { put("title", title) }, "url = ?", arrayOf(url))
+    }
+
     /** Newest first, optionally only those matching [query]. */
     fun bookmarks(query: String = "", limit: Int = 500): JSONArray {
         val items = JSONArray()

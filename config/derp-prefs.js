@@ -70,6 +70,9 @@ pref("derp.fun.power", false); // Power typing: sparks from the address bar
 pref("derp.fun.hiccups", false); // Hiccups: now and then a page hops ("hic!")
 pref("derp.fun.ghosts", false); // Tab ghosts: closed tabs drift away as ghosts
 pref("derp.fun.rainbow", false); // Rainbow mode: a rainbow loading bar
+
+// Your devices: the relay paired Derps pass their encrypted snapshots through.
+pref("derp.pair.relay", "https://bennettholland.com/derp-relay.php");
 pref("browser.taskbarTabs.enabled", true); // web apps: install sites as apps
 pref("image.jxl.enabled", true); // JPEG XL images
 

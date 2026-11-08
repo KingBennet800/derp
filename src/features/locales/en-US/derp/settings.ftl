@@ -88,3 +88,19 @@ derp-ghosts =
 derp-rainbow =
     .label = Rainbow mode
     .description = The loading bar is a rainbow.
+
+derp-devices-group =
+    .label = Your devices
+    .description = Bookmarks, passwords and open tabs, shared between your computer and your phone. End-to-end encrypted, still no account.
+derp-devices-none =
+    .label = Not paired yet
+    .description = Pair Derp on your phone to share with it.
+derp-devices-alone-card =
+    .label = Waiting for your phone
+    .description = Scan the pairing code with your phone’s camera.
+# $names: the paired devices, like "Derp on a Pixel 8"
+derp-devices-some =
+    .label = Paired
+    .description = With { $names }
+derp-devices-open =
+    .label = Your devices

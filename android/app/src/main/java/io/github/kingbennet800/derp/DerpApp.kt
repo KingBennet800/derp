@@ -64,6 +64,7 @@ class DerpApp : Application() {
     val logins by lazy { Logins(this) }
     val browser by lazy { Browser(this) }
     val blocker by lazy { Blocker(this) }
+    val pairing by lazy { Pairing(this) }
 
     /** Android is short of memory: Memory Saver puts every tab but the one
      * you're on to sleep (a Derp in the background is the first to go). */

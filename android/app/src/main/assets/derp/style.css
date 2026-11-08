@@ -351,3 +351,10 @@ a.lib-main:active { background: var(--hover); }
 .reader article figure { margin: 1.25em 0; }
 .reader article figcaption { margin-top: 6px; color: var(--dim); font-size: 0.9rem; }
 .reader .reader-empty { margin-top: 30vh; color: var(--dim); text-align: center; }
+
+/* ── Your devices ──────────────────────────────────────────────────────── */
+
+.dev-steps { margin: 0 4px 14px; padding-inline-start: 1.3em; line-height: 1.6; }
+.dev-card { margin: 0 0 12px; padding: 12px 8px 6px; border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+.dev-card h2 { margin: 0 8px; font-size: 1.05rem; }
+.dev-card > .lib-sub { margin: 2px 8px 6px; }

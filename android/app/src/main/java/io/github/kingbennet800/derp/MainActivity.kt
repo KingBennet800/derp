@@ -133,6 +133,7 @@ class MainActivity : Activity() {
         Updater.check(this, manual = false)
         root.removeCallbacks(sweep)
         root.postDelayed(sweep, SWEEP)
+        app.pairing.resumed()
     }
 
     /** Memory Saver looks over your tabs every few minutes while Derp is on screen. */
@@ -152,6 +153,7 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         root.removeCallbacks(sweep)
+        app.pairing.paused()
         browser.save()
         super.onPause()
     }
@@ -1059,6 +1061,7 @@ class MainActivity : Activity() {
         item("History") { browser.openPage("history.html") }
         item("Passwords") { browser.openPage("passwords.html") }
         item("Import data") { browser.openPage("import.html") }
+        item("Your devices", if (app.pairing.paired) "Paired" else null) { browser.openPage("devices.html") }
         divider()
         item("Search engine", browser.engine.label) { pickEngine() }
         item("Ad blocker", blockerState()) { adBlocker() }
@@ -1264,6 +1267,31 @@ class MainActivity : Activity() {
             if (on) "Memory Saver on: tabs you haven't looked at for half an hour fall asleep" else "Memory Saver off",
             Toast.LENGTH_LONG,
         ).show()
+    }
+
+    // ── Your devices ───────────────────────────────────────────────────────
+
+    /** A pairing code's link: pair with the computer that showed it, once you say so. */
+    fun confirmPair(link: String) {
+        if (Pairing.parse(link) == null) {
+            Toast.makeText(this, "That pairing code didn't work. Make a new one on your computer.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val already = if (app.pairing.paired) "\n\nDerp on this phone is paired already; it'll leave that pair for this one." else ""
+        AlertDialog.Builder(this)
+            .setTitle("Pair with your computer?")
+            .setMessage(
+                "Your bookmarks, passwords and open tabs will be shared between Derp here and on your computer, " +
+                    "end-to-end encrypted. Derp's relay passes them along without being able to read them.$already",
+            )
+            .setPositiveButton("Pair") { _, _ ->
+                app.pairing.join(link) { message ->
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                    browser.openPage("devices.html")
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun pickEngine() {

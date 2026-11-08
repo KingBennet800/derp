@@ -7,8 +7,9 @@ It fills site/page.html with Derp's logo and wordmark, the version, real
 screenshots from site/screenshots/, the dork drawing code from
 src/features/DerpDork.sys.mjs and the duck from src/features/DerpDuck.sys.mjs,
 so dorks and the duck on the site look exactly like the ones in the browser.
-It also builds Doodle's home page into _site/doodle/ (site/doodle.html). The
-Pages workflow runs this and publishes _site/.
+It also builds Doodle's home page into _site/doodle/ (site/doodle.html) and
+the page pairing codes open, _site/pair/ (site/pair.html). The Pages workflow
+runs this and publishes _site/.
 """
 import base64
 import pathlib
@@ -144,6 +145,21 @@ def build_doodle():
     print(f"built {out / 'index.html'} ({len(page.encode()) // 1024} KB)")
 
 
+def build_pair():
+    """The page pairing codes' links open (_site/pair/): on a phone without
+    Derp as its browser, it hands the code to Derp; it never sends it anywhere."""
+    page = read("site/pair.html")
+    for key, value in {"{{LOGO}}": svg_data_uri(read("brand/derp.svg")), "{{PAGES}}": PAGES}.items():
+        if key not in page:
+            sys.exit(f"build.py: {key} isn't used in pair.html")
+        page = page.replace(key, value)
+    out = OUT / "pair"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "index.html").write_text(page, encoding="utf-8")
+    print(f"built {out / 'index.html'} ({len(page.encode()) // 1024} KB)")
+
+
 if __name__ == "__main__":
     build()
     build_doodle()
+    build_pair()

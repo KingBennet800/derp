@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair with Derp</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="{{LOGO}}">
+<style>
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #18181b;
+  --dim: #5f6068;
+  --line: #dedee3;
+  --accent: #2f6feb;
+  --accent-text: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131314;
+    --surface: #1d1d1f;
+    --text: #f2f2f3;
+    --dim: #a1a1aa;
+    --line: #333336;
+    --accent: #86b1ff;
+    --accent-text: #0f1115;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131314;
+  --surface: #1d1d1f;
+  --text: #f2f2f3;
+  --dim: #a1a1aa;
+  --line: #333336;
+  --accent: #86b1ff;
+  --accent-text: #0f1115;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100svh; background: var(--bg); }
+body {
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: min(420px, 100%);
+  padding: 28px 22px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  text-align: center;
+}
+img { width: 72px; height: 72px; }
+h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+p { margin: 0; color: var(--dim); }
+.button {
+  display: inline-block;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.small { font-size: 0.9rem; }
+a { color: var(--accent); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <img src="{{LOGO}}" alt="">
+  <h1>Pair with Derp</h1>
+  <div id="phone" hidden>
+    <p>This is a pairing code from Derp on your computer. Open it in Derp on this phone, and tap <b>Pair</b>.</p>
+    <p style="margin-top:16px"><a class="button" id="open" href="#">Open in Derp</a></p>
+    <p class="small" style="margin-top:16px">No Derp yet? <a href="{{PAGES}}/#install">Get Derp for Android</a>, then scan the code again.</p>
+  </div>
+  <div id="computer" hidden>
+    <p>This is a pairing code for Derp on your phone. Point your phone’s camera at the code on your computer’s screen instead.</p>
+  </div>
+  <div id="none" hidden>
+    <p>Pair Derp on your phone with Derp on your computer: on the computer, open Derp’s Settings, then You and your dork, and choose <b>Pair a phone</b>.</p>
+  </div>
+  <p class="small">The code stays on your devices. This page doesn’t send it anywhere.</p>
+</main>
+<script>
+"use strict";
+// The secret is in the address's #part, which never leaves the phone. Take it
+// out of the address bar and history, and hand it to Derp.
+const code = location.hash.slice(1);
+const show = id => (document.getElementById(id).hidden = false);
+if (!/^[A-Za-z0-9_-]{43}(~[A-Za-z0-9%._-]+)?$/.test(code)) {
+  show("none");
+} else {
+  history.replaceState(null, "", location.pathname);
+  if (/Android/i.test(navigator.userAgent)) {
+    const back = encodeURIComponent("{{PAGES}}/#install");
+    document.getElementById("open").href =
+      `intent://kingbennet800.github.io/derp/pair/#${code}#Intent;scheme=https;package=io.github.kingbennet800.derp;S.browser_fallback_url=${back};end`;
+    show("phone");
+  } else {
+    show("computer");
+  }
+}
+</script>
+</body>
+</html>

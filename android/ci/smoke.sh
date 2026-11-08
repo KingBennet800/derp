@@ -2,7 +2,8 @@
 # Smoke-test Derp for Android on an emulator: install, start, check it shows
 # the welcome dork editor, open a link, bookmark it, check history, save a
 # password and get it offered back, the just-for-fun gags, the ad blocker,
-# find in page, Reader view, Add to home screen, Memory Saver, dark mode;
+# find in page, Reader view, Add to home screen, Memory Saver, pairing with a
+# computer (tests/pairing.py standing in for it, through a test relay), dark mode;
 # screenshots and logcat go to $2. Fails if Derp crashes or isn't running.
 set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
@@ -257,6 +258,51 @@ sleep 5
 logged "Memory Saver: a tab woke up" "The sleeping tab didn't wake up"
 alive "Memory Saver"
 
+# Your devices: a computer shows a pairing code; its link opens in Derp, which
+# asks, pairs, and swaps bookmarks, passwords and tabs with it.
+pairing="$(dirname "$0")/../../tests/pairing.py"
+python3 "$pairing" relay --port 8124 >"$out/relay.log" 2>&1 &
+relay=$!
+trap 'kill $server $relay 2>/dev/null || true' EXIT
+adb reverse tcp:8124 tcp:8124
+sleep 1
+link=$(python3 "$pairing" new --relay http://localhost:8124/)
+desk=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+now=$(($(date +%s) * 1000))
+cat >"$out/desk.json" <<JSON
+{"tabs": [{"url": "https://example.com/on-the-computer", "title": "Open on the computer"}],
+ "bookmarks": {"https://example.org/from-the-computer": {"title": "From the computer", "at": $now, "gone": false}},
+ "logins": {"https://desk.example\n\ndeskuser": {"origin": "https://desk.example", "realm": "", "form": "", "username": "deskuser", "password": "deskpass1", "at": $now, "gone": false}}}
+JSON
+python3 "$pairing" push "$link" --device $desk --name "Derp on a CI box" --snapshot "$out/desk.json" >/dev/null
+adb shell "am start -W -a android.intent.action.VIEW -d '$link' $pkg" >/dev/null
+sleep 3
+shot 10-pair 0
+tap_text Pair || { ui >"$out/ui-no-pair.xml"; echo "Derp didn't ask to pair"; exit 1; }
+for _ in $(seq 1 20); do
+  adb logcat -d | grep -q "Your devices: paired" && break
+  sleep 1
+done
+logged "Your devices: paired with Derp on a CI box" "Derp didn't pair with the computer"
+shot 11-devices 3
+alive "pairing"
+python3 "$pairing" pull "$link" >"$out/pulled.json"
+python3 - "$out/pulled.json" $desk <<'CHECK'
+import json, sys
+slots = json.load(open(sys.argv[1]))
+phones = [s for d, s in slots.items() if d != sys.argv[2]]
+assert len(phones) == 1, f"no phone on the relay: {list(slots)}"
+phone = phones[0]
+assert phone["kind"] == "phone", phone["kind"]
+assert "https://example.com/" in phone["bookmarks"], "the phone's bookmark didn't reach the computer"
+assert "https://example.org/from-the-computer" in phone["bookmarks"], "the phone didn't take the computer's bookmark"
+logins = list(phone["logins"].values())
+assert any(l["username"] == "tester" and l["password"] == "hunter2hunter2" for l in logins), "the phone's password didn't reach the computer"
+assert any(l["username"] == "deskuser" and l["password"] == "deskpass1" for l in logins), "the phone didn't take the computer's password"
+assert phone["tabs"], "the phone sent no tabs"
+print(f"Paired: {phone['name']} sent {len(phone['bookmarks'])} bookmarks, {len(logins)} passwords, {len(phone['tabs'])} tabs")
+CHECK
+
 # The tabs view and the menu.
 tap Tabs
 shot 3b-tabs 3
@@ -287,4 +333,4 @@ if grep -E "FATAL EXCEPTION|E AndroidRuntime" "$out/logcat.txt" | grep -q .; the
   grep -A 20 "FATAL EXCEPTION" "$out/logcat.txt" | head -60
   exit 1
 fi
-echo "Derp ran: first start, a link, bookmarks, history, a saved password, the gags, the ad blocker, find in page, Reader view, Add to home screen, Memory Saver, dark mode."
+echo "Derp ran: first start, a link, bookmarks, history, a saved password, the gags, the ad blocker, find in page, Reader view, Add to home screen, Memory Saver, pairing, dark mode."

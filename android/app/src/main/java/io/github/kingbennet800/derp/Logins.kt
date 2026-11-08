@@ -41,6 +41,7 @@ class Logins(private val app: DerpApp) : Autocomplete.StorageDelegate {
 
     override fun onLoginSave(login: Autocomplete.LoginEntry) {
         save(login.guid, login.origin, login.formActionOrigin, login.httpRealm, login.username, login.password)
+        app.pairing.changed()
     }
 
     override fun onLoginUsed(login: Autocomplete.LoginEntry, usedFields: Int) {
@@ -84,6 +85,29 @@ class Logins(private val app: DerpApp) : Autocomplete.StorageDelegate {
     }
 
     fun count(): Long = app.library.count("logins")
+
+    // ── For syncing with your other devices ────────────────────────────────
+
+    class Synced(val origin: String, val realm: String, val form: String, val username: String, val password: String)
+
+    /** Every saved password, decrypted (those that can be). */
+    fun all(): List<Synced> = rows().mapNotNull { row ->
+        runCatching { Synced(row.origin, row.realm.orEmpty(), row.formAction.orEmpty(), row.username, Vault.open(row.sealed)) }.getOrNull()
+    }
+
+    /** Saves a password from another device (new, or a changed one). */
+    fun put(login: Synced) {
+        val existing = rows("origin = ? AND username = ?", arrayOf(login.origin, login.username))
+            .firstOrNull { it.realm.orEmpty() == login.realm }
+        save(existing?.guid, login.origin, login.form.ifEmpty { null }, login.realm.ifEmpty { null }, login.username, login.password)
+    }
+
+    /** Removes a password another device deleted. */
+    fun delete(origin: String, realm: String, username: String) {
+        rows("origin = ? AND username = ?", arrayOf(origin, username))
+            .filter { it.realm.orEmpty() == realm }
+            .forEach { remove(it.guid) }
+    }
 
     // ──────────────────────────────────────────────────────────────────────
 

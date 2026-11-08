@@ -10,6 +10,8 @@
  *   (DerpDork.sys.mjs).
  * - Doodle: Derp's search (the default, by policy in config/policies.json),
  *   DuckDuckGo's results in Derp's colors, dark while Derp is dark.
+ * - Your devices: pair with Derp on your phone to share bookmarks, passwords
+ *   and open tabs, end-to-end encrypted (DerpPair.sys.mjs).
  * - Just for fun (all off by default): Duck mode, where now and then a duck
  *   eats what you typed in the address bar (DerpDuck.sys.mjs), and Snail
  *   mode, Peekaboo, Party mode, Sleepy tabs, Power typing, Hiccups, Tab ghosts
@@ -48,7 +50,7 @@ export const DerpFeatures = {
   init() {
     const onStartup = () => {
       Services.obs.removeObserver(onStartup, "final-ui-startup");
-      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, Doodle, SettingsSection, Layout]) {
+      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, Doodle, Pair, SettingsSection, Layout]) {
         try {
           feature.init();
         } catch (e) {
@@ -116,6 +118,14 @@ const Doodle = {
   dark() {
     const appearance = Services.prefs.getIntPref("layout.css.prefers-color-scheme.content-override", 2);
     return appearance === 2 ? Services.appinfo.contentThemeDerivedColorSchemeIsDark : appearance === 0;
+  },
+};
+
+const Pair = {
+  init() {
+    const { DerpPair } = ChromeUtils.importESModule(derpURL("DerpPair.sys.mjs"));
+    const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
+    DerpPair.init({ cssURL: derpURL("pair.css"), dork: DerpDork });
   },
 };
 
@@ -229,6 +239,7 @@ const SettingsSection = {
       settings: derpURL("DerpSettings.mjs"),
       dork: derpURL("DerpDork.sys.mjs"),
       duck: derpURL("DerpDuck.sys.mjs"),
+      pair: derpURL("DerpPair.sys.mjs"),
     };
     Services.scriptloader.loadSubScriptWithOptions(derpURL("derp-settings.js"), {
       target: win,

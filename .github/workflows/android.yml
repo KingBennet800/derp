@@ -11,6 +11,7 @@ on:
       - src/features/DerpDork.sys.mjs
       - src/features/DerpFeatures.sys.mjs
       - config/policies.json
+      - tests/pairing.py
       - site/build.py
       - brand/**
       - VERSION
@@ -21,6 +22,7 @@ on:
       - src/features/DerpDork.sys.mjs
       - src/features/DerpFeatures.sys.mjs
       - config/policies.json
+      - tests/pairing.py
       - brand/**
       - .github/workflows/android.yml
   workflow_dispatch:
@@ -110,6 +112,9 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # The smoke test pairs with a stand-in computer (tests/pairing.py).
+      - name: Pairing test's crypto
+        run: python3 -m pip install --user --quiet cryptography
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34

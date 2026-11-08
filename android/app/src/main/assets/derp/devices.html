@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your devices</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="library">
+  <header class="lib-head">
+    <h1>Your devices</h1>
+    <p class="lib-lede" id="lede"></p>
+  </header>
+  <section id="unpaired" hidden>
+    <ol class="dev-steps">
+      <li>On your computer, open Derp’s <b>Settings</b>, then <b>You and your dork</b>.</li>
+      <li>Under <b>Your devices</b>, choose <b>Pair a phone</b>.</li>
+      <li>Point this phone’s camera at the code, and open the link in Derp.</li>
+    </ol>
+    <p class="lib-lede">Your bookmarks, passwords and open tabs are encrypted on your devices, with a key only they have. Derp’s relay passes them along without being able to read them, and there’s still no account.</p>
+  </section>
+  <div id="devices"></div>
+  <p class="lib-empty" id="problem" hidden></p>
+  <div class="lib-actions" id="actions" hidden>
+    <button class="lib-btn primary" type="button" id="sync">Sync now</button>
+    <button class="lib-btn danger" type="button" id="leave">Stop syncing</button>
+  </div>
+  <script src="pages.js"></script>
+  <script src="devices.js"></script>
+</body>
+</html>

@@ -281,8 +281,10 @@ sleep 3
 logged "Memory Saver: a tab fell asleep" "Memory Saver didn't put tabs to sleep"
 tap Tabs
 shot 3-tabs 3
-ui | grep -q "💤" || { echo "Sleeping tabs don't snore"; exit 1; }
-tap_has "Example Domain" || { echo "Can't find the example.com tab"; exit 1; }
+# (The UI dump may write the emoji as a character reference, or as a pair of them.)
+ui >"$out/ui-tabs.xml" || true
+grep -qE '💤|&#128164;|&#x1[Ff]4[Aa]4;|&#55357;&#56484;' "$out/ui-tabs.xml" || { echo "Sleeping tabs don't snore"; exit 1; }
+tap_has "Signed in" || { echo "Can't find a sleeping tab to wake"; exit 1; }
 sleep 5
 logged "Memory Saver: a tab woke up" "The sleeping tab didn't wake up"
 alive "Memory Saver"

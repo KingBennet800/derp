@@ -10,6 +10,7 @@ import "chrome://browser/content/preferences/config/account-sync.mjs";
 const { DerpDork } = ChromeUtils.importESModule(window.derpURLs.dork);
 const { DerpDuck, DUCK_URL } = ChromeUtils.importESModule(window.derpURLs.duck);
 const { DerpPair } = ChromeUtils.importESModule(window.derpURLs.pair);
+const { DerpUpdates } = ChromeUtils.importESModule(window.derpURLs.updates);
 
 const UNLOAD_AFTER_MINUTES = [15, 30, 60, 120, 240];
 
@@ -99,7 +100,41 @@ Preferences.addSetting({
 });
 Preferences.addSetting({
   id: "derpDevicesOpen",
-  onUserClick: () => DerpPair.open(window.browsingContext.topChromeWindow, { pair: !DerpPair.paired }),
+  onUserClick: () => DerpPair.open(window.browsingContext.topChromeWindow),
+});
+
+// Updates: Derp's and the engine's versions, and checking for updates now.
+const UPDATE_STATES = {
+  idle: "derp-updates-idle",
+  checking: "derp-updates-checking",
+  current: "derp-updates-current",
+  updated: "derp-updates-updated",
+  engine: "derp-updates-engine",
+  busy: "derp-updates-busy",
+  failed: "derp-updates-failed",
+};
+const watchUpdates = emitChange => {
+  Services.obs.addObserver(emitChange, "derp-updates-changed");
+  return () => Services.obs.removeObserver(emitChange, "derp-updates-changed");
+};
+Preferences.addSetting({ id: "derpUpdatesBox" });
+Preferences.addSetting({
+  id: "derpUpdatesCard",
+  setup(emitChange) {
+    DerpUpdates.load();
+    return watchUpdates(emitChange);
+  },
+  getControlConfig(config) {
+    config.l10nId = UPDATE_STATES[DerpUpdates.state] ?? UPDATE_STATES.idle;
+    config.l10nArgs = { version: DerpUpdates.installed || "?", engine: Services.appinfo.version, new: DerpUpdates.newVersion };
+    return config;
+  },
+});
+Preferences.addSetting({
+  id: "derpUpdatesCheck",
+  setup: watchUpdates,
+  disabled: () => DerpUpdates.state === "checking",
+  onUserClick: () => DerpUpdates.check(),
 });
 
 SettingGroupManager.registerGroups({
@@ -119,6 +154,21 @@ SettingGroupManager.registerGroups({
             controlAttrs: { layout: "large-icon" },
           },
           { id: "derpDorkEdit", control: "moz-box-button", l10nId: "derp-dork-edit" },
+        ],
+      },
+    ],
+  },
+  derpUpdates: {
+    l10nId: "derp-updates-group",
+    headingLevel: 2,
+    iconSrc: "chrome://global/skin/icons/update-icon.svg",
+    items: [
+      {
+        id: "derpUpdatesBox",
+        control: "moz-box-group",
+        items: [
+          { id: "derpUpdatesCard", control: "moz-box-item", l10nId: "derp-updates-idle" },
+          { id: "derpUpdatesCheck", control: "moz-box-button", l10nId: "derp-updates-check" },
         ],
       },
     ],

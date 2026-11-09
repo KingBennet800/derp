@@ -65,8 +65,9 @@ Derp keeps itself current, both Derp and its engine:
 Checks run at most every 6 hours: when you open Derp on Linux, from a login
 agent on macOS, and from the "Derp Update" scheduled task on Windows. Firefox's
 own updater is off because it would install stock, Firefox-branded files. To
-check right away run `lib/derp-update` (Linux, macOS) or `lib\derp-update.ps1`
-(Windows) from Derp's files folder.
+check right away, use **Settings → Derp → Updates → Check for updates**, which
+runs the same updater and says how it went (or run `lib/derp-update` on Linux
+and macOS, `lib\derp-update.ps1` on Windows, from Derp's files folder).
 
 ## Uninstall
 

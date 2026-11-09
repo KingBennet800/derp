@@ -52,7 +52,7 @@
   SettingPaneManager.registerPane("derp", {
     l10nId: "derp-pane-header",
     iconSrc: "chrome://branding/content/about-logo.svg",
-    groupIds: ["derpMemorySaver", "derpWebApps", "derpImages", "derpAi", "derpFun"],
+    groupIds: ["derpUpdates", "derpMemorySaver", "derpWebApps", "derpImages", "derpAi", "derpFun"],
     module: window.derpURLs.settings,
     visible: () => true,
   });

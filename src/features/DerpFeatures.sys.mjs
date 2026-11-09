@@ -17,7 +17,8 @@
  *   eats what you typed in the address bar (DerpDuck.sys.mjs), and Snail
  *   mode, Peekaboo, Party mode, Sleepy tabs, Power typing, Hiccups, Tab ghosts
  *   and Rainbow mode (DerpFun.sys.mjs).
- * - A "Derp" page in Settings for these, JPEG XL and AI controls.
+ * - A "Derp" page in Settings for these, JPEG XL and AI controls, and
+ *   checking for updates now (DerpUpdates.sys.mjs).
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
  * Mozilla's account and online services are off by policy (config/). */
 
@@ -263,6 +264,7 @@ const SettingsSection = {
       dork: derpURL("DerpDork.sys.mjs"),
       duck: derpURL("DerpDuck.sys.mjs"),
       pair: derpURL("DerpPair.sys.mjs"),
+      updates: derpURL("DerpUpdates.sys.mjs"),
     };
     Services.scriptloader.loadSubScriptWithOptions(derpURL("derp-settings.js"), {
       target: win,

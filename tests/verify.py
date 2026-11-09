@@ -46,6 +46,7 @@ def main():
     check(all((HOME / "features" / f).exists() for f in duck), "duck mode installed")
     fun = ("DerpFun.sys.mjs", "fun.css", "locales/en-US/derp/fun.ftl")
     check(all((HOME / "features" / f).exists() for f in fun), "just-for-fun settings installed")
+    check((HOME / "features/DerpUpdates.sys.mjs").exists(), "Check for updates installed")
     look = ("manifest.json", "doodle-page.js", "doodle-page.css")
     check(all((HOME / "features/doodle-look" / f).exists() for f in look), "Doodle's look installed")
     pair = ("DerpPair.sys.mjs", "pair.css", "locales/en-US/derp/pair.ftl")

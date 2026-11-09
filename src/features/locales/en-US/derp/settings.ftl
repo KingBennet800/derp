@@ -104,3 +104,32 @@ derp-devices-some =
     .description = With { $names }
 derp-devices-open =
     .label = Your devices
+
+derp-updates-group =
+    .label = Updates
+    .description = Derp and its Firefox engine update themselves every few hours, checked against their signatures. A new engine is used the next time you open Derp.
+derp-updates-check =
+    .label = Check for updates
+# $version: Derp’s version, like 2.0.0. $engine: the Firefox engine’s, like 159.0.1.
+derp-updates-idle =
+    .label = Derp { $version }
+    .description = Firefox engine { $engine }
+derp-updates-checking =
+    .label = Checking for updates…
+    .description = Derp { $version }, Firefox engine { $engine }
+derp-updates-current =
+    .label = Derp is up to date
+    .description = Derp { $version }, Firefox engine { $engine }
+# $new: the version of Derp just installed
+derp-updates-updated =
+    .label = Derp { $new } is installed
+    .description = Restart Derp to use it.
+derp-updates-engine =
+    .label = A new Firefox engine is ready
+    .description = It’s used the next time you open Derp.
+derp-updates-busy =
+    .label = Derp is already checking for updates
+    .description = Try again in a minute.
+derp-updates-failed =
+    .label = Couldn’t check for updates
+    .description = Derp tries again on its own every few hours. Details are in update.log, in Derp’s folder.

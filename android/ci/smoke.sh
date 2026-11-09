@@ -17,8 +17,8 @@ ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell ca
 # can fail while something animates. Nothing (and false) if it isn't there,
 # with the last dump, a screenshot and logcat kept to see why.
 find_view() {
-  local dump='' bounds=''
-  for _ in 1 2 3; do
+  local dump='' bounds='' tries=${2:-3}
+  for ((try = 1; try <= tries; try++)); do
     dump=$(ui || true)
     bounds=$(grep -o "$1[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" <<<"$dump" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]' || true)
     [[ $bounds ]] && break
@@ -38,6 +38,20 @@ tap() {
   local at
   at=$(find_view "content-desc=\"$1\"") || { echo "Can't find '$1' to tap (see ui-missing.xml, missing.png)"; exit 1; }
   adb shell input tap $at
+}
+# Tap an item in the open menu, scrolling the menu down to it if need be.
+pick() {
+  local at
+  for _ in 1 2 3 4; do
+    if at=$(find_view "content-desc=\"$1\"" 1); then
+      adb shell input tap $at
+      return
+    fi
+    adb shell input swipe $((w / 2)) $((h * 70 / 100)) $((w / 2)) $((h * 30 / 100)) 300
+    sleep 1
+  done
+  echo "Can't find '$1' in the menu (see ui-missing.xml, missing.png)"
+  exit 1
 }
 # Tap the view whose text contains this.
 tap_has() {
@@ -63,6 +77,7 @@ adb shell settings put global animator_duration_scale 0
 adb shell cmd uimode night no
 adb install -r "$apk"
 adb logcat -c
+read -r w h < <(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -n1 | tr x ' ')
 
 # First start: Derp opens with the welcome dork editor.
 adb shell am start -W -n "$pkg/.MainActivity"
@@ -81,17 +96,17 @@ alive "opening a link"
 # Bookmarks and history: star the page from the menu, then open both pages.
 tap Menu
 sleep 1
-tap "Bookmark this page"
+pick "Bookmark this page"
 sleep 2
 tap Menu
 sleep 1
-tap Bookmarks
+pick Bookmarks
 shot 2b-bookmarks 6
 alive "the bookmarks page"
 logged "bookmarks.list -> 1" "The bookmark isn't on the Bookmarks page"
 tap Menu
 sleep 1
-tap History
+pick History
 shot 2c-history 6
 alive "the history page"
 logged "history.list -> [1-9]" "Nothing in the history"
@@ -128,7 +143,6 @@ trap 'kill $server 2>/dev/null || true' EXIT
 adb reverse tcp:8123 tcp:8123
 adb shell am start -W -a android.intent.action.VIEW -d http://localhost:8123/ "$pkg"
 sleep 10
-read -r w h < <(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -n1 | tr x ' ')
 # The username field fills the top quarter of the page.
 adb shell input tap $((w / 2)) $((h * 17 / 100))
 sleep 1
@@ -166,7 +180,7 @@ gag() {
 }
 tap Menu
 sleep 1
-tap "Just for fun"
+pick "Just for fun"
 sleep 1
 for name in "Snail mode" "Peekaboo" "Party mode" "Sleepy tabs" "Power typing" "Hiccups" "Tab ghosts" "Rainbow mode"; do
   gag "$name"
@@ -177,7 +191,7 @@ tap_text Done || { echo "No Done button on Just for fun"; exit 1; }
 sleep 1
 tap Menu
 sleep 1
-tap "Bookmark this page"
+pick "Bookmark this page"
 shot 2g-confetti 0.4
 logged "Confetti!" "No confetti for a bookmark"
 for i in 1 2 3; do
@@ -230,7 +244,7 @@ sleep 8
 logged "Reader view: this page reads well" "Derp didn't notice the article"
 tap Menu
 sleep 1
-tap "Find in page"
+pick "Find in page"
 sleep 1
 adb shell input text quack
 sleep 2
@@ -243,7 +257,7 @@ tap "Close find in page"
 sleep 1
 tap Menu
 sleep 1
-tap "Reader view"
+pick "Reader view"
 shot 8-reader 6
 logged "page asks: reader.get" "Reader view didn't open"
 alive "find in page and Reader view"
@@ -253,7 +267,7 @@ sleep 3
 # Add to home screen asks the launcher to pin the page.
 tap Menu
 sleep 1
-tap "Add to home screen"
+pick "Add to home screen"
 shot 9-home-screen 4
 logged "Add to home screen: asked to pin localhost" "Add to home screen didn't ask the launcher"
 adb shell input keyevent KEYCODE_BACK

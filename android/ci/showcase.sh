@@ -22,11 +22,14 @@ calm() {
   fi
 }
 ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml; }
-# Tap a native view by its exact accessibility label or text.
+# Tap a native view by its exact accessibility label or text; with "scroll",
+# scroll (the menu) to find it if need be.
 tap() {
-  local x='' y=''
-  ui >"$out/.ui.xml"
-  read -r x y < <(python3 - "$1" "$out/.ui.xml" <<'PY'
+  local x='' y='' w h tries=1
+  [[ ${2:-} == scroll ]] && tries=4
+  for ((try = 1; try <= tries; try++)); do
+    ui >"$out/.ui.xml" || true
+    read -r x y < <(python3 - "$1" "$out/.ui.xml" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
 label, dump = sys.argv[1], sys.argv[2]
 for node in ET.parse(dump).getroot().iter("node"):
@@ -35,7 +38,12 @@ for node in ET.parse(dump).getroot().iter("node"):
         print((x1 + x2) // 2, (y1 + y2) // 2)
         break
 PY
-  ) || true
+    ) || true
+    [[ $x || $try == "$tries" ]] && break
+    read -r w h < <(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -n1 | tr x ' ')
+    adb shell input swipe $((w / 2)) $((h * 70 / 100)) $((w / 2)) $((h * 30 / 100)) 300
+    sleep 1
+  done
   [[ $x ]] || { echo "Can't find '$1' to tap"; return 1; }
   adb shell input tap "$x" "$y"
 }
@@ -77,7 +85,7 @@ shot newtab 8
 adb shell settings put global animator_duration_scale 1
 tap Menu
 sleep 1
-tap "Just for fun"
+tap "Just for fun" scroll
 sleep 1
 tap "Duck mode"
 sleep 1

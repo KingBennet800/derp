@@ -12,6 +12,7 @@ on:
       - src/features/DerpFeatures.sys.mjs
       - config/policies.json
       - tests/pairing.py
+      - src/features/doodle-look/**
       - site/build.py
       - brand/**
       - VERSION
@@ -23,6 +24,7 @@ on:
       - src/features/DerpFeatures.sys.mjs
       - config/policies.json
       - tests/pairing.py
+      - src/features/doodle-look/**
       - brand/**
       - .github/workflows/android.yml
   workflow_dispatch:

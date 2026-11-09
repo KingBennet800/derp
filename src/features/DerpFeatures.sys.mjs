@@ -9,7 +9,8 @@
  * - Your dork: Derp's own account, an avatar you design, kept on this device
  *   (DerpDork.sys.mjs).
  * - Doodle: Derp's search (the default, by policy in config/policies.json),
- *   DuckDuckGo's results in Derp's colors, dark while Derp is dark.
+ *   DuckDuckGo's results in Doodle's look (doodle-look/), dark while Derp
+ *   is dark.
  * - Your devices: pair with Derp on your phone to share bookmarks, passwords
  *   and open tabs, end-to-end encrypted (DerpPair.sys.mjs).
  * - Just for fun (all off by default): Duck mode, where now and then a duck
@@ -94,12 +95,34 @@ const Fun = {
 
 // Doodle's search address carries DuckDuckGo's settings for Derp's light
 // colors (DuckDuckGo stays light unless asked). While websites are shown dark,
-// Doodle's searches swap them for its dark theme in Derp's dark colors.
+// Doodle's searches swap them for its dark theme in Derp's dark colors. Those
+// settings also mark the page as Doodle's, which gets Doodle's look.
 const Doodle = {
   LIGHT: "k9=2f6feb&kaa=7a52c7&kx=0f8a74",
   DARK: "kae=d&k9=86b1ff&kaa=a98bf0&kx=34c6a0",
   init() {
     Services.obs.addObserver(this, "http-on-modify-request");
+    this.installLook().catch(e => console.error("Doodle's look didn't install:", e));
+  },
+  // Doodle's look on its result pages is a tiny built-in extension
+  // (doodle-look/): web pages' processes can't read Derp's files, but an
+  // extension's content script reaches them. It's installed again whenever
+  // its files change, and allowed in private windows too.
+  LOOK: "doodle-look@kingbennet800.github.io",
+  LOOK_PREF: "derp.doodle.lookInstalled",
+  async installLook() {
+    const { AddonManager } = ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs");
+    const { ExtensionPermissions } = ChromeUtils.importESModule("resource://gre/modules/ExtensionPermissions.sys.mjs");
+    const base = "resource://derp/doodle-look/";
+    const stamp = ["manifest.json", "doodle-page.js", "doodle-page.css"].map(f => derpURL(`doodle-look/${f}`).split("?v=")[1]).join(".");
+    const { version } = await (await fetch(base + "manifest.json")).json();
+    if (Services.prefs.getStringPref(this.LOOK_PREF, "") !== stamp) {
+      await AddonManager.installBuiltinAddon(base);
+      Services.prefs.setStringPref(this.LOOK_PREF, stamp);
+    } else {
+      await AddonManager.maybeInstallBuiltinAddon(this.LOOK, version, base);
+    }
+    await ExtensionPermissions.add(this.LOOK, { permissions: ["internal:privateBrowsingAllowed"], origins: [] });
   },
   observe(subject) {
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);

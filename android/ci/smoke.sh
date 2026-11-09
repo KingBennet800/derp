@@ -12,29 +12,44 @@ mkdir -p "$out"
 shot() { sleep "$2"; adb exec-out screencap -p >"$out/$1.png"; }
 alive() { adb shell pidof "$pkg" >/dev/null || { echo "Derp isn't running after: $1"; adb logcat -d >"$out/logcat.txt"; exit 1; }; }
 ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml; }
-# Tap the view with this accessibility label (from a fresh UI dump).
-tap() {
-  local bounds
-  bounds=$(ui | grep -o "content-desc=\"$1\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
-  [[ $bounds ]] || { echo "Can't find '$1' to tap"; exit 1; }
+# Where the first view matching this pattern (its attributes, up to its
+# bounds) is, as "x y" of its middle; tries a few fresh UI dumps, since a dump
+# can fail while something animates. Nothing (and false) if it isn't there,
+# with the last dump, a screenshot and logcat kept to see why.
+find_view() {
+  local dump='' bounds=''
+  for _ in 1 2 3; do
+    dump=$(ui || true)
+    bounds=$(grep -o "$1[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" <<<"$dump" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]' || true)
+    [[ $bounds ]] && break
+    sleep 2
+  done
+  if [[ -z $bounds ]]; then
+    printf '%s' "$dump" >"$out/ui-missing.xml"
+    adb exec-out screencap -p >"$out/missing.png" || true
+    adb logcat -d >"$out/logcat.txt" || true
+    return 1
+  fi
   read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
-  adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+  echo "$(((x1 + x2) / 2)) $(((y1 + y2) / 2))"
+}
+# Tap the view with this accessibility label.
+tap() {
+  local at
+  at=$(find_view "content-desc=\"$1\"") || { echo "Can't find '$1' to tap (see ui-missing.xml, missing.png)"; exit 1; }
+  adb shell input tap $at
 }
 # Tap the view whose text contains this.
 tap_has() {
-  local bounds
-  bounds=$(ui | grep -o "text=\"[^\"]*$1[^\"]*\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
-  [[ $bounds ]] || return 1
-  read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
-  adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+  local at
+  at=$(find_view "text=\"[^\"]*$1[^\"]*\"") || return 1
+  adb shell input tap $at
 }
 # Tap the view showing this text (a dialog's button).
 tap_text() {
-  local bounds
-  bounds=$(ui | grep -o "text=\"$1\"[^>]*bounds=\"\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]\"" | head -n1 | grep -o '\[[0-9,]*\]\[[0-9,]*\]')
-  [[ $bounds ]] || return 1
-  read -r x1 y1 x2 y2 <<<"$(tr '[],' '   ' <<<"$bounds")"
-  adb shell input tap $(((x1 + x2) / 2)) $(((y1 + y2) / 2))
+  local at
+  at=$(find_view "text=\"$1\"") || return 1
+  adb shell input tap $at
 }
 # Fail unless Derp logged this (a pattern) since it started.
 logged() {

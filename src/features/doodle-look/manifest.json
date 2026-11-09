@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Doodle’s look",
+  "version": "2.0.0",
+  "description": "Doodle’s look on its search results: DuckDuckGo’s results pages, for Doodle searches only. Part of Derp.",
+  "browser_specific_settings": {
+    "gecko": { "id": "doodle-look@kingbennet800.github.io" }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://duckduckgo.com/*"],
+      "js": ["doodle-page.js"],
+      "css": ["doodle-page.css"],
+      "run_at": "document_end"
+    }
+  ]
+}

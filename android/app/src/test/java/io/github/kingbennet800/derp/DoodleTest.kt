@@ -25,6 +25,15 @@ class DoodleTest {
     }
 
     @Test
+    fun theLookHasDoodlesLogo() {
+        val paths = Regex("""\sd="([^"]+)"""")
+        val logo = paths.findAll(File(repo, "brand/doodle.svg").readText()).map { it.groupValues[1] }.toList()
+        val look = File(repo, "src/features/doodle-look/doodle-page.js").readText()
+        assertTrue("brand/doodle.svg has paths", logo.isNotEmpty())
+        logo.forEach { assertTrue("doodle-page.js draws $it", look.contains("d=\"$it\"")) }
+    }
+
+    @Test
     fun sameColorsAsDesktop() {
         val policies = File(repo, "config/policies.json").readText()
         assertTrue("policies.json has Doodle's light colors", policies.contains("q={searchTerms}&$DOODLE_LIGHT&kt=system-ui&ka=system-ui"))

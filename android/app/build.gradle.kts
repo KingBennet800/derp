@@ -104,6 +104,7 @@ val prepareDerpAssets by tasks.registering(Exec::class) {
     inputs.file(script)
     inputs.file(rootDir.resolve("../src/features/DerpDork.sys.mjs"))
     inputs.dir(rootDir.resolve("../brand"))
+    inputs.dir(rootDir.resolve("../src/features/doodle-look"))
     outputs.dir(generated)
     commandLine("python3", script.path, file(generated).path)
 }

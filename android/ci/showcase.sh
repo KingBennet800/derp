@@ -41,7 +41,8 @@ PY
     ) || true
     [[ $x || $try == "$tries" ]] && break
     read -r w h < <(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -n1 | tr x ' ')
-    adb shell input swipe $((w / 2)) $((h * 70 / 100)) $((w / 2)) $((h * 30 / 100)) 300
+    # (The menu sits at the right: at the bottom on phones, dropping down on tablets.)
+    adb shell input swipe $((w * 85 / 100)) $((h * 70 / 100)) $((w * 85 / 100)) $((h * 30 / 100)) 300
     sleep 1
   done
   [[ $x ]] || { echo "Can't find '$1' to tap"; return 1; }

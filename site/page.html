@@ -497,7 +497,10 @@ h2 { margin: 0; font-size: clamp(1.9rem, 4.4vw, 2.9rem); line-height: 1.08; lett
   overflow-x: auto;
   font: 14px/1.5 ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
   white-space: nowrap;
+  /* The command box is dark in both themes; so is its scrollbar. */
+  color-scheme: dark;
   scrollbar-width: thin;
+  scrollbar-color: #4a4a52 transparent;
 }
 .command code .prompt { color: #8a8a93; user-select: none; }
 .copy {

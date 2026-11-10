@@ -65,6 +65,14 @@ tap_text() {
   at=$(find_view "text=\"$1\"") || return 1
   adb shell input tap $at
 }
+# Type a word a letter at a time (a busy emulator can jumble a whole word sent at once).
+type_slowly() {
+  local i
+  for ((i = 0; i < ${#1}; i++)); do
+    adb shell input text "${1:i:1}"
+    sleep 0.3
+  done
+}
 # Fail unless Derp logged this (a pattern) since it started.
 logged() {
   adb logcat -d >"$out/logcat.txt"
@@ -246,7 +254,7 @@ tap Menu
 sleep 1
 pick "Find in page"
 sleep 1
-adb shell input text quack
+type_slowly quack
 sleep 2
 logged "Find in page: 1 of 3" "Find in page didn't find the three quacks"
 tap "Next match"

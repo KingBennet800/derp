@@ -12,7 +12,11 @@ html[data-doodle] {
   --doodle-accent-text: #ffffff;
   --doodle-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 20px rgb(15 23 42 / 0.06);
 }
+html[data-doodle="light"] {
+  color-scheme: light;
+}
 html[data-doodle="dark"] {
+  color-scheme: dark;
   --doodle-bg: #131314;
   --doodle-surface: #1d1d1f;
   --doodle-text: #f2f2f3;
@@ -43,6 +47,10 @@ html[data-doodle] #header {
   height: auto !important;
   min-height: 0 !important;
 }
+/* (On phones DuckDuckGo leaves room above its tabs for its own search box.) */
+html[data-doodle] #header {
+  padding-top: 0 !important;
+}
 html[data-doodle] [data-testid="header"] {
   padding-top: 0 !important;
   border-bottom: 1px solid var(--doodle-line) !important;
@@ -53,8 +61,7 @@ html[data-doodle] [data-testid="header"] {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 20px;
-  max-width: 1180px;
-  padding: 14px 24px 6px;
+  padding: 16px 24px 8px var(--doodle-inset, 24px);
   box-sizing: border-box;
   color: var(--doodle-text);
   font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -130,29 +137,21 @@ html[data-doodle="dark"] #doodle-bar .eyes {
   font-size: 12.5px;
   white-space: nowrap;
 }
-#doodle-bar .doodle-credit > a {
-  display: inline-flex !important;
-  position: static !important;
+#doodle-bar .doodle-ddg {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  color: inherit !important;
+  color: var(--doodle-text);
   font-weight: 600;
-  text-decoration: none !important;
+  text-decoration: none;
 }
-/* Their logo is a background picture on its first span (a round duck). */
-#doodle-bar .doodle-credit > a > span:first-child {
-  display: block !important;
-  flex: none;
-  width: 22px !important;
-  height: 22px !important;
-  margin: 0 !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-size: contain !important;
+#doodle-bar .doodle-ddg:hover {
+  text-decoration: underline;
+}
+#doodle-bar .doodle-ddg img {
+  display: block;
+  width: 18px;
+  height: 18px;
 }
 
 /* DuckDuckGo's tabs (All, Images, News…) under Doodle's search box. */
@@ -161,6 +160,15 @@ html[data-doodle] [data-testid="duckbar"] {
 }
 html[data-doodle] [data-testid="duckbar"] a {
   font-family: inherit !important;
+}
+
+/* The filters row (Private, region, safe search…) fades out at its edges in
+ * DuckDuckGo's white; fade into Doodle's background instead. */
+html[data-doodle] [data-testid="web-vertical"] nav::before {
+  background-image: linear-gradient(90deg, var(--doodle-bg), transparent) !important;
+}
+html[data-doodle] [data-testid="web-vertical"] nav::after {
+  background-image: linear-gradient(90deg, transparent, var(--doodle-bg)) !important;
 }
 
 /* Results and ads on cards. */

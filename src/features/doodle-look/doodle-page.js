@@ -58,18 +58,38 @@
     }
     form.append(make("button", { type: "submit", textContent: "Search" }));
 
-    // Credit where it's due: DuckDuckGo's own logo link, moved into Doodle's header.
-    const credit = make("span", { className: "doodle-credit" }, "Results from");
-    const theirs = document.querySelector("[data-testid=header-logo]") || make("a", { href: "https://duckduckgo.com/" });
-    // (Their link already says "DuckDuckGo" to screen readers.)
-    const name = make("span", { className: "doodle-ddg", textContent: "DuckDuckGo" });
-    name.setAttribute("aria-hidden", "true");
-    theirs.append(name);
-    theirs.removeAttribute("tabindex");
-    credit.append(theirs);
+    // Credit where it's due: DuckDuckGo's logo (their duck) and name, linking to them.
+    const duck = make("img", { src: "/favicon.ico", alt: "", width: 18, height: 18 });
+    const theirs = make("a", { className: "doodle-ddg", href: "https://duckduckgo.com/" }, duck, "DuckDuckGo");
+    const credit = make("span", { className: "doodle-credit" }, "Results from", theirs);
 
-    header.prepend(make("div", { id: "doodle-bar" }, logo, form, credit));
+    const bar = make("div", { id: "doodle-bar" }, logo, form, credit);
+    header.prepend(bar);
+    align(bar);
     return true;
+  }
+
+  // Doodle's header lines up with the results below it (they move with the
+  // window's width, so it follows).
+  function align(bar) {
+    const results = () =>
+      [...document.querySelectorAll("article[data-testid=result], .react-results--main")].find(el => el.getBoundingClientRect().width > 0);
+    const line = () => {
+      const first = results();
+      const left = first ? first.getBoundingClientRect().left - bar.parentElement.getBoundingClientRect().left : 0;
+      bar.style.setProperty("--doodle-inset", `${Math.max(12, Math.round(left))}px`);
+    };
+    line();
+    addEventListener("resize", line);
+    // The results arrive after the header; line up again when they do.
+    const watch = new MutationObserver(() => {
+      if (results()) {
+        watch.disconnect();
+        line();
+      }
+    });
+    watch.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(() => watch.disconnect(), 10000);
   }
 
   // DuckDuckGo draws its header as the page loads; wait for it if need be.

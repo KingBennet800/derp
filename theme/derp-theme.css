@@ -331,7 +331,7 @@
 #urlbar {
   --urlbar-background-box-shadow-open: 0 14px 30px -16px light-dark(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.65)) !important;
   /* Results: a soft tint for the selected row instead of a solid fill. */
-  --urlbarview-background-color-selected: color-mix(in srgb, var(--focus-outline-color) 16%, transparent) !important;
+  --urlbarview-background-color-selected: color-mix(in srgb, var(--focus-outline-color) 11%, transparent) !important;
   --urlbarview-text-color-selected: var(--toolbar-field-text-color-focus, currentColor) !important;
   --urlbarview-background-color-hover: color-mix(in srgb, currentColor 8%, transparent) !important;
   --urlbarview-text-color-hover: var(--toolbar-field-text-color-focus, currentColor) !important;
@@ -341,9 +341,9 @@
 .urlbarView-row[selected] {
   background-image: linear-gradient(
     90deg,
-    light-dark(rgba(198, 245, 126, 0.45), rgba(198, 245, 126, 0.16)),
-    light-dark(rgba(47, 214, 190, 0.2), rgba(47, 214, 190, 0.1)) 30%,
-    transparent 65%
+    light-dark(rgba(198, 245, 126, 0.32), rgba(198, 245, 126, 0.09)),
+    light-dark(rgba(47, 214, 190, 0.12), rgba(47, 214, 190, 0.05)) 30%,
+    transparent 60%
   ) !important;
 }
 

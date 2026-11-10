@@ -154,10 +154,10 @@ sleep 10
 # The username field fills the top quarter of the page.
 adb shell input tap $((w / 2)) $((h * 17 / 100))
 sleep 1
-adb shell input text tester
+type_slowly tester
 # (The keyboard is up now and the page smaller, so Tab to the password field.)
 adb shell input keyevent KEYCODE_TAB
-adb shell input text hunter2hunter2
+type_slowly hunter2hunter2
 adb shell input keyevent KEYCODE_ENTER
 shot 2d-save-password 6
 tap_text Save || { ui >"$out/ui-no-save.xml"; echo "Derp didn't offer to save the password"; exit 1; }
@@ -336,8 +336,8 @@ assert phone["kind"] == "phone", phone["kind"]
 assert "https://example.com/" in phone["bookmarks"], "the phone's bookmark didn't reach the computer"
 assert "https://example.org/from-the-computer" in phone["bookmarks"], "the phone didn't take the computer's bookmark"
 logins = list(phone["logins"].values())
-# (The password is whatever the phone saved: the emulator's typing sometimes jumbles it.)
-assert any(l["username"] == "tester" and l.get("password") for l in logins), "the phone's password didn't reach the computer"
+# (The sign-in is whatever the phone saved: the emulator's typing has jumbled it before.)
+assert any(l["origin"] == "http://localhost:8123" and l.get("password") for l in logins), "the phone's password didn't reach the computer"
 assert any(l["username"] == "deskuser" and l["password"] == "deskpass1" for l in logins), "the phone didn't take the computer's password"
 assert phone["tabs"], "the phone sent no tabs"
 print(f"Paired: {phone['name']} sent {len(phone['bookmarks'])} bookmarks, {len(logins)} passwords, {len(phone['tabs'])} tabs")

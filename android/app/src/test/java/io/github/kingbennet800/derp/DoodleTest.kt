@@ -37,6 +37,13 @@ class DoodleTest {
     }
 
     @Test
+    fun bothTellGoogleDerpsTheme() {
+        val hint = "Sec-CH-Prefers-Color-Scheme"
+        assertTrue("desktop's hint", File(repo, "src/features/DerpFeatures.sys.mjs").readText().contains(hint))
+        assertTrue("Android's hint", File("src/main/assets/derp/background.js").readText().contains(hint))
+    }
+
+    @Test
     fun theLookRunsOnDoodlesPages() {
         val pages = "\"https://www.google.com/search*\""
         assertTrue("desktop's look", File(repo, "src/features/doodle-look/manifest.json").readText().contains(pages))

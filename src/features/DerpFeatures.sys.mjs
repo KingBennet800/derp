@@ -95,10 +95,28 @@ const Fun = {
 };
 
 // Doodle searches Google, with doodle=1 in the address to mark the page as
-// Doodle's, which gets Doodle's look (light or dark, as Derp is).
+// Doodle's, which gets Doodle's look. Derp tells Google whether it's light or
+// dark, the way Chrome does (its Sec-CH-Prefers-Color-Scheme hint, which
+// Google doesn't get from Firefox otherwise), so Google's pages, Doodle's
+// results among them, come in Derp's theme.
 const Doodle = {
   init() {
+    Services.obs.addObserver(this, "http-on-modify-request");
     this.installLook().catch(e => console.error("Doodle's look didn't install:", e));
+  },
+  observe(subject) {
+    const channel = subject.QueryInterface(Ci.nsIHttpChannel);
+    if (
+      channel.URI.host === "www.google.com" &&
+      channel.loadInfo.externalContentPolicyType === Ci.nsIContentPolicy.TYPE_DOCUMENT
+    ) {
+      channel.setRequestHeader("Sec-CH-Prefers-Color-Scheme", this.dark() ? "dark" : "light", false);
+    }
+  },
+  // Settings → Website appearance: dark, light, or (2) following the theme.
+  dark() {
+    const appearance = Services.prefs.getIntPref("layout.css.prefers-color-scheme.content-override", 2);
+    return appearance === 2 ? Services.appinfo.contentThemeDerivedColorSchemeIsDark : appearance === 0;
   },
   // Doodle's look on its result pages is a tiny built-in extension
   // (doodle-look/): web pages' processes can't read Derp's files, but an

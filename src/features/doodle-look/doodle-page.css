@@ -186,12 +186,6 @@ html[data-doodle="dark"] {
   --doodle-visited: #a98bf0;
   --doodle-address: #34c6a0;
 }
-html[data-doodle-invert] {
-  /* The same, before the page is turned dark. */
-  --doodle-link: #1c4ea9;
-  --doodle-visited: #7552c8;
-  --doodle-address: #007c50;
-}
 html[data-doodle] #rso a h3 {
   color: var(--doodle-link) !important;
 }
@@ -200,42 +194,6 @@ html[data-doodle] #rso a:visited h3 {
 }
 html[data-doodle] #rso cite {
   color: var(--doodle-address) !important;
-}
-
-/* Dark: Google's light page, turned dark. The whole page is inverted (and
- * hue-turned, so blue stays blue) and its contrast eased, so Google's white
- * lands on Doodle's dark background; pictures, color swatches and Doodle's
- * own header get the exact opposite, so they show as they are. */
-html[data-doodle-invert] {
-  filter: invert(1) hue-rotate(180deg) contrast(0.855);
-}
-html[data-doodle-invert],
-html[data-doodle-invert] body {
-  background: #fff !important;
-}
-html[data-doodle-invert] img,
-html[data-doodle-invert] picture,
-html[data-doodle-invert] video,
-html[data-doodle-invert] canvas,
-html[data-doodle-invert] iframe,
-html[data-doodle-invert] [style*="background-image"],
-html[data-doodle-invert] [style*="background:#"]:empty,
-html[data-doodle-invert] [style*="background-color:#"]:empty,
-html[data-doodle-invert] .doodle-home svg,
-html[data-doodle-invert] #doodle-bar {
-  filter: contrast(1.1696) hue-rotate(180deg) invert(1) !important;
-}
-html[data-doodle-invert] #doodle-bar img,
-html[data-doodle-invert] [style*="background-image"] img,
-html[data-doodle-invert] picture img {
-  filter: none !important;
-}
-/* Doodle's dark cards, before the page is turned (#1d1d1f and #333336 after). */
-html[data-doodle-invert] #rso .MjjYud:has([data-snc]),
-html[data-doodle-invert] #tads [data-text-ad] {
-  border-color: #d8d8dc !important;
-  background: #f2f2f5 !important;
-  box-shadow: none !important;
 }
 
 /* A phone: Doodle's logo and the credit, then the search box across (or,

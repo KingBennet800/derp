@@ -3,9 +3,9 @@
 // address says doodle=1, and the Google pages you go on to from there in the
 // same tab (Images, News, the next page). Doodle's header, its logo and a
 // search box, takes the place of Google's logo and search box, crediting
-// Google; results sit on cards in Derp's colors (doodle-page.css), and the
-// page is dark while Derp is. Google's AI (its AI Overview and AI Mode) and
-// Sign in go; its ads and its legal links stay.
+// Google; results sit on cards in Derp's colors (doodle-page.css), light or
+// dark as Derp is. Google's AI (its AI Overview and AI Mode) and Sign in go;
+// its ads and its legal links stay.
 // It's a content script: in desktop Derp's built-in Doodle's look extension
 // (this folder), and in Derp for Android's.
 (() => {
@@ -24,23 +24,30 @@
   }
   const root = document.documentElement;
 
-  // Light or dark, as Derp is. Google gives Derp its light page, so while
-  // Derp is dark the stylesheet turns it dark, pictures excepted. (If you
-  // set Google itself to dark, its page is dark already, and Doodle's header
-  // is dark to match.)
+  // Light or dark, as Derp is: Derp tells Google its theme (the way Chrome
+  // does), and Google's page comes in it. Doodle's header follows the page
+  // (also if you've set Google itself to light or dark). When Derp's theme
+  // changes, a page in the other one comes again, once you're looking at it.
   const darkMode = matchMedia("(prefers-color-scheme: dark)");
   const lightPage = () => {
     const [r, g, b, a = 1] = (getComputedStyle(document.body).backgroundColor.match(/[\d.]+/g) || [255, 255, 255]).map(Number);
     return a === 0 || 0.2126 * r + 0.7152 * g + 0.0722 * b > 128;
   };
   const paint = () => {
-    root.removeAttribute("data-doodle-invert");
-    const light = !document.body || lightPage();
-    root.dataset.doodle = darkMode.matches || !light ? "dark" : "light";
-    root.toggleAttribute("data-doodle-invert", darkMode.matches && light);
+    root.dataset.doodle = !document.body || lightPage() ? "light" : "dark";
+  };
+  const follow = () => {
+    paint();
+    if (darkMode.matches !== (root.dataset.doodle === "dark")) {
+      if (document.hidden) {
+        document.addEventListener("visibilitychange", follow, { once: true });
+      } else {
+        location.reload();
+      }
+    }
   };
   paint();
-  darkMode.addEventListener("change", paint);
+  darkMode.addEventListener("change", follow);
 
   // Doodle's logo (brand/doodle.svg), with its own ids.
   const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 268 84" role="img" aria-label="Doodle">

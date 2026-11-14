@@ -90,36 +90,34 @@ PAGES = "https://kingbennet800.github.io/derp"
 
 
 def doodle_settings():
-    """Doodle's search address and DuckDuckGo settings, light (from
-    config/policies.json) and dark (from DerpFeatures.sys.mjs)."""
+    """Doodle's search, from config/policies.json: the engine, its address,
+    and where its home page's form goes, with the fields it adds (doodle=1,
+    which marks a search as Doodle's for Doodle's look)."""
     import json
 
     engine = json.loads(read("config/policies.json"))["policies"]["SearchEngines"]["Add"][0]
     template = engine["URLTemplate"]
-    light = dict(urllib.parse.parse_qsl(template.split("?", 1)[1]))
-    del light["q"]
-    match = re.search(r'DARK: "([^"]+)"', read("src/features/DerpFeatures.sys.mjs"))
-    if not match:
-        sys.exit("build.py: no Doodle DARK settings in DerpFeatures.sys.mjs")
-    return engine, template, light, dict(urllib.parse.parse_qsl(match.group(1)))
+    action, query = template.split("?", 1)
+    fields = dict(urllib.parse.parse_qsl(query))
+    del fields["q"]
+    return engine, template, action, fields
 
 
 def build_doodle():
     """Doodle's home page, _site/doodle/: the page, its icon, and an
     OpenSearch description so other browsers can add Doodle too."""
     import html
-    import json
 
-    engine, template, light, dark = doodle_settings()
+    engine, template, action, fields = doodle_settings()
     logo = re.sub(r'\s(width|height)="\d+"', "", read("brand/doodle.svg").strip(), count=2)
     logo = logo.replace("<svg ", '<svg role="img" aria-label="Doodle" ', 1)
-    fields = "\n".join(f'    <input type="hidden" name="{k}" value="{html.escape(v)}">' for k, v in light.items())
+    hidden = "\n".join(f'    <input type="hidden" name="{k}" value="{html.escape(v)}">' for k, v in fields.items())
     page = read("site/doodle.html")
     values = {
         "{{LOGO}}": logo,
         "{{ICON}}": svg_data_uri(read("brand/doodle-icon.svg")),
-        "{{FIELDS}}": fields,
-        "{{DARK}}": json.dumps(dark),
+        "{{ACTION}}": html.escape(action),
+        "{{FIELDS}}": hidden,
         "{{PAGES}}": PAGES,
     }
     for key, value in values.items():

@@ -46,14 +46,10 @@ class Tab(val private: Boolean) {
     val asleep get() = sleeping != null
 }
 
-// Doodle's DuckDuckGo settings: links and addresses in Derp's colors, light
-// and dark (DuckDuckGo stays light unless asked). Desktop Derp's are in
-// config/policies.json.
-internal const val DOODLE_LIGHT = "k9=2f6feb&kaa=7a52c7&kx=0f8a74"
-internal const val DOODLE_DARK = "kae=d&k9=86b1ff&kaa=a98bf0&kx=34c6a0"
-
 enum class Engine(val label: String, val template: String) {
-    DOODLE("Doodle", "https://duckduckgo.com/?q=%s&$DOODLE_LIGHT&kt=system-ui&ka=system-ui"),
+    // Google's results, marked doodle=1 for Doodle's look (desktop Derp's
+    // Doodle is in config/policies.json).
+    DOODLE("Doodle", "https://www.google.com/search?q=%s&doodle=1"),
     GOOGLE("Google", "https://www.google.com/search?q=%s"),
     DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=%s"),
     BING("Bing", "https://www.bing.com/search?q=%s"),
@@ -61,11 +57,8 @@ enum class Engine(val label: String, val template: String) {
     ECOSIA("Ecosia", "https://www.ecosia.org/search?q=%s"),
     ;
 
-    /** A search for [encoded] (already URL-encoded); Doodle's results are dark while Derp is. */
-    fun search(encoded: String, dark: Boolean): String {
-        val url = template.replace("%s", encoded)
-        return if (this == DOODLE && dark) url.replace(DOODLE_LIGHT, DOODLE_DARK) else url
-    }
+    /** A search for [encoded] (already URL-encoded). */
+    fun search(encoded: String) = template.replace("%s", encoded)
 
     /** The words searched for, if [url] is a search on this engine. */
     fun terms(url: String): String? {
@@ -263,7 +256,7 @@ class Browser(val app: DerpApp) {
             scheme.containsMatchIn(text) -> text
             !text.contains(' ') && Regex("^localhost(:\\d+)?(/.*)?$").matches(text) -> "http://$text"
             !text.contains(' ') && Regex("^[^/\\s]+\\.[a-zA-Z]{2,}(:\\d+)?(/.*)?$").matches(text) -> "https://$text"
-            else -> engine.search(Uri.encode(text), app.dark)
+            else -> engine.search(Uri.encode(text))
         }
     }
 

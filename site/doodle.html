@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Doodle</title>
-<meta name="description" content="Doodle: search with googly eyes. Derp's search engine, with results from DuckDuckGo.">
+<meta name="description" content="Doodle: search with googly eyes. Derp's search engine, with results from Google.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="{{ICON}}">
 <link rel="search" type="application/opensearchdescription+xml" title="Doodle" href="{{PAGES}}/doodle/opensearch.xml">
@@ -114,7 +114,7 @@ footer { padding: 16px; color: var(--dim); font-size: 13px; text-align: center; 
 <body>
 <main>
   <h1>{{LOGO}}</h1>
-  <form id="search" action="https://duckduckgo.com/" method="get" role="search">
+  <form id="search" action="{{ACTION}}" method="get" role="search">
     <label class="box">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7.25" cy="7.25" r="4.25"/><path d="m10.4 10.4 2.6 2.6"/></svg>
       <input id="q" name="q" type="search" placeholder="Search with Doodle" aria-label="Search with Doodle" autocomplete="off" autofocus required>
@@ -122,22 +122,12 @@ footer { padding: 16px; color: var(--dim); font-size: 13px; text-align: center; 
     </label>
 {{FIELDS}}
   </form>
-  <p class="note">Doodle is the search engine of <a href="{{PAGES}}/">Derp</a>, the browser. Your results come from DuckDuckGo, in Doodle's colors.</p>
+  <p class="note">Doodle is the search engine of <a href="{{PAGES}}/">Derp</a>, the browser. Your results come from Google, in Doodle's look in Derp.</p>
 </main>
 <footer>Doodle has googly eyes. They're watching. Nicely.</footer>
 <script>
 "use strict";
-// While the page is dark, ask DuckDuckGo for its dark theme in Derp's dark colors.
-const DARK = {{DARK}};
-const form = document.getElementById("search");
 const input = document.getElementById("q");
-form.addEventListener("submit", () => {
-  if (!matchMedia("(prefers-color-scheme: dark)").matches) return;
-  for (const [name, value] of Object.entries(DARK)) {
-    const field = form.elements[name] || form.appendChild(Object.assign(document.createElement("input"), { type: "hidden", name }));
-    field.value = value;
-  }
-});
 
 // The googly eyes follow your pointer, and look down at what you type,
 // jiggling with each key.

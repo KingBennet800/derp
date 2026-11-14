@@ -1,9 +1,8 @@
-/* Doodle's look for DuckDuckGo's results (with doodle-page.js, which marks
+/* Doodle's look for Google's results (with doodle-page.js, which marks
  * Doodle searches with data-doodle on the page's root). Everything here is
- * scoped to that, so plain DuckDuckGo searches look like DuckDuckGo. */
+ * scoped to that, so plain Google searches look like Google. */
 
 html[data-doodle] {
-  --doodle-bg: #fafafa;
   --doodle-surface: #ffffff;
   --doodle-text: #18181b;
   --doodle-dim: #5f6068;
@@ -12,12 +11,7 @@ html[data-doodle] {
   --doodle-accent-text: #ffffff;
   --doodle-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 20px rgb(15 23 42 / 0.06);
 }
-html[data-doodle="light"] {
-  color-scheme: light;
-}
 html[data-doodle="dark"] {
-  color-scheme: dark;
-  --doodle-bg: #131314;
   --doodle-surface: #1d1d1f;
   --doodle-text: #f2f2f3;
   --doodle-dim: #a1a1aa;
@@ -27,65 +21,60 @@ html[data-doodle="dark"] {
   --doodle-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
 }
 
-html[data-doodle],
-html[data-doodle] body,
-html[data-doodle] .site-wrapper,
-html[data-doodle] [data-testid="header"],
-html[data-doodle] #header {
-  background: var(--doodle-bg) !important;
-}
-html[data-doodle] body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
-}
-
-/* Doodle's header in place of DuckDuckGo's logo and search box (their tabs stay). */
-html[data-doodle] #header-non-nav {
+/* Doodle's header in place of Google's logo and search box (Google's tabs,
+ * its settings and Sign in stay). */
+html[data-doodle] [data-doodle-gone] {
   display: none !important;
 }
-html[data-doodle] [data-testid="header"],
-html[data-doodle] #header {
-  height: auto !important;
-  min-height: 0 !important;
-}
-/* (On phones DuckDuckGo leaves room above its tabs for its own search box.) */
-html[data-doodle] #header {
-  padding-top: 0 !important;
-}
-html[data-doodle] [data-testid="header"] {
-  padding-top: 0 !important;
-  border-bottom: 1px solid var(--doodle-line) !important;
-  box-shadow: none !important;
+html[data-doodle] [data-doodle-hidden] {
+  visibility: hidden !important;
 }
 #doodle-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
   align-items: center;
   gap: 10px 20px;
-  padding: 16px 24px 8px var(--doodle-inset, 24px);
+  min-width: 0;
+  padding: 0 24px 0 0;
   box-sizing: border-box;
   color: var(--doodle-text);
-  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.4 Inter, "Adwaita Sans", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto,
+    "Noto Sans", Cantarell, "Helvetica Neue", Arial, sans-serif;
+  text-align: start;
 }
 #doodle-bar .doodle-logo {
   display: block;
   flex: none;
   line-height: 0;
 }
-#doodle-bar .doodle-logo svg {
+html[data-doodle] .doodle-logo svg {
   display: block;
   width: auto;
   height: 34px;
   overflow: visible;
 }
-html[data-doodle="dark"] #doodle-bar .eyes {
+html[data-doodle="dark"] .doodle-logo .eyes {
   stroke: transparent;
+}
+/* On phones, in the place of Google's (its link keeps Google's spot). */
+html[data-doodle] .doodle-home {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+html[data-doodle] .doodle-home svg {
+  height: 28px;
+}
+#doodle-bar.doodle-logo-up > .doodle-logo {
+  display: none;
 }
 #doodle-bar .doodle-search {
   display: flex;
-  flex: 1 1 360px;
+  flex: 1 1 320px;
   align-items: center;
   gap: 8px;
-  max-width: 680px;
+  min-width: 0;
+  max-width: 640px;
   height: 46px;
   margin: 0;
   padding: 0 5px 0 18px;
@@ -111,6 +100,7 @@ html[data-doodle="dark"] #doodle-bar .eyes {
   font: inherit;
   font-size: 16px;
   box-shadow: none;
+  appearance: none;
 }
 #doodle-bar .doodle-search input[type="search"]::-webkit-search-cancel-button {
   display: none;
@@ -137,7 +127,7 @@ html[data-doodle="dark"] #doodle-bar .eyes {
   font-size: 12.5px;
   white-space: nowrap;
 }
-#doodle-bar .doodle-ddg {
+#doodle-bar .doodle-source {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -145,35 +135,18 @@ html[data-doodle="dark"] #doodle-bar .eyes {
   font-weight: 600;
   text-decoration: none;
 }
-#doodle-bar .doodle-ddg:hover {
+#doodle-bar .doodle-source:hover {
   text-decoration: underline;
 }
-#doodle-bar .doodle-ddg img {
+#doodle-bar .doodle-source img {
   display: block;
   width: 18px;
   height: 18px;
 }
 
-/* DuckDuckGo's tabs (All, Images, News…) under Doodle's search box. */
-html[data-doodle] [data-testid="duckbar"] {
-  background: transparent !important;
-}
-html[data-doodle] [data-testid="duckbar"] a {
-  font-family: inherit !important;
-}
-
-/* The filters row (Private, region, safe search…) fades out at its edges in
- * DuckDuckGo's white; fade into Doodle's background instead. */
-html[data-doodle] [data-testid="web-vertical"] nav::before {
-  background-image: linear-gradient(90deg, var(--doodle-bg), transparent) !important;
-}
-html[data-doodle] [data-testid="web-vertical"] nav::after {
-  background-image: linear-gradient(90deg, transparent, var(--doodle-bg)) !important;
-}
-
 /* Results and ads on cards. */
-html[data-doodle] article[data-testid="result"],
-html[data-doodle] article[data-testid="ad"] {
+html[data-doodle] #rso .MjjYud:has([data-snc]),
+html[data-doodle] #tads [data-text-ad] {
   padding: 14px 16px !important;
   margin-bottom: 10px !important;
   border: 1px solid var(--doodle-line) !important;
@@ -181,19 +154,86 @@ html[data-doodle] article[data-testid="ad"] {
   background: var(--doodle-surface) !important;
   box-shadow: var(--doodle-shadow) !important;
 }
-html[data-doodle] [data-testid="result-title-a"] {
-  font-weight: 600 !important;
-  text-decoration: none !important;
+/* (Google's spacing under a result goes; the cards space them.) */
+html[data-doodle] #rso .MjjYud:has([data-snc]) :has([data-snc]) {
+  margin-bottom: 0 !important;
 }
-html[data-doodle] [data-testid="result-title-a"]:hover {
-  text-decoration: underline !important;
+html[data-doodle] #rso .MjjYud:has([data-snc]) h3,
+html[data-doodle] #tads [data-text-ad] [role="heading"] {
+  font-weight: 600 !important;
 }
 
-/* A phone: Doodle's logo and the credit, then the search box across. */
+/* Titles, visited titles and addresses in Doodle's colors, as on its home page. */
+html[data-doodle] {
+  --doodle-link: #2f6feb;
+  --doodle-visited: #7a52c7;
+  --doodle-address: #0f8a74;
+}
+html[data-doodle="dark"] {
+  --doodle-link: #86b1ff;
+  --doodle-visited: #a98bf0;
+  --doodle-address: #34c6a0;
+}
+html[data-doodle-invert] {
+  /* The same, before the page is turned dark. */
+  --doodle-link: #1c4ea9;
+  --doodle-visited: #7552c8;
+  --doodle-address: #007c50;
+}
+html[data-doodle] #rso a h3 {
+  color: var(--doodle-link) !important;
+}
+html[data-doodle] #rso a:visited h3 {
+  color: var(--doodle-visited) !important;
+}
+html[data-doodle] #rso cite {
+  color: var(--doodle-address) !important;
+}
+
+/* Dark: Google's light page, turned dark. The whole page is inverted (and
+ * hue-turned, so blue stays blue) and its contrast eased, so Google's white
+ * lands on Doodle's dark background; pictures, color swatches and Doodle's
+ * own header get the exact opposite, so they show as they are. */
+html[data-doodle-invert] {
+  filter: invert(1) hue-rotate(180deg) contrast(0.855);
+}
+html[data-doodle-invert],
+html[data-doodle-invert] body {
+  background: #fff !important;
+}
+html[data-doodle-invert] img,
+html[data-doodle-invert] picture,
+html[data-doodle-invert] video,
+html[data-doodle-invert] canvas,
+html[data-doodle-invert] iframe,
+html[data-doodle-invert] [style*="background-image"],
+html[data-doodle-invert] [style*="background:#"]:empty,
+html[data-doodle-invert] [style*="background-color:#"]:empty,
+html[data-doodle-invert] .doodle-home svg,
+html[data-doodle-invert] #doodle-bar {
+  filter: contrast(1.1696) hue-rotate(180deg) invert(1) !important;
+}
+html[data-doodle-invert] #doodle-bar img,
+html[data-doodle-invert] [style*="background-image"] img,
+html[data-doodle-invert] picture img {
+  filter: none !important;
+}
+/* Doodle's dark cards, before the page is turned (#1d1d1f and #333336 after). */
+html[data-doodle-invert] #rso .MjjYud:has([data-snc]),
+html[data-doodle-invert] #tads [data-text-ad] {
+  border-color: #d8d8dc !important;
+  background: #f2f2f5 !important;
+  box-shadow: none !important;
+}
+
+/* A phone: Doodle's logo and the credit, then the search box across (or,
+ * with Doodle's logo up top in Google's place, the credit under it). */
 @media (max-width: 640px) {
   #doodle-bar {
+    flex-wrap: wrap;
     justify-content: space-between;
-    padding: 10px 12px 4px;
+    gap: 8px 12px;
+    padding: 0;
   }
   #doodle-bar .doodle-logo svg {
     height: 28px;
@@ -201,10 +241,11 @@ html[data-doodle] [data-testid="result-title-a"]:hover {
   #doodle-bar .doodle-search {
     order: 3;
     flex-basis: 100%;
+    max-width: none;
     height: 44px;
   }
-  html[data-doodle] article[data-testid="result"],
-  html[data-doodle] article[data-testid="ad"] {
-    margin-inline: 8px !important;
+  #doodle-bar.doodle-logo-up .doodle-credit {
+    order: 4;
+    margin: 0 0 4px 18px;
   }
 }

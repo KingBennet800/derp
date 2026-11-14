@@ -139,13 +139,12 @@ Windows) to delete it too.
   engine is: security updates to certificate revocation lists and blocklists,
   Safe Browsing, add-on installs and updates from addons.mozilla.org, and
   downloads of on-device translation models.
-- **Doodle**: Derp's own search engine, and the default instead of Google.
-  It has googly eyes for its oo's. Results come from DuckDuckGo, in Doodle's
-  look: Doodle's header and search box, results on cards in Derp's colors
-  (dark while Derp is dark), with credit to DuckDuckGo (their logo) and their
-  ads left as they are. The look is a small built-in extension
-  (`src/features/doodle-look/`, on Android too) that only touches Doodle
-  searches. Type `@doodle` to use Doodle when another engine is the default. Doodle has a home page too, at
+- **Doodle**: Derp's own search engine, and the default. It has googly eyes
+  for its oo's. Results come from Google, in Doodle's look: Doodle's header
+  and search box, results on cards in Derp's colors (dark while Derp is dark),
+  with credit to Google (their "G") and their ads left as they are. The look
+  is a small built-in extension (`src/features/doodle-look/`, on Android too)
+  that only touches Doodle searches. Type `@doodle` to use Doodle when another engine is the default. Doodle has a home page too, at
   [kingbennet800.github.io/derp/doodle](https://kingbennet800.github.io/derp/doodle/),
   which other browsers can add as a search engine.
 - **No Firefox branding**: name, logos, the fox mascot (about 90 illustrations,

@@ -15,13 +15,9 @@ class DoodleTest {
     }
 
     @Test
-    fun searchesInDerpsColors() {
-        val light = Engine.DOODLE.search("googly%20eyes", dark = false)
-        assertEquals("https://duckduckgo.com/?q=googly%20eyes&$DOODLE_LIGHT&kt=system-ui&ka=system-ui", light)
-        val dark = Engine.DOODLE.search("googly%20eyes", dark = true)
-        assertEquals("https://duckduckgo.com/?q=googly%20eyes&$DOODLE_DARK&kt=system-ui&ka=system-ui", dark)
-        // Other engines don't change with dark mode.
-        assertEquals("https://www.google.com/search?q=duck", Engine.GOOGLE.search("duck", dark = true))
+    fun searchesGoogleMarkedAsDoodle() {
+        assertEquals("https://www.google.com/search?q=googly%20eyes&doodle=1", Engine.DOODLE.search("googly%20eyes"))
+        assertEquals("https://www.google.com/search?q=duck", Engine.GOOGLE.search("duck"))
     }
 
     @Test
@@ -34,11 +30,16 @@ class DoodleTest {
     }
 
     @Test
-    fun sameColorsAsDesktop() {
+    fun sameSearchAsDesktop() {
         val policies = File(repo, "config/policies.json").readText()
-        assertTrue("policies.json has Doodle's light colors", policies.contains("q={searchTerms}&$DOODLE_LIGHT&kt=system-ui&ka=system-ui"))
-        val features = File(repo, "src/features/DerpFeatures.sys.mjs").readText()
-        assertTrue("DerpFeatures has Doodle's light colors", features.contains("LIGHT: \"$DOODLE_LIGHT\""))
-        assertTrue("DerpFeatures has Doodle's dark colors", features.contains("DARK: \"$DOODLE_DARK\""))
+        val desktop = Engine.DOODLE.template.replace("%s", "{searchTerms}")
+        assertTrue("policies.json searches $desktop", policies.contains("\"URLTemplate\": \"$desktop\""))
+    }
+
+    @Test
+    fun theLookRunsOnDoodlesPages() {
+        val pages = "\"https://www.google.com/search*\""
+        assertTrue("desktop's look", File(repo, "src/features/doodle-look/manifest.json").readText().contains(pages))
+        assertTrue("Android's look", File("src/main/assets/derp/manifest.json").readText().contains(pages))
     }
 }

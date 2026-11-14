@@ -144,6 +144,18 @@ html[data-doodle] .doodle-home svg {
   height: 18px;
 }
 
+/* No Google AI and no Sign in: its AI Overview (with its follow-up
+ * questions), AI Mode, and Google's Sign in all go. */
+html[data-doodle] .M8OgIe:has([data-scope-id="turn"]),
+html[data-doodle] #eKIzJc:has([data-scope-id="turn"]),
+html[data-doodle] [data-scope-id="turn"],
+html[data-doodle] #m-x-content,
+html[data-doodle] [role="listitem"]:has(a[href*="udm=50"]),
+html[data-doodle] a[href*="udm=50"],
+html[data-doodle] a[href*="accounts.google.com/ServiceLogin"] {
+  display: none !important;
+}
+
 /* Results and ads on cards. */
 html[data-doodle] #rso .MjjYud:has([data-snc]),
 html[data-doodle] #tads [data-text-ad] {

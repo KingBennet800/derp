@@ -4,7 +4,8 @@
 // same tab (Images, News, the next page). Doodle's header, its logo and a
 // search box, takes the place of Google's logo and search box, crediting
 // Google; results sit on cards in Derp's colors (doodle-page.css), and the
-// page is dark while Derp is. Google's ads and its legal links stay.
+// page is dark while Derp is. Google's AI (its AI Overview and AI Mode) and
+// Sign in go; its ads and its legal links stay.
 // It's a content script: in desktop Derp's built-in Doodle's look extension
 // (this folder), and in Derp for Android's.
 (() => {
@@ -111,7 +112,13 @@
     // "G", in a side bar) just goes.
     const home = [...document.querySelectorAll("a[href]")].find(a => {
       const url = new URL(a.href, location.href);
-      return url.host === location.host && /^\/(webhp)?$/.test(url.pathname) && a.querySelector("svg, img") && !theirs.contains(a);
+      return (
+        url.host === location.host &&
+        /^\/(webhp)?$/.test(url.pathname) &&
+        a.querySelector("svg, img") &&
+        !theirs.contains(a) &&
+        !bar.contains(a)
+      );
     });
     if (home?.getBoundingClientRect().width >= 80) {
       home.replaceChildren(drawing());

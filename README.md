@@ -142,8 +142,9 @@ Windows) to delete it too.
 - **Doodle**: Derp's own search engine, and the default. It has googly eyes
   for its oo's. Results come from Google, in Doodle's look: Doodle's header
   and search box, results on cards in Derp's colors (dark while Derp is dark),
-  with credit to Google (their "G") and their ads left as they are. The look
-  is a small built-in extension (`src/features/doodle-look/`, on Android too)
+  with credit to Google (their "G") and their ads left as they are, and
+  without Google's AI (AI Overviews, AI Mode) or Sign in. The look is a small
+  built-in extension (`src/features/doodle-look/`, on Android too)
   that only touches Doodle searches. Type `@doodle` to use Doodle when another engine is the default. Doodle has a home page too, at
   [kingbennet800.github.io/derp/doodle](https://kingbennet800.github.io/derp/doodle/),
   which other browsers can add as a search engine.

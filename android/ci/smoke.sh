@@ -9,7 +9,16 @@ set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
 mkdir -p "$out"
 
-shot() { sleep "$2"; adb exec-out screencap -p >"$out/$1.png"; }
+# A screenshot after a wait. The emulator's graphics can stall (the screen
+# never comes back): then fail, keeping logcat and what the GPU was doing.
+shot() {
+  sleep "$2"
+  timeout 60 adb exec-out screencap -p >"$out/$1.png" && return
+  echo "The screen didn't come back for $1"
+  timeout 60 adb logcat -d >"$out/logcat.txt" || true
+  timeout 60 adb shell dumpsys gfxinfo "$pkg" >"$out/gfxinfo.txt" || true
+  exit 1
+}
 alive() { adb shell pidof "$pkg" >/dev/null || { echo "Derp isn't running after: $1"; adb logcat -d >"$out/logcat.txt"; exit 1; }; }
 ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml; }
 # Where the first view matching this pattern (its attributes, up to its

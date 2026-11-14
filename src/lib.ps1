@@ -109,7 +109,9 @@ function Get-Firefox([string]$Version, [string]$Work) {
     if ($proc.ExitCode -ne 0) { throw "Firefox's installer failed to unpack (exit $($proc.ExitCode))" }
     $engine = Get-ChildItem -Path $out -Filter firefox.exe -Recurse | Select-Object -First 1
     if (-not $engine) { throw "Firefox's installer unpacked no firefox.exe" }
-    Remove-Item $setup -Force
+    # (Something may still hold the installer for a moment, say antivirus
+    # scanning it; the work folder goes at the end anyway.)
+    Remove-Item $setup -Force -ErrorAction SilentlyContinue
     return $engine.DirectoryName
 }
 

@@ -4,7 +4,7 @@
 # password and get it offered back, the just-for-fun gags, the ad blocker,
 # find in page, Reader view, Add to home screen, Memory Saver, pairing with a
 # computer (tests/pairing.py standing in for it, through a test relay), a
-# screenshot with stickers, looks, dark mode;
+# screenshot with stickers, looks, what's new, dark mode;
 # screenshots and logcat go to $2. Fails if Derp crashes or isn't running.
 set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
@@ -399,6 +399,18 @@ sleep 1
 tap_text "Derp (blue)" || { echo "No Derp look"; exit 1; }
 sleep 1
 alive "looks"
+
+# What's new (shown after an update): About Derp → What's new.
+tap Menu
+sleep 1
+pick "About Derp"
+sleep 1
+tap_has "s new" || { echo "No What's new in About Derp"; exit 1; }
+sleep 1
+shot 5d-whats-new 1
+logged "What's new: " "What's new didn't show"
+tap_text "Nice!" || { echo "No Nice! on What's new"; exit 1; }
+sleep 1
 
 # Dark mode.
 adb shell cmd uimode night yes

@@ -1,0 +1,54 @@
+[
+  {
+    "version": "2.1.0",
+    "title": "Derp gets personality",
+    "items": [
+      {
+        "icon": "🐾",
+        "title": "Dork pet",
+        "text": "Your dork becomes a pet: it naps while you’re away, wiggles when you point at it, and earns new outfits the more days you spend together.",
+        "desktop": "Settings → Derp → Just for fun",
+        "android": "⋮ → Just for fun"
+      },
+      {
+        "icon": "🎨",
+        "title": "Looks",
+        "text": "Grape, Mint, Peach, Bubblegum or Graphite instead of Derp’s blue, in light and dark.",
+        "desktop": "Settings → Derp → Look",
+        "android": "⋮ → Look"
+      },
+      {
+        "icon": "📸",
+        "title": "Screenshot with stickers",
+        "text": "Put your dork, googly eyes, the duck and more on a picture of a page, then save it.",
+        "desktop": "Right-click a page",
+        "android": "⋮ → Screenshot with stickers"
+      },
+      {
+        "icon": "❄️",
+        "title": "Seasons",
+        "text": "Now and then the season drifts down: snow, blossoms, sunshine or leaves, with hearts for Valentine’s Day and pumpkins for Halloween.",
+        "desktop": "Settings → Derp → Just for fun",
+        "android": "⋮ → Just for fun"
+      },
+      {
+        "icon": "🦆",
+        "title": "Download duck",
+        "text": "A duck carries each download to the downloads button.",
+        "desktop": "Settings → Derp → Just for fun",
+        "android": "⋮ → Just for fun"
+      }
+    ]
+  },
+  {
+    "version": "2.0.1",
+    "title": "Doodle searches Google",
+    "items": [
+      {
+        "icon": "🔎",
+        "title": "Doodle searches Google",
+        "text": "Doodle’s results come from Google now, in Doodle’s own look, without Google’s AI or its Sign in, and dark while Derp is."
+      }
+    ]
+  }
+]

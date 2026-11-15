@@ -29,11 +29,17 @@
   .derp-st-x, .derp-st-grip { width: 30px; height: 30px; }
   .derp-st-x { top: -20px; left: -20px; }
   .derp-st-grip { right: -20px; bottom: -20px; }
-  #empty { margin: auto; color: var(--dim); text-align: center; }
+  #empty { margin: auto; padding: 24px; color: var(--dim); text-align: center; }
+  #empty button { margin-top: 14px; padding: 8px 20px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600; }
 </style>
 </head>
 <body>
-  <main id="editor"><p id="empty" hidden>No screenshot to put stickers on.</p></main>
+  <main id="editor">
+    <div id="empty" hidden>
+      <p>This screenshot is gone (Derp was closed in between). Take another from the page’s ⋮ menu.</p>
+      <button id="close" type="button">Close</button>
+    </div>
+  </main>
   <script src="dork-art.js"></script>
   <script src="critters.js"></script>
   <script src="stickers.js"></script>

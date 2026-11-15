@@ -11,6 +11,7 @@ const { DerpDork } = ChromeUtils.importESModule(window.derpURLs.dork);
 const { DerpDuck, DUCK_URL } = ChromeUtils.importESModule(window.derpURLs.duck);
 const { DerpPair } = ChromeUtils.importESModule(window.derpURLs.pair);
 const { DerpUpdates } = ChromeUtils.importESModule(window.derpURLs.updates);
+const { DerpWhatsNew } = ChromeUtils.importESModule(window.derpURLs.whatsNew);
 
 const UNLOAD_AFTER_MINUTES = [15, 30, 60, 120, 240];
 
@@ -146,6 +147,10 @@ Preferences.addSetting({
   disabled: () => DerpUpdates.state === "checking",
   onUserClick: () => DerpUpdates.check(),
 });
+Preferences.addSetting({
+  id: "derpUpdatesWhatsNew",
+  onUserClick: () => DerpWhatsNew.showCurrent(window.browsingContext.topChromeWindow),
+});
 
 SettingGroupManager.registerGroups({
   derpDork: {
@@ -179,6 +184,7 @@ SettingGroupManager.registerGroups({
         items: [
           { id: "derpUpdatesCard", control: "moz-box-item", l10nId: "derp-updates-idle" },
           { id: "derpUpdatesCheck", control: "moz-box-button", l10nId: "derp-updates-check" },
+          { id: "derpUpdatesWhatsNew", control: "moz-box-button", l10nId: "derp-updates-whatsnew" },
         ],
       },
     ],

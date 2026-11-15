@@ -49,6 +49,8 @@ def main():
     check(all((HOME / "features" / f).exists() for f in ("DerpPet.sys.mjs", "pet.css")), "dork pet installed")
     stickers = ("DerpStickers.sys.mjs", "stickers.js", "stickers.css", "locales/en-US/derp/stickers.ftl")
     check(all((HOME / "features" / f).exists() for f in stickers), "screenshot stickers installed")
+    whatsnew = ("DerpWhatsNew.sys.mjs", "whatsnew.json", "whatsnew.css", "locales/en-US/derp/whatsnew.ftl")
+    check(all((HOME / "features" / f).exists() for f in whatsnew), "what's new installed")
     check((HOME / "features/DerpUpdates.sys.mjs").exists(), "Check for updates installed")
     look = ("manifest.json", "doodle-page.js", "doodle-page.css")
     check(all((HOME / "features/doodle-look" / f).exists() for f in look), "Doodle's look installed")

@@ -8,7 +8,8 @@ same code the browser and the website use), the logo, the wordmark, Doodle's
 icon and Doodle's look for its results (src/features/doodle-look/), the
 screenshot sticker editor (stickers.js, stickers.css) with Derp's critters
 (critters.js: the duck, snail and ghost), and the Seasons gag's art
-(seasons/*.svg, from DerpFun.sys.mjs); and <out>/res/drawable-nodpi/
+(seasons/*.svg, from DerpFun.sys.mjs), what's new after an update
+(whatsnew.json); and <out>/res/drawable-nodpi/
 derp_logo.png for the launcher icon.
 """
 import importlib.util
@@ -75,6 +76,8 @@ def main(out):
         "// Generated from src/features/ by prepare_assets.py.\nconst CRITTERS = " + json.dumps(critters, indent=2) + ";\n",
         encoding="utf-8",
     )
+    # What's new after an update: the same list as desktop Derp's.
+    shutil.copyfile(ROOT / "src/features/whatsnew.json", assets / "whatsnew.json")
     # Seasons: what falls, as files the app draws.
     (assets / "seasons").mkdir(exist_ok=True)
     for name, svg in seasons().items():

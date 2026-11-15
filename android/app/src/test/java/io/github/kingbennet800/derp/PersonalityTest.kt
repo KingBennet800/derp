@@ -3,7 +3,9 @@ package io.github.kingbennet800.derp
 import java.io.File
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Dork pet, Looks and Seasons: the same on Android as on desktop. */
@@ -50,5 +52,22 @@ class PersonalityTest {
         for (name in days.values.flatten().toSet()) {
             assertNotNull("DerpFun.sys.mjs draws $name", Regex("""\n  $name: svg\(""").find(source))
         }
+    }
+
+    @Test
+    fun versionsCompare() {
+        assertTrue(WhatsNew.newer("2.1.0", "2.0.1"))
+        assertTrue(WhatsNew.newer("2.10.0", "2.9.9"))
+        assertTrue(WhatsNew.newer("3.0", "2.99.99"))
+        assertFalse(WhatsNew.newer("2.1.0", "2.1.0"))
+        assertFalse(WhatsNew.newer("2.0.9", "2.1.0"))
+    }
+
+    @Test
+    fun newsIsNewestFirst() {
+        // Both apps show whatsnew.json's releases in its order, the newest first.
+        val listed = Regex(""""version": "([\d.]+)"""").findAll(File(repo, "src/features/whatsnew.json").readText()).map { it.groupValues[1] }.toList()
+        assertTrue("whatsnew.json lists versions", listed.isNotEmpty())
+        for ((a, b) in listed.zipWithNext()) assertTrue("$a is listed before $b", WhatsNew.newer(a, b))
     }
 }

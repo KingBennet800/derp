@@ -106,6 +106,9 @@ Windows) to delete it too.
 - **Looks** (Settings → Derp → Look): Grape, Mint, Peach, Bubblegum or
   Graphite instead of Derp's blue, light and dark, in the window, its menus and
   Derp's pages, switching at once.
+- **What's new**: after an update brings something new, Derp shows what came
+  with it and where to find it (`src/features/whatsnew.json`, on Android
+  too); Settings → Derp → Updates shows it again.
 - **Screenshot with stickers** (a page's right-click menu): a picture of what
   you see of the page, with stickers you drag on: your dork, the duck, the
   snail, a ghost, googly eyes, hearts, stars, shades, a crown and a "derp!"
@@ -251,6 +254,8 @@ pick up. The version in use is `android/geckoview-version.txt`.
   default), with Dork pet, Seasons and the Download duck.
 - **Screenshot with stickers** (⋮ menu): the same sticker editor as desktop;
   Save keeps the picture in Pictures/Derp.
+- **What's new** after an update, as on desktop (⋮ → About Derp → What's new
+  shows it again).
 - **Doodle** is the search engine here too; the address bar shows what you
   searched for.
 - **Ad blocker**: uBlock Origin, built in like on desktop. Derp installs it

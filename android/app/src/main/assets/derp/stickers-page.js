@@ -14,8 +14,10 @@ const blobToDataURL = blob =>
 
 (async () => {
   const state = (await derp({ type: "stickers.get" })) || {};
+  // Restored after Derp was closed, the picture is gone: say so, and let it close.
   if (!state.image) {
     document.getElementById("empty").hidden = false;
+    document.getElementById("close").addEventListener("click", () => derp({ type: "stickers.close" }));
     return;
   }
   const dork = state.dork ? normalizeDork(state.dork) : null;

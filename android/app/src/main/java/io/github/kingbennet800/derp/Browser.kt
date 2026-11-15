@@ -220,19 +220,23 @@ class Browser(val app: DerpApp) {
     /** Screenshot with stickers: the picture (a PNG data: URL) waiting for
      * stickers.html, and the tab it opens in. */
     var stickerShot: String? = null
-    private var stickerTab: Tab? = null
+    private var stickerFrom: Tab? = null
 
     /** Opens the sticker editor in a new tab, next to [from], with [shot]. */
     fun openStickers(shot: String, from: Tab) {
         stickerShot = shot
-        app.withPages { stickerTab = newTab(it.metaData.baseUrl + "stickers.html", private = from.private, parent = from) }
+        stickerFrom = from
+        app.withPages { newTab(it.metaData.baseUrl + "stickers.html", private = from.private, parent = from) }
     }
 
-    /** The sticker editor is done (saved or cancelled): back to the page. */
-    fun closeStickers() {
+    /** The sticker editor in [tab] is done (saved or cancelled): it closes,
+     * and you're back on the page you took the picture of. */
+    fun closeStickers(tab: Tab?) {
+        val from = stickerFrom
         stickerShot = null
-        stickerTab?.let { if (it in tabs) close(it) }
-        stickerTab = null
+        stickerFrom = null
+        if (tab != null && tab in tabs) close(tab)
+        if (from != null && from in tabs) select(from)
     }
 
     /** One of Derp's own pages (bookmarks.html, history.html…) in the current tab. */
@@ -552,9 +556,9 @@ class Browser(val app: DerpApp) {
             }
             val type = msg.optString("type")
             Log.d("Derp", "page asks: $type")
-            later(type, msg)?.let { return it }
-            val reply = JSONObject().put("ok", true)
             val tab = tabs.firstOrNull { it.session === sender.session }
+            later(type, msg, tab)?.let { return it }
+            val reply = JSONObject().put("ok", true)
             runCatching { answer(type, msg, reply, tab) }.onFailure { reply.put("ok", false).put("error", it.toString()) }
             return GeckoResult.fromValue(reply.toString())
         }
@@ -611,7 +615,7 @@ class Browser(val app: DerpApp) {
                     stickerShot?.let { reply.put("image", it) }
                     app.dork.json?.let { reply.put("dork", it) }
                 }
-                "stickers.close" -> closeStickers()
+                "stickers.close" -> closeStickers(tab)
                 "made" -> app.dork.made = true
                 "focusUrl" -> ui?.focusUrl()
                 "bookmarks.list" -> reply.put("items", library.bookmarks(msg.optString("query"), msg.optInt("limit", 500)))
@@ -639,7 +643,7 @@ class Browser(val app: DerpApp) {
         }
 
         /** Questions answered later: ones that need you (a file to pick, your screen lock). */
-        private fun later(type: String, msg: JSONObject): GeckoResult<Any>? {
+        private fun later(type: String, msg: JSONObject, tab: Tab?): GeckoResult<Any>? {
             if (type !in setOf("import", "logins.reveal", "logins.copy", "devices.sync", "devices.leave", "stickers.save")) return null
             val result = GeckoResult<Any>()
             val ui = ui ?: return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
@@ -647,7 +651,7 @@ class Browser(val app: DerpApp) {
             when (type) {
                 "stickers.save" -> ui.saveStickers(msg.optString("png")) { saved ->
                     done(JSONObject().put("ok", saved))
-                    if (saved) closeStickers()
+                    if (saved) closeStickers(tab)
                 }
                 "devices.sync" -> app.pairing.syncNow { done(JSONObject().put("ok", true).put("devices", app.pairing.summary)) }
                 "devices.leave" -> app.pairing.leave { done(JSONObject().put("ok", true).put("devices", app.pairing.summary)) }

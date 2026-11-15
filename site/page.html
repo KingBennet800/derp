@@ -1273,11 +1273,14 @@ function render(pop = true) {
     if (content) b.append(content);
     return b;
   };
+  // Dork pets' outfits are earned in Derp: only the rest are offered here
+  // (unless a dork from a link already wears one).
+  const offered = (part, value) => unlocked(part, value, null) || dork[part] === value;
   const grid = $(".maker-grid");
   grid.hidden = !current.options;
   if (current.options) {
     grid.replaceChildren(
-      ...PARTS[current.options].map(value => {
+      ...PARTS[current.options].filter(value => offered(current.options, value)).map(value => {
         const img = new Image();
         img.alt = "";
         img.src = dorkURL({ ...dork, [current.options]: value }, 160);
@@ -1288,7 +1291,11 @@ function render(pop = true) {
   const colors = $(".maker-colors");
   colors.hidden = !current.colors;
   if (current.colors) {
-    colors.replaceChildren(...Object.entries(PARTS[current.colors]).map(([value, color]) => choice(current.colors, value, null, color)));
+    colors.replaceChildren(
+      ...Object.entries(PARTS[current.colors])
+        .filter(([value]) => offered(current.colors, value))
+        .map(([value, color]) => choice(current.colors, value, null, color))
+    );
   }
   if (focused) document.querySelector(`.maker [data-value="${focused}"][data-part]`)?.focus();
 }

@@ -136,6 +136,8 @@ derp-updates-group =
     .description = Derp and its Firefox engine update themselves every few hours, checked against their signatures. A new engine is used the next time you open Derp.
 derp-updates-check =
     .label = Check for updates
+derp-updates-whatsnew =
+    .label = What’s new in this version
 # $version: Derp’s version, like 2.0.0. $engine: the Firefox engine’s, like 159.0.1.
 derp-updates-idle =
     .label = Derp { $version }

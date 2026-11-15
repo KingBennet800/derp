@@ -136,7 +136,11 @@ class MainActivity : Activity() {
         }
         browser.start(intent)
         render()
-        root.postDelayed({ maybeFlurry(1) }, 1200)
+        // A fresh window (not one Android rebuilt, say for rotating the phone).
+        if (savedInstanceState == null) {
+            root.postDelayed({ maybeFlurry(1) }, 1200)
+            root.postDelayed({ showWhatsNew(WhatsNew.since(this, app.dork.made)) }, 1500)
+        }
     }
 
     /** Every time Derp comes to the screen, it looks for a newer Derp (at most once an hour). */
@@ -1411,8 +1415,91 @@ class MainActivity : Activity() {
                     "Derp is open source and isn't affiliated with Mozilla.",
             )
             .setPositiveButton("Website") { _, _ -> browser.newTab("https://kingbennet800.github.io/derp/") }
+            .setNeutralButton("What’s new") { _, _ -> showWhatsNew(WhatsNew.current(this)) }
             .setNegativeButton("Close", null)
             .show()
+    }
+
+    /** What's new: the new things in [releases] (newest first), each with
+     * where to find it, under your dork. */
+    private fun showWhatsNew(releases: List<WhatsNew.Release>) {
+        if (releases.isEmpty() || isFinishing) return
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(4), dp(24), dp(4))
+        }
+        for (release in releases) {
+            if (releases.size > 1) {
+                list.addView(TextView(this).apply {
+                    text = "Derp ${release.version}: ${release.title}"
+                    textSize = 13f
+                    typeface = MEDIUM
+                    setTextColor(palette.accent)
+                    setPadding(0, dp(10), 0, dp(2))
+                })
+            }
+            for (item in release.items) {
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    setPadding(0, dp(8), 0, dp(8))
+                }
+                row.addView(TextView(this).apply {
+                    text = item.icon
+                    textSize = 22f
+                    gravity = Gravity.CENTER
+                }, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
+                val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                words.addView(TextView(this).apply {
+                    text = item.title
+                    textSize = 16f
+                    typeface = MEDIUM
+                })
+                words.addView(TextView(this).apply {
+                    text = item.text
+                    textSize = 14f
+                })
+                item.where?.let { where ->
+                    words.addView(TextView(this).apply {
+                        text = where
+                        textSize = 13f
+                        alpha = 0.6f
+                        setPadding(0, dp(2), 0, 0)
+                    })
+                }
+                row.addView(words, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                list.addView(row)
+            }
+        }
+        val head = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(24), dp(20), dp(24), dp(8))
+        }
+        app.dork.avatar(dp(56))?.let { face ->
+            head.addView(ImageView(this).apply { setImageBitmap(face) }, LinearLayout.LayoutParams(dp(56), dp(56)).apply { marginEnd = dp(14) })
+        }
+        val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        titles.addView(TextView(this).apply {
+            text = "What’s new in Derp ${releases.first().version}"
+            textSize = 20f
+            typeface = MEDIUM
+        })
+        titles.addView(TextView(this).apply {
+            text = releases.first().title
+            textSize = 14f
+            alpha = 0.7f
+        })
+        head.addView(titles)
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(head)
+            addView(ScrollView(this@MainActivity).apply { addView(list) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        }
+        AlertDialog.Builder(this)
+            .setView(panel)
+            .setPositiveButton("Nice!", null)
+            .show()
+        Log.d("Derp", "What's new: ${releases.joinToString { it.version }}")
     }
 
     private var updateOffer: AlertDialog? = null

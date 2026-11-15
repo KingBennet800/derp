@@ -1,0 +1,245 @@
+/* Screenshot with stickers (stickers.js): the editor. Desktop Derp shows it
+ * over the window in .derp-stickers; Derp for Android fills its page. */
+
+.derp-stickers {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.45);
+  animation: derp-st-fade 180ms ease-out both;
+}
+
+@keyframes derp-st-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.derp-st {
+  --st-accent: var(--derp-accent, light-dark(#2f6feb, #86b1ff));
+  --st-surface: var(--arrowpanel-background, light-dark(#fff, #26272a));
+  --st-text: var(--arrowpanel-color, light-dark(#1d1d1f, #ececec));
+  --st-line: light-dark(#dedee3, #3a3a3c);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  box-sizing: border-box;
+  width: min(1100px, 100%);
+  height: min(820px, 100%);
+  max-height: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--st-surface);
+  color: var(--st-text);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.35);
+  font: menu;
+  font-size: 14px;
+  outline: none;
+}
+
+.derp-st-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.derp-st-top > strong {
+  font-size: 1.15em;
+}
+
+.derp-st-hint {
+  opacity: 0.65;
+}
+
+/* The picture, as big as fits; stickers sit on it. */
+.derp-st-area {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  container-type: size;
+}
+
+.derp-st-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--st-line);
+  touch-action: none;
+}
+
+.derp-st-shot {
+  display: block;
+  max-width: 100cqw;
+  max-height: 100cqh;
+  user-select: none;
+}
+
+.derp-st-sticker {
+  position: absolute;
+  translate: -50% -50%;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+
+.derp-st-sticker:active {
+  cursor: grabbing;
+}
+
+.derp-st-sticker > img {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
+}
+
+.derp-st-selected {
+  outline: 2px dashed var(--st-accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+/* The selected sticker's × (take it off) and grip (resize and turn). */
+.derp-st-x,
+.derp-st-grip {
+  position: absolute;
+  display: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
+}
+
+.derp-st-selected > .derp-st-x,
+.derp-st-selected > .derp-st-grip {
+  display: grid;
+}
+
+.derp-st-x {
+  top: -16px;
+  left: -16px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: #fff;
+  color: #1d1d1f;
+  font: 700 16px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.derp-st-grip {
+  right: -16px;
+  bottom: -16px;
+  border: 3px solid #fff;
+  box-sizing: border-box;
+  background: var(--st-accent);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+/* Stickers to pick from. */
+.derp-st-tray {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+
+.derp-st-tray > button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  cursor: pointer;
+}
+
+.derp-st-tray > button:hover {
+  background: color-mix(in srgb, currentColor 13%, transparent);
+}
+
+.derp-st-tray > button > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.derp-st-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.derp-st-actions > button {
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.derp-st-actions > button:hover {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.derp-st-actions > .derp-st-primary {
+  background: var(--st-accent);
+  color: light-dark(#fff, #0f1115);
+}
+
+.derp-st-actions > button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* A note after saving or copying, at the bottom of the window. */
+.derp-st-note {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 2147483647;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--arrowpanel-background, light-dark(#fff, #26272a));
+  color: var(--arrowpanel-color, light-dark(#1d1d1f, #ececec));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  font: menu;
+  animation: derp-st-fade 180ms ease-out both;
+}
+
+.derp-st-note > button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--derp-accent, light-dark(#2f6feb, #86b1ff));
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .derp-stickers,
+  .derp-st-note {
+    animation: none;
+  }
+}

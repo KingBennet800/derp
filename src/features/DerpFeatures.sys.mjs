@@ -17,6 +17,8 @@
  *   eats what you typed in the address bar (DerpDuck.sys.mjs), Dork pet
  *   (DerpPet.sys.mjs), and Snail mode, Peekaboo, Party mode, Sleepy tabs,
  *   Power typing, Hiccups, Tab ghosts and Rainbow mode (DerpFun.sys.mjs).
+ * - Screenshot with stickers, in a page's context menu (DerpStickers.sys.mjs,
+ *   with stickers.js).
  * - A "Derp" page in Settings for these, JPEG XL and AI controls, and
  *   checking for updates now (DerpUpdates.sys.mjs).
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
@@ -52,7 +54,7 @@ export const DerpFeatures = {
   init() {
     const onStartup = () => {
       Services.obs.removeObserver(onStartup, "final-ui-startup");
-      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, Pet, Doodle, Pair, SettingsSection, Layout]) {
+      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, Pet, Stickers, Doodle, Pair, SettingsSection, Layout]) {
         try {
           feature.init();
         } catch (e) {
@@ -91,6 +93,21 @@ const Pet = {
     const { DerpPet } = ChromeUtils.importESModule(derpURL("DerpPet.sys.mjs"));
     const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
     DerpPet.init({ cssURL: derpURL("pet.css"), dork: DerpDork });
+  },
+};
+
+const Stickers = {
+  init() {
+    const { DerpStickers } = ChromeUtils.importESModule(derpURL("DerpStickers.sys.mjs"));
+    const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
+    const { DUCK_URL } = ChromeUtils.importESModule(derpURL("DerpDuck.sys.mjs"));
+    const { SNAIL_URL, GHOST_URL } = ChromeUtils.importESModule(derpURL("DerpFun.sys.mjs"));
+    DerpStickers.init({
+      cssURL: derpURL("stickers.css"),
+      scriptURL: derpURL("stickers.js"),
+      dork: DerpDork,
+      critters: { duck: DUCK_URL, snail: SNAIL_URL, ghost: GHOST_URL },
+    });
   },
 };
 

@@ -72,6 +72,70 @@
   }
 }
 
+/* ── Looks (Settings → Derp → Look) ─────────────────────────────────────
+ * Derp's blue above is the default; these recolor the window for the look
+ * you pick (the derp.look pref, which -moz-pref follows as it changes).
+ * Private windows keep their violet. derp-palette.css matches Firefox's
+ * accent scale to each look, in menus and on Derp's pages. */
+
+@media -moz-pref("derp.look", "grape") {
+  :root:not([privatebrowsingmode="temporary"]) {
+    --derp-accent: light-dark(#7c4dff, #b8a4ff);
+    --derp-frame: light-dark(#e7def7, #1e1829);
+    --derp-frame-inactive: light-dark(#efe9fa, #231d2e);
+    --derp-toolbar: light-dark(#f8f4ff, #2a2336);
+    --derp-field: light-dark(#e6ddf6, #352c44);
+    --derp-field-focus: light-dark(#ffffff, #352c44);
+    --derp-line: light-dark(#d4c7ec, #3f3550);
+    --derp-content-line: light-dark(#ddd3f0, #382f48);
+    --derp-content: light-dark(#ffffff, #201b28);
+  }
+}
+@media -moz-pref("derp.look", "mint") {
+  :root:not([privatebrowsingmode="temporary"]) {
+    --derp-accent: light-dark(#0d9a80, #4fd8b8);
+    --derp-frame: light-dark(#dbefe7, #15211d);
+    --derp-frame-inactive: light-dark(#e6f4ee, #1a2622);
+    --derp-toolbar: light-dark(#f4fbf8, #1f2d28);
+    --derp-field: light-dark(#d8ece4, #283a33);
+    --derp-field-focus: light-dark(#ffffff, #283a33);
+    --derp-line: light-dark(#c3e0d4, #31453d);
+    --derp-content-line: light-dark(#cfe6dc, #2d3f38);
+    --derp-content: light-dark(#ffffff, #1a2320);
+  }
+}
+@media -moz-pref("derp.look", "peach") {
+  :root:not([privatebrowsingmode="temporary"]) {
+    --derp-accent: light-dark(#e2540a, #ffa56b);
+    --derp-frame: light-dark(#f8e6d9, #241b15);
+    --derp-frame-inactive: light-dark(#fbeee4, #29201a);
+    --derp-toolbar: light-dark(#fff8f2, #2f251e);
+    --derp-field: light-dark(#f5e0d1, #3a2e26);
+    --derp-field-focus: light-dark(#ffffff, #3a2e26);
+    --derp-line: light-dark(#ecd2bf, #45372d);
+    --derp-content-line: light-dark(#f1dccc, #3f3229);
+    --derp-content: light-dark(#ffffff, #221b17);
+  }
+}
+@media -moz-pref("derp.look", "bubblegum") {
+  :root:not([privatebrowsingmode="temporary"]) {
+    --derp-accent: light-dark(#d93a74, #ff8fb6);
+    --derp-frame: light-dark(#f8e1ec, #25171e);
+    --derp-frame-inactive: light-dark(#fbeaf2, #2a1c23);
+    --derp-toolbar: light-dark(#fff6fa, #302129);
+    --derp-field: light-dark(#f5dce8, #3b2a33);
+    --derp-field-focus: light-dark(#ffffff, #3b2a33);
+    --derp-line: light-dark(#ecc9d9, #47323d);
+    --derp-content-line: light-dark(#f1d4e1, #403039);
+    --derp-content: light-dark(#ffffff, #22191e);
+  }
+}
+@media -moz-pref("derp.look", "graphite") {
+  :root:not([privatebrowsingmode="temporary"]) {
+    --derp-accent: light-dark(#3a3a3c, #d4d4d8);
+  }
+}
+
 /* Recolor Firefox's own tokens — only for the built-in themes (private
  * windows use one too), so an add-on theme from addons.mozilla.org still looks
  * the way its author intended. */

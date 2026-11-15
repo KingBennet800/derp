@@ -35,4 +35,107 @@
     /* Panels, menus and cards: Firefox's dark gray (#23222b) has a purple cast. */
     --background-color-box: light-dark(#ffffff, #26272a) !important;
   }
+
+  /* Looks (Settings → Derp → Look): the accent scale in the look's color,
+   * and the accent itself on Derp's pages (derp-content.css sets the blue). */
+  @media -moz-pref("derp.look", "grape") {
+    :root:not([privatebrowsingmode="temporary"]) {
+      --color-violet-0: color-mix(in oklab, #8a5cff 7%, white) !important;
+      --color-violet-10: color-mix(in oklab, #8a5cff 22%, white) !important;
+      --color-violet-20: color-mix(in oklab, #8a5cff 40%, white) !important;
+      --color-violet-30: color-mix(in oklab, #8a5cff 62%, white) !important;
+      --color-violet-40: color-mix(in oklab, #8a5cff 82%, white) !important;
+      --color-violet-50: #8a5cff !important;
+      --color-violet-60: color-mix(in oklab, #8a5cff 86%, black) !important;
+      --color-violet-70: color-mix(in oklab, #8a5cff 70%, black) !important;
+      --color-violet-80: color-mix(in oklab, #8a5cff 55%, black) !important;
+      --color-violet-90: color-mix(in oklab, #8a5cff 42%, black) !important;
+      --color-violet-100: color-mix(in oklab, #8a5cff 30%, black) !important;
+      --color-violet-110: color-mix(in oklab, #8a5cff 18%, black) !important;
+      --color-accent-primary: light-dark(#7c4dff, #b8a4ff) !important;
+      --color-accent-primary-hover: light-dark(var(--color-violet-70), var(--color-violet-20)) !important;
+      --color-accent-primary-active: light-dark(var(--color-violet-80), var(--color-violet-10)) !important;
+      --focus-outline-color: light-dark(#7c4dff, #b8a4ff) !important;
+    }
+  }
+  @media -moz-pref("derp.look", "mint") {
+    :root:not([privatebrowsingmode="temporary"]) {
+      --color-violet-0: color-mix(in oklab, #14b394 7%, white) !important;
+      --color-violet-10: color-mix(in oklab, #14b394 22%, white) !important;
+      --color-violet-20: color-mix(in oklab, #14b394 40%, white) !important;
+      --color-violet-30: color-mix(in oklab, #14b394 62%, white) !important;
+      --color-violet-40: color-mix(in oklab, #14b394 82%, white) !important;
+      --color-violet-50: #14b394 !important;
+      --color-violet-60: color-mix(in oklab, #14b394 86%, black) !important;
+      --color-violet-70: color-mix(in oklab, #14b394 70%, black) !important;
+      --color-violet-80: color-mix(in oklab, #14b394 55%, black) !important;
+      --color-violet-90: color-mix(in oklab, #14b394 42%, black) !important;
+      --color-violet-100: color-mix(in oklab, #14b394 30%, black) !important;
+      --color-violet-110: color-mix(in oklab, #14b394 18%, black) !important;
+      --color-accent-primary: light-dark(#0d9a80, #4fd8b8) !important;
+      --color-accent-primary-hover: light-dark(var(--color-violet-70), var(--color-violet-20)) !important;
+      --color-accent-primary-active: light-dark(var(--color-violet-80), var(--color-violet-10)) !important;
+      --focus-outline-color: light-dark(#0d9a80, #4fd8b8) !important;
+    }
+  }
+  @media -moz-pref("derp.look", "peach") {
+    :root:not([privatebrowsingmode="temporary"]) {
+      --color-violet-0: color-mix(in oklab, #f26a1f 7%, white) !important;
+      --color-violet-10: color-mix(in oklab, #f26a1f 22%, white) !important;
+      --color-violet-20: color-mix(in oklab, #f26a1f 40%, white) !important;
+      --color-violet-30: color-mix(in oklab, #f26a1f 62%, white) !important;
+      --color-violet-40: color-mix(in oklab, #f26a1f 82%, white) !important;
+      --color-violet-50: #f26a1f !important;
+      --color-violet-60: color-mix(in oklab, #f26a1f 86%, black) !important;
+      --color-violet-70: color-mix(in oklab, #f26a1f 70%, black) !important;
+      --color-violet-80: color-mix(in oklab, #f26a1f 55%, black) !important;
+      --color-violet-90: color-mix(in oklab, #f26a1f 42%, black) !important;
+      --color-violet-100: color-mix(in oklab, #f26a1f 30%, black) !important;
+      --color-violet-110: color-mix(in oklab, #f26a1f 18%, black) !important;
+      --color-accent-primary: light-dark(#e2540a, #ffa56b) !important;
+      --color-accent-primary-hover: light-dark(var(--color-violet-70), var(--color-violet-20)) !important;
+      --color-accent-primary-active: light-dark(var(--color-violet-80), var(--color-violet-10)) !important;
+      --focus-outline-color: light-dark(#e2540a, #ffa56b) !important;
+    }
+  }
+  @media -moz-pref("derp.look", "bubblegum") {
+    :root:not([privatebrowsingmode="temporary"]) {
+      --color-violet-0: color-mix(in oklab, #e84d86 7%, white) !important;
+      --color-violet-10: color-mix(in oklab, #e84d86 22%, white) !important;
+      --color-violet-20: color-mix(in oklab, #e84d86 40%, white) !important;
+      --color-violet-30: color-mix(in oklab, #e84d86 62%, white) !important;
+      --color-violet-40: color-mix(in oklab, #e84d86 82%, white) !important;
+      --color-violet-50: #e84d86 !important;
+      --color-violet-60: color-mix(in oklab, #e84d86 86%, black) !important;
+      --color-violet-70: color-mix(in oklab, #e84d86 70%, black) !important;
+      --color-violet-80: color-mix(in oklab, #e84d86 55%, black) !important;
+      --color-violet-90: color-mix(in oklab, #e84d86 42%, black) !important;
+      --color-violet-100: color-mix(in oklab, #e84d86 30%, black) !important;
+      --color-violet-110: color-mix(in oklab, #e84d86 18%, black) !important;
+      --color-accent-primary: light-dark(#d93a74, #ff8fb6) !important;
+      --color-accent-primary-hover: light-dark(var(--color-violet-70), var(--color-violet-20)) !important;
+      --color-accent-primary-active: light-dark(var(--color-violet-80), var(--color-violet-10)) !important;
+      --focus-outline-color: light-dark(#d93a74, #ff8fb6) !important;
+    }
+  }
+  @media -moz-pref("derp.look", "graphite") {
+    :root:not([privatebrowsingmode="temporary"]) {
+      --color-violet-0: color-mix(in oklab, #6e6e73 7%, white) !important;
+      --color-violet-10: color-mix(in oklab, #6e6e73 22%, white) !important;
+      --color-violet-20: color-mix(in oklab, #6e6e73 40%, white) !important;
+      --color-violet-30: color-mix(in oklab, #6e6e73 62%, white) !important;
+      --color-violet-40: color-mix(in oklab, #6e6e73 82%, white) !important;
+      --color-violet-50: #6e6e73 !important;
+      --color-violet-60: color-mix(in oklab, #6e6e73 86%, black) !important;
+      --color-violet-70: color-mix(in oklab, #6e6e73 70%, black) !important;
+      --color-violet-80: color-mix(in oklab, #6e6e73 55%, black) !important;
+      --color-violet-90: color-mix(in oklab, #6e6e73 42%, black) !important;
+      --color-violet-100: color-mix(in oklab, #6e6e73 30%, black) !important;
+      --color-violet-110: color-mix(in oklab, #6e6e73 18%, black) !important;
+      --color-accent-primary: light-dark(#3a3a3c, #d4d4d8) !important;
+      --color-accent-primary-hover: light-dark(var(--color-violet-70), var(--color-violet-20)) !important;
+      --color-accent-primary-active: light-dark(var(--color-violet-80), var(--color-violet-10)) !important;
+      --focus-outline-color: light-dark(#3a3a3c, #d4d4d8) !important;
+    }
+  }
 }

@@ -209,3 +209,115 @@
     animation: none;
   }
 }
+
+/* ── Seasons: the season, drifting down over the toolbar ────────────────── */
+
+.derp-flurry {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+
+.derp-flurry > img {
+  position: absolute;
+  top: -28px;
+  animation-name: derp-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@keyframes derp-fall {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--drift) 270px;
+    rotate: var(--spin);
+  }
+}
+
+/* ── Download duck: a parcel, carried to the downloads button ───────────── */
+
+/* Positioned by DerpFun: on the toolbar's bottom edge, walking to --to. */
+.derp-carry {
+  position: fixed;
+  z-index: 2147483647;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+/* The duck walks left; this one walks right. */
+.derp-carry-duck {
+  width: 30px;
+  height: 30px;
+  scale: -1 1;
+}
+
+/* Held in its beak. */
+.derp-carry-parcel {
+  width: 18px;
+  height: 18px;
+  margin-inline-start: -6px;
+  translate: 0 -11px;
+}
+
+.derp-carry-go {
+  animation: derp-carry-walk 2200ms ease-in-out forwards;
+}
+
+.derp-carry-go > .derp-carry-duck {
+  animation: derp-carry-waddle 300ms ease-in-out infinite alternate;
+}
+
+@keyframes derp-carry-walk {
+  to {
+    left: var(--to);
+  }
+}
+
+@keyframes derp-carry-waddle {
+  from {
+    rotate: -8deg;
+  }
+  to {
+    rotate: 8deg;
+  }
+}
+
+/* There: the parcel pops into the downloads button, and the duck goes. */
+.derp-carry-drop {
+  animation:
+    derp-carry-walk 2200ms ease-in-out forwards,
+    derp-carry-off 600ms 380ms ease-in forwards;
+}
+
+.derp-carry-drop > .derp-carry-parcel {
+  animation: derp-carry-in 380ms ease-in forwards;
+}
+
+@keyframes derp-carry-in {
+  to {
+    translate: 22px -2px;
+    scale: 0.3;
+    opacity: 0;
+  }
+}
+
+@keyframes derp-carry-off {
+  to {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}

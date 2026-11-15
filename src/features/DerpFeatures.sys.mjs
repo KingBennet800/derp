@@ -14,9 +14,9 @@
  * - Your devices: pair with Derp on your phone to share bookmarks, passwords
  *   and open tabs, end-to-end encrypted (DerpPair.sys.mjs).
  * - Just for fun (all off by default): Duck mode, where now and then a duck
- *   eats what you typed in the address bar (DerpDuck.sys.mjs), and Snail
- *   mode, Peekaboo, Party mode, Sleepy tabs, Power typing, Hiccups, Tab ghosts
- *   and Rainbow mode (DerpFun.sys.mjs).
+ *   eats what you typed in the address bar (DerpDuck.sys.mjs), Dork pet
+ *   (DerpPet.sys.mjs), and Snail mode, Peekaboo, Party mode, Sleepy tabs,
+ *   Power typing, Hiccups, Tab ghosts and Rainbow mode (DerpFun.sys.mjs).
  * - A "Derp" page in Settings for these, JPEG XL and AI controls, and
  *   checking for updates now (DerpUpdates.sys.mjs).
  * - Derp's minimal toolbar layout, applied once (you can rearrange after).
@@ -52,7 +52,7 @@ export const DerpFeatures = {
   init() {
     const onStartup = () => {
       Services.obs.removeObserver(onStartup, "final-ui-startup");
-      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, Doodle, Pair, SettingsSection, Layout]) {
+      for (const feature of [Strings, WebApps, MemorySaver, Dork, Duck, Fun, Pet, Doodle, Pair, SettingsSection, Layout]) {
         try {
           feature.init();
         } catch (e) {
@@ -86,11 +86,20 @@ const Duck = {
   },
 };
 
+const Pet = {
+  init() {
+    const { DerpPet } = ChromeUtils.importESModule(derpURL("DerpPet.sys.mjs"));
+    const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
+    DerpPet.init({ cssURL: derpURL("pet.css"), dork: DerpDork });
+  },
+};
+
 const Fun = {
   init() {
     const { DerpFun } = ChromeUtils.importESModule(derpURL("DerpFun.sys.mjs"));
     const { DerpDork } = ChromeUtils.importESModule(derpURL("DerpDork.sys.mjs"));
-    DerpFun.init({ cssURL: derpURL("fun.css"), dork: DerpDork });
+    const { DUCK_URL } = ChromeUtils.importESModule(derpURL("DerpDuck.sys.mjs"));
+    DerpFun.init({ cssURL: derpURL("fun.css"), dork: DerpDork, duckURL: DUCK_URL });
   },
 };
 

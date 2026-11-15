@@ -12,6 +12,15 @@ derp-dork-name =
     .placeholder = Name your dork
     .aria-label = Name
 derp-dork-local = Your Derp profile, kept only on this device.
+# Dork pet (Settings → Derp → Just for fun). $days: how many days you've used Derp with it on
+derp-dork-days = { $days ->
+    [one] 🐾 Your first day together
+   *[other] 🐾 { $days } days together
+}
+# A dork pet's outfit it hasn't earned yet. $days: days together it takes
+derp-dork-locked =
+    .aria-label = Locked: unlocks after { $days } days together
+    .title = Unlocks after { $days } days together
 
 derp-dork-tab-face = Face
 derp-dork-tab-eyes = Eyes
@@ -156,6 +165,15 @@ derp-dork-hair-cap =
 derp-dork-hair-party =
     .aria-label = Party hat
     .title = Party hat
+derp-dork-hair-flower =
+    .aria-label = Flower
+    .title = Flower
+derp-dork-hair-crown =
+    .aria-label = Crown
+    .title = Crown
+derp-dork-hair-wizard =
+    .aria-label = Wizard hat
+    .title = Wizard hat
 
 derp-dork-hairColor-ink =
     .aria-label = Ink
@@ -209,6 +227,12 @@ derp-dork-extras-blush =
 derp-dork-extras-bandage =
     .aria-label = Bandage
     .title = Bandage
+derp-dork-extras-bowtie =
+    .aria-label = Bow tie
+    .title = Bow tie
+derp-dork-extras-monocle =
+    .aria-label = Monocle
+    .title = Monocle
 derp-dork-extras-headphones =
     .aria-label = Headphones
     .title = Headphones
@@ -240,6 +264,9 @@ derp-dork-backdrop-fog =
 derp-dork-backdrop-night =
     .aria-label = Night
     .title = Night
+derp-dork-backdrop-stars =
+    .aria-label = Starry night
+    .title = Starry night
 derp-dork-backdrop-none =
     .aria-label = No backdrop
     .title = No backdrop

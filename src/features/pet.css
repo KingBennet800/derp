@@ -1,0 +1,160 @@
+/* Dork pet (DerpPet.sys.mjs): your dork's button, and its news. */
+
+/* Pointed at, your dork wiggles. */
+#derp-dork-button[derp-petted] > .toolbarbutton-icon {
+  animation: derp-pet-wiggle 650ms ease-in-out infinite;
+}
+
+@keyframes derp-pet-wiggle {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: -12deg;
+  }
+  75% {
+    rotate: 12deg;
+  }
+}
+
+/* Napping: a "z" drifts up from it, again and again. */
+#derp-dork-button[derp-napping] {
+  position: relative;
+}
+
+#derp-dork-button[derp-napping]::after {
+  content: "z";
+  position: absolute;
+  top: 0;
+  inset-inline-end: 1px;
+  color: var(--derp-accent, #2f6feb);
+  font: 800 11px/1 system-ui, sans-serif;
+  pointer-events: none;
+  animation: derp-pet-z 2400ms ease-out infinite;
+}
+
+@keyframes derp-pet-z {
+  0% {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.7;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 7px -10px;
+    scale: 1.25;
+  }
+}
+
+/* Back again: a little hop. */
+#derp-dork-button[derp-waking] > .toolbarbutton-icon {
+  animation: derp-pet-hop 650ms ease-out;
+}
+
+@keyframes derp-pet-hop {
+  30% {
+    translate: 0 -6px;
+  }
+  60% {
+    translate: 0 0;
+  }
+  80% {
+    translate: 0 -2px;
+  }
+}
+
+/* ── An unlocked outfit, under your dork's button ───────────────────────── */
+
+.derp-pet-toast {
+  position: fixed;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 340px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--arrowpanel-background, #fff);
+  color: var(--arrowpanel-color, #1d1d1f);
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 0.22),
+    0 0 0 1px color-mix(in srgb, currentColor 10%, transparent);
+  font: menu;
+  animation: derp-pet-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.derp-pet-toast > img {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+}
+
+.derp-pet-text {
+  margin: 0;
+  font-size: 1.08em;
+  font-weight: 700;
+}
+
+.derp-pet-days {
+  margin: 2px 0 10px;
+  opacity: 0.7;
+}
+
+.derp-pet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.derp-pet-actions > button {
+  appearance: none;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.derp-pet-actions > button:hover {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.derp-pet-actions > .primary {
+  background: var(--derp-accent, #2f6feb);
+  color: light-dark(#fff, #0f1115);
+}
+
+.derp-pet-actions > .primary:hover {
+  background: color-mix(in srgb, var(--derp-accent, #2f6feb) 88%, currentColor);
+}
+
+.derp-pet-gone {
+  opacity: 0;
+  translate: 0 -6px;
+  transition:
+    opacity 250ms ease-in,
+    translate 250ms ease-in;
+}
+
+@keyframes derp-pet-in {
+  from {
+    opacity: 0;
+    translate: 0 -10px;
+    scale: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #derp-dork-button > .toolbarbutton-icon,
+  #derp-dork-button[derp-napping]::after,
+  .derp-pet-toast {
+    animation: none !important;
+  }
+}

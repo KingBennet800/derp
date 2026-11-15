@@ -212,6 +212,45 @@
   outline-offset: 2px;
 }
 
+/* A dork pet's outfits it hasn't earned yet: faded, with a lock. */
+.derp-dork-locked {
+  position: relative;
+  cursor: default;
+}
+.derp-dork-grid > .derp-dork-locked > img {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+.derp-dork-colors > .derp-dork-locked {
+  opacity: 0.45;
+}
+.derp-dork-locked::after {
+  content: "🔒";
+  position: absolute;
+  inset-block-end: 2px;
+  inset-inline-end: 4px;
+  font-size: 13px;
+}
+.derp-dork-colors > .derp-dork-locked::after {
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+}
+.derp-dork-grid > .derp-dork-locked:hover {
+  background: none;
+}
+
+.derp-dork-days {
+  margin: 2px 0 0;
+  color: var(--dork-accent);
+  font-size: 0.85em;
+  font-weight: 600;
+}
+.derp-dork-days[hidden] {
+  display: none;
+}
+
 /* ── Actions ─────────────────────────────────────────────────────────────── */
 
 .derp-dork-actions {

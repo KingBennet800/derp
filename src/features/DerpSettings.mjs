@@ -15,11 +15,13 @@ const { DerpUpdates } = ChromeUtils.importESModule(window.derpURLs.updates);
 const UNLOAD_AFTER_MINUTES = [15, 30, 60, 120, 240];
 
 Preferences.addAll([
+  { id: "derp.look", type: "string" },
   { id: "derp.memorySaver.enabled", type: "bool" },
   { id: "derp.memorySaver.minutes", type: "int" },
   { id: "browser.taskbarTabs.enabled", type: "bool" },
   { id: "image.jxl.enabled", type: "bool" },
   { id: DerpDuck.PREF, type: "bool" },
+  { id: "derp.pet.enabled", type: "bool" },
   { id: "derp.fun.snail", type: "bool" },
   { id: "derp.fun.peekaboo", type: "bool" },
   { id: "derp.fun.party", type: "bool" },
@@ -28,8 +30,13 @@ Preferences.addAll([
   { id: "derp.fun.hiccups", type: "bool" },
   { id: "derp.fun.ghosts", type: "bool" },
   { id: "derp.fun.rainbow", type: "bool" },
+  { id: "derp.fun.seasons", type: "bool" },
+  { id: "derp.fun.downloadDuck", type: "bool" },
 ]);
 
+// Looks: Derp's colors (theme/derp-theme.css follows the pref).
+const LOOKS = ["derp", "grape", "mint", "peach", "bubblegum", "graphite"];
+Preferences.addSetting({ id: "derpLook", pref: "derp.look", get: look => (LOOKS.includes(look) ? look : "derp") });
 Preferences.addSetting({ id: "derpMemorySaver", pref: "derp.memorySaver.enabled" });
 Preferences.addSetting({
   id: "derpMemorySaverMinutes",
@@ -43,6 +50,7 @@ Preferences.addSetting({ id: "derpWebApps", pref: "browser.taskbarTabs.enabled" 
 Preferences.addSetting({ id: "derpJpegXL", pref: "image.jxl.enabled" });
 Preferences.addSetting({ id: "derpAiControls" });
 Preferences.addSetting({ id: "derpDuck", pref: DerpDuck.PREF });
+Preferences.addSetting({ id: "derpPet", pref: "derp.pet.enabled" });
 Preferences.addSetting({ id: "derpSnail", pref: "derp.fun.snail" });
 Preferences.addSetting({ id: "derpPeekaboo", pref: "derp.fun.peekaboo" });
 Preferences.addSetting({ id: "derpParty", pref: "derp.fun.party" });
@@ -51,6 +59,8 @@ Preferences.addSetting({ id: "derpPower", pref: "derp.fun.power" });
 Preferences.addSetting({ id: "derpHiccups", pref: "derp.fun.hiccups" });
 Preferences.addSetting({ id: "derpGhosts", pref: "derp.fun.ghosts" });
 Preferences.addSetting({ id: "derpRainbow", pref: "derp.fun.rainbow" });
+Preferences.addSetting({ id: "derpSeasons", pref: "derp.fun.seasons" });
+Preferences.addSetting({ id: "derpDownloadDuck", pref: "derp.fun.downloadDuck" });
 
 // Your dork: shown large, with its name; follows edits made in the editor.
 Preferences.addSetting({ id: "derpDorkBox" });
@@ -188,6 +198,19 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  derpLook: {
+    l10nId: "derp-look-group",
+    headingLevel: 2,
+    iconSrc: "chrome://browser/skin/customize.svg",
+    items: [
+      {
+        id: "derpLook",
+        l10nId: "derp-look",
+        control: "moz-select",
+        options: LOOKS.map(look => ({ value: look, l10nId: `derp-look-${look}` })),
+      },
+    ],
+  },
   derpMemorySaver: {
     l10nId: "derp-memory-saver-group",
     headingLevel: 2,
@@ -231,6 +254,7 @@ SettingGroupManager.registerGroups({
     iconSrc: DUCK_URL,
     items: [
       { id: "derpDuck", l10nId: "derp-duck" },
+      { id: "derpPet", l10nId: "derp-pet" },
       { id: "derpSnail", l10nId: "derp-snail" },
       { id: "derpPeekaboo", l10nId: "derp-peekaboo" },
       { id: "derpParty", l10nId: "derp-party" },
@@ -239,6 +263,8 @@ SettingGroupManager.registerGroups({
       { id: "derpHiccups", l10nId: "derp-hiccups" },
       { id: "derpGhosts", l10nId: "derp-ghosts" },
       { id: "derpRainbow", l10nId: "derp-rainbow" },
+      { id: "derpSeasons", l10nId: "derp-seasons" },
+      { id: "derpDownloadDuck", l10nId: "derp-download-duck" },
     ],
   },
 });

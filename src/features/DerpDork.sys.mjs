@@ -13,6 +13,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const PREF = "derp.dork";
+// Dork pet (DerpPet.sys.mjs): whether it's on, and your days together, which
+// unlock outfits.
+const PET_PREF = "derp.pet.enabled";
+const PET_DAYS = "derp.pet.days";
 // Set once you've made your dork (pressed "That's me!"); until then Derp
 // greets you with the editor at startup.
 const MADE_PREF = "derp.dork.made";
@@ -46,7 +50,7 @@ export const PARTS = {
   },
   eyes: ["googly", "round", "happy", "sleepy", "wink", "hearts", "startled"],
   mouth: ["derp", "grin", "smile", "buck", "blep", "o", "smirk"],
-  hair: ["none", "sprout", "bowl", "swoop", "spiky", "curly", "mohawk", "bun", "long", "beanie", "cap", "party"],
+  hair: ["none", "sprout", "bowl", "swoop", "spiky", "curly", "mohawk", "bun", "long", "beanie", "cap", "party", "flower", "crown", "wizard"],
   hairColor: {
     ink: "#2a2423",
     chestnut: "#5a3a26",
@@ -59,7 +63,7 @@ export const PARTS = {
     teal: "#22bfa8",
     purple: "#8f62f0",
   },
-  extras: ["none", "nerd", "round", "shades", "freckles", "blush", "bandage", "headphones"],
+  extras: ["none", "nerd", "round", "shades", "freckles", "blush", "bandage", "headphones", "bowtie", "monocle"],
   backdrop: {
     derp: "linear-gradient(135deg, #c6f57e, #2fd6be 45%, #2f6feb)",
     sky: "#dce8ff",
@@ -70,9 +74,24 @@ export const PARTS = {
     butter: "#fff2c2",
     fog: "#e5e5ea",
     night: "#262833",
+    stars: "radial-gradient(circle at 30% 32%, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 68% 62%, #ffe27a 0 2px, transparent 3px), #232a5c",
     none: "transparent",
   },
 };
+
+// Outfits a dork earns as a pet (Just for fun → Dork pet), after so many days
+// together. Until then they're locked, and random dorks never wear them.
+const UNLOCKS = [
+  { part: "hair", value: "flower", days: 3 },
+  { part: "extras", value: "bowtie", days: 7 },
+  { part: "hair", value: "crown", days: 14 },
+  { part: "hair", value: "wizard", days: 30 },
+  { part: "extras", value: "monocle", days: 45 },
+  { part: "backdrop", value: "stars", days: 60 },
+];
+const unlockOf = (part, value) => UNLOCKS.find(u => u.part === part && u.value === value);
+/** Whether a part is yours after [days] days together (null: not a pet). */
+const unlocked = (part, value, days) => !unlockOf(part, value) || (days !== null && days >= unlockOf(part, value).days);
 
 // The editor's tabs: each picks options (drawn as your dork wearing them)
 // and/or colors.
@@ -293,6 +312,29 @@ function drawHair(kind, c) {
           `<circle cx="246" cy="124" r="8" fill="#fff" opacity=".75"/><circle cx="272" cy="96" r="7" fill="#fff" opacity=".75"/><circle cx="262" cy="140" r="6" fill="#fff" opacity=".75"/>` +
           `<circle cx="256" cy="24" r="17" fill="#ffd84d"/><circle cx="250" cy="18" r="5" fill="#fff" opacity=".6"/>`,
       ];
+    case "flower": {
+      let petals = "";
+      for (let a = 0; a < 360; a += 60) {
+        petals += `<ellipse cx="192" cy="84" rx="19" ry="32" transform="rotate(${a} 192 116)" fill="#fff" stroke="${INK}" stroke-opacity=".12" stroke-width="3"/>`;
+      }
+      return ["", `<path d="M214 142 Q224 128 240 122" fill="none" stroke="#5fae3e" stroke-width="9" stroke-linecap="round"/>` + petals + `<circle cx="192" cy="116" r="20" fill="#ffd43b"/>`];
+    }
+    case "crown":
+      return [
+        "",
+        `<path d="M168 150 L160 66 L208 108 L256 46 L304 108 L352 66 L344 150 Q256 168 168 150 Z" fill="#ffd43b" stroke="#d99a00" stroke-width="6" stroke-linejoin="round"/>` +
+          `<path d="M172 136 Q256 152 340 136" fill="none" stroke="#d99a00" stroke-width="5"/>` +
+          `<circle cx="256" cy="120" r="12" fill="#ff5d7a"/><circle cx="206" cy="128" r="9" fill="#3b74f0"/><circle cx="306" cy="128" r="9" fill="#22bfa8"/>` +
+          `<circle cx="160" cy="66" r="8" fill="#ffd43b"/><circle cx="256" cy="46" r="9" fill="#ffd43b"/><circle cx="352" cy="66" r="8" fill="#ffd43b"/>`,
+      ];
+    case "wizard":
+      return [
+        "",
+        fill("M176 150 Q232 92 250 8 Q300 30 338 150 Q256 170 176 150 Z") +
+          `<ellipse cx="256" cy="150" rx="150" ry="26" fill="${c}"/><ellipse cx="256" cy="150" rx="150" ry="26" fill="#000" opacity=".16"/>` +
+          `<path d="M242 74 l5 12 13 1 -10 8 3 13 -11 -7 -11 7 3 -13 -10 -8 13 -1 Z" fill="#ffd84d"/>` +
+          `<circle cx="292" cy="112" r="6" fill="#ffd84d"/><circle cx="216" cy="122" r="5" fill="#ffd84d"/>`,
+      ];
     default: // none
       return ["", ""];
   }
@@ -371,6 +413,18 @@ function drawExtras(kind) {
           `<rect x="50" y="244" width="52" height="100" rx="24" fill="#2a2d3a"/><rect x="410" y="244" width="52" height="100" rx="24" fill="#2a2d3a"/>` +
           `<rect x="62" y="262" width="28" height="64" rx="14" fill="#2f6feb"/><rect x="422" y="262" width="28" height="64" rx="14" fill="#2f6feb"/>`,
       ];
+    case "bowtie":
+      return [
+        `<path d="M256 452 L188 420 Q176 452 188 484 Z M256 452 L324 420 Q336 452 324 484 Z" fill="#e8455b" stroke="${INK}" stroke-opacity=".25" stroke-width="5" stroke-linejoin="round"/>` +
+          `<rect x="238" y="436" width="36" height="32" rx="10" fill="#c92f45"/>`,
+        "",
+      ];
+    case "monocle":
+      return [
+        `<circle cx="${R.x}" cy="${R.y}" r="58" fill="#fff" fill-opacity=".12" stroke="#d4a93a" stroke-width="9"/>` +
+          `<path d="M${R.x + 50} ${R.y + 30} Q${R.x + 96} ${R.y + 110} ${R.x + 66} ${R.y + 190}" fill="none" stroke="#d4a93a" stroke-width="5" stroke-linecap="round"/>`,
+        "",
+      ];
     default: // none
       return ["", ""];
   }
@@ -385,6 +439,13 @@ function backdrop(kind) {
       `<linearGradient id="derp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c6f57e"/>` +
       `<stop offset=".45" stop-color="#2fd6be"/><stop offset="1" stop-color="#2f6feb"/></linearGradient>` +
       `<circle cx="256" cy="256" r="256" fill="url(#derp)"/>`
+    );
+  }
+  if (kind === "stars") {
+    const stars = [[96, 120, 7], [404, 96, 6], [430, 300, 5], [70, 330, 6], [150, 440, 4], [380, 450, 5], [250, 40, 4]];
+    return (
+      `<circle cx="256" cy="256" r="256" fill="#232a5c"/>` +
+      stars.map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${i % 2 ? "#ffe27a" : "#fff"}"/>`).join("")
     );
   }
   return `<circle cx="256" cy="256" r="256" fill="${PARTS.backdrop[kind]}"/>`;
@@ -421,10 +482,10 @@ function randomDork(name = "") {
     skin: pick(choices("skin")),
     eyes: pick(["googly", "googly", "round", "happy", "wink", "startled"]),
     mouth: pick(PARTS.mouth),
-    hair: pick(PARTS.hair),
+    hair: pick(PARTS.hair.filter(h => !unlockOf("hair", h))),
     hairColor: pick(choices("hairColor")),
-    extras: Math.random() < 0.5 ? "none" : pick(PARTS.extras.slice(1)),
-    backdrop: pick(choices("backdrop").filter(b => b !== "none")),
+    extras: Math.random() < 0.5 ? "none" : pick(PARTS.extras.slice(1).filter(e => !unlockOf("extras", e))),
+    backdrop: pick(choices("backdrop").filter(b => b !== "none" && !unlockOf("backdrop", b))),
   };
 }
 
@@ -445,6 +506,10 @@ function normalizeDork(saved) {
 export const DerpDork = {
   PARTS,
   PREF,
+  UNLOCKS,
+  /** How the toolbar's dork looks right now (its pet's mood), as eyes: null,
+   * or "sleepy" while it naps. */
+  mood: null,
 
   random: randomDork,
 
@@ -471,6 +536,11 @@ export const DerpDork = {
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(draw(dork, size))}`;
   },
 
+  /** Your days together with your dork pet, or null if it isn't one. */
+  get petDays() {
+    return Services.prefs.getBoolPref(PET_PREF, false) ? Services.prefs.getIntPref(PET_DAYS, 0) : null;
+  },
+
   // ── In browser windows ───────────────────────────────────────────────────
 
   init({ cssURL }) {
@@ -490,8 +560,9 @@ export const DerpDork = {
       },
       onCreated: node => this.paintButton(node),
     });
-    Services.prefs.addObserver(PREF, () => this.refresh());
-    Services.prefs.addObserver(MADE_PREF, () => this.refresh());
+    for (const pref of [PREF, MADE_PREF, PET_PREF, PET_DAYS]) {
+      Services.prefs.addObserver(pref, () => this.refresh());
+    }
     if (!this.made) {
       this.welcomeOnStartup();
     }
@@ -531,7 +602,7 @@ export const DerpDork = {
   },
 
   paintButton(node, dork = this.get()) {
-    node.setAttribute("image", this.dataURL(dork, 48));
+    node.setAttribute("image", this.dataURL(this.mood ? { ...dork, eyes: this.mood } : dork, 48));
     // A ring pulses around the avatar until you've made your dork.
     node.toggleAttribute("derp-new", !this.made);
     if (dork.name) {
@@ -626,7 +697,8 @@ export const DerpDork = {
         { class: "derp-dork-hero" },
         h("img", { class: "derp-dork-face", alt: "" }),
         name,
-        h("p", { class: "derp-dork-note", "data-l10n-id": "derp-dork-local" })
+        h("p", { class: "derp-dork-note", "data-l10n-id": "derp-dork-local" }),
+        h("p", { class: "derp-dork-days" })
       ),
       tabs,
       h("div", { class: "derp-dork-grid", role: "radiogroup" }),
@@ -701,17 +773,32 @@ export const DerpDork = {
     for (const button of view.querySelectorAll(".derp-dork-tabs > button")) {
       button.setAttribute("aria-selected", button.dataset.tab === tab.id);
     }
+    const days = this.petDays;
+    const together = view.querySelector(".derp-dork-days");
+    together.hidden = days === null;
+    if (days !== null) {
+      doc.l10n.setAttributes(together, "derp-dork-days", { days });
+    }
     const done = view.querySelector("[data-action=done]");
     doc.l10n.setAttributes(done, view.hasAttribute("welcome") ? "derp-dork-welcome-done" : "derp-dork-done");
 
     const focused = doc.activeElement?.dataset?.value;
+    // Pet outfits: offered once your dork pet has earned them, shown locked
+    // until then, and not at all if your dork isn't a pet.
+    const offered = (part, value) => days !== null || unlocked(part, value, null) || dork[part] === value;
     const choice = (part, value, content, attrs = {}) => {
       const button = doc.createElementNS(XHTML, "button");
       button.setAttribute("role", "radio");
       button.setAttribute("aria-checked", dork[part] === value);
       button.dataset.part = part;
       button.dataset.value = value;
-      doc.l10n.setAttributes(button, `derp-dork-${part}-${value}`);
+      if (unlocked(part, value, days) || dork[part] === value) {
+        doc.l10n.setAttributes(button, `derp-dork-${part}-${value}`);
+      } else {
+        button.disabled = true;
+        button.classList.add("derp-dork-locked");
+        doc.l10n.setAttributes(button, "derp-dork-locked", { days: unlockOf(part, value).days });
+      }
       for (const [k, v] of Object.entries(attrs)) {
         button.style.setProperty(k, v);
       }
@@ -724,7 +811,7 @@ export const DerpDork = {
     grid.hidden = !tab.options;
     if (tab.options) {
       grid.replaceChildren(
-        ...PARTS[tab.options].map(value => {
+        ...PARTS[tab.options].filter(value => offered(tab.options, value)).map(value => {
           const img = doc.createElementNS(XHTML, "img");
           img.alt = "";
           img.src = this.dataURL({ ...dork, [tab.options]: value }, 128);
@@ -736,7 +823,9 @@ export const DerpDork = {
     colors.hidden = !tab.colors;
     if (tab.colors) {
       colors.replaceChildren(
-        ...Object.entries(PARTS[tab.colors]).map(([value, color]) => choice(tab.colors, value, null, { "--swatch": color }))
+        ...Object.entries(PARTS[tab.colors])
+          .filter(([value]) => offered(tab.colors, value))
+          .map(([value, color]) => choice(tab.colors, value, null, { "--swatch": color }))
       );
     }
     if (focused) {

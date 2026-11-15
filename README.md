@@ -103,6 +103,14 @@ Windows) to delete it too.
   extensions menu, and the bookmarks bar is off (Ctrl+Shift+B). Neutral grays, a blue accent, no translucency or blur.
   Follows GNOME light/dark; private windows are dark with a violet tint. Works
   with any theme: the selected tab takes the theme's toolbar color.
+- **Looks** (Settings → Derp → Look): Grape, Mint, Peach, Bubblegum or
+  Graphite instead of Derp's blue, light and dark, in the window, its menus and
+  Derp's pages, switching at once.
+- **Screenshot with stickers** (a page's right-click menu): a picture of what
+  you see of the page, with stickers you drag on: your dork, the duck, the
+  snail, a ghost, googly eyes, hearts, stars, shades, a crown and a "derp!"
+  bubble. Drag a sticker's handle to resize and turn it. Save puts it in
+  Downloads; Copy puts it on the clipboard.
 - **Derp touches**: loading tabs show a tiny bouncing Derp orb, and a
   lime-teal-blue shimmer runs under the toolbar while a page loads, and the
   highlighted address-bar suggestion gets a soft wash of the same gradient. Derp pops in on every new tab and wiggles if you hover it,
@@ -113,6 +121,10 @@ Windows) to delete it too.
 - **Just for fun** (all off by default; Settings → Derp → Just for fun):
   - **Duck mode**: 1 in 10 times you press Enter in the address bar, a duck
     waddles along it and eats what you typed. Quack.
+  - **Dork pet**: your dork becomes a pet. Each day you use Derp is a day
+    together, and some days unlock outfits (a flower, a bow tie, a crown, a
+    wizard hat, a monocle, a starry night); it naps on its button while you're
+    away and wiggles when you point at it.
   - **Snail mode**: when a page takes more than 3 seconds, a snail crawls along
     the loading bar, and zooms off once the page is there.
   - **Peekaboo**: now and then (1 in 6 new tabs) your dork peeks up from the
@@ -123,6 +135,10 @@ Windows) to delete it too.
   - **Hiccups**: now and then (1 in 12 pages) a page gets the hiccups. Hic!
   - **Tab ghosts**: a tab you close drifts away as a little ghost.
   - **Rainbow mode**: the loading bar is a rainbow.
+  - **Seasons**: when a window opens (and now and then a new tab), the season
+    drifts down over the toolbar: snow, blossoms, sunshine or leaves, with
+    hearts for Valentine's Day and pumpkins for Halloween.
+  - **Download duck**: a duck carries each download to the downloads button.
 - **Fluid**: spring-physics smooth scrolling with momentum, elastic overscroll and
   kinetic touchpad scrolling.
 - **Fast**: GPU canvas, shader pre-caching, more parallel connections, a bigger
@@ -230,8 +246,11 @@ pick up. The version in use is `android/geckoview-version.txt`.
   until you type, and the lime-teal-blue loading shimmer. Phones have one
   bottom toolbar (address bar, tabs, your dork, menu) and a tabs view;
   tablets have desktop's tab strip with folder tabs, and back, forward and
-  reload in the toolbar. Private tabs, and light and dark mode. Just for fun is
-  in the menu here too (all off by default).
+  reload in the toolbar. Private tabs, and light and dark mode, in the same
+  **Looks** (⋮ → Look). Just for fun is in the menu here too (all off by
+  default), with Dork pet, Seasons and the Download duck.
+- **Screenshot with stickers** (⋮ menu): the same sticker editor as desktop;
+  Save keeps the picture in Pictures/Derp.
 - **Doodle** is the search engine here too; the address bar shows what you
   searched for.
 - **Ad blocker**: uBlock Origin, built in like on desktop. Derp installs it

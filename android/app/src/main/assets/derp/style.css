@@ -178,6 +178,15 @@ img { display: block; }
 }
 .colors button[aria-checked="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 .grid button:active, .colors button:active { transform: scale(0.92); }
+/* A dork pet's outfits it hasn't earned yet: faded, with a lock. */
+.grid button.locked, .colors button.locked { position: relative; }
+.grid button.locked img { filter: grayscale(1); opacity: 0.4; }
+.colors button.locked { opacity: 0.45; }
+.grid button.locked::after, .colors button.locked::after { content: "🔒"; position: absolute; inset-block-end: 2px; inset-inline-end: 4px; font-size: 13px; }
+.colors button.locked::after { inset: 0; display: grid; place-items: center; font-size: 12px; }
+.grid button.locked:active, .colors button.locked:active { transform: none; }
+.days { margin: 6px 0 0; color: var(--accent); font-size: 0.9rem; font-weight: 600; text-align: center; }
+.days[hidden] { display: none; }
 .grid button, .colors button { transition: background-color 120ms ease, box-shadow 120ms ease, transform 200ms var(--spring); }
 .actions {
   position: fixed;

@@ -6,14 +6,17 @@ const TAB_NAMES = { face: "Face", eyes: "Eyes", mouth: "Mouth", hair: "Hair", ex
 const LABELS = {
   eyes: { googly: "Googly", round: "Round", happy: "Happy", sleepy: "Sleepy", wink: "Wink", hearts: "Hearts", startled: "Startled" },
   mouth: { derp: "Derp", grin: "Grin", smile: "Smile", buck: "Buck teeth", blep: "Blep", o: "Oh", smirk: "Smirk" },
-  hair: { none: "No hair", sprout: "Sprout", bowl: "Bowl cut", swoop: "Swoop", spiky: "Spiky", curly: "Curly", mohawk: "Mohawk", bun: "Bun", long: "Long", beanie: "Beanie", cap: "Cap", party: "Party hat" },
-  extras: { none: "Nothing", nerd: "Taped glasses", round: "Round glasses", shades: "Shades", freckles: "Freckles", blush: "Blush", bandage: "Bandage", headphones: "Headphones" },
+  hair: { none: "No hair", sprout: "Sprout", bowl: "Bowl cut", swoop: "Swoop", spiky: "Spiky", curly: "Curly", mohawk: "Mohawk", bun: "Bun", long: "Long", beanie: "Beanie", cap: "Cap", party: "Party hat", flower: "Flower", crown: "Crown", wizard: "Wizard hat" },
+  extras: { none: "Nothing", nerd: "Taped glasses", round: "Round glasses", shades: "Shades", freckles: "Freckles", blush: "Blush", bandage: "Bandage", headphones: "Headphones", bowtie: "Bow tie", monocle: "Monocle" },
+  backdrop: { stars: "Starry night" },
 };
 const label = (part, value) => LABELS[part]?.[value] ?? (value === "none" ? "None" : value[0].toUpperCase() + value.slice(1));
 const $ = id => document.getElementById(id);
 
 let dork = randomDork();
 let tab = "face";
+// Your days together if your dork is a pet (Just for fun), which unlock outfits.
+let petDays = null;
 
 document.getElementById("welcome").hidden = !welcome;
 document.getElementById("plain").hidden = welcome;
@@ -39,6 +42,8 @@ function render(pop = true) {
     face.classList.add("pop");
   }
   if (document.activeElement !== $("name")) $("name").value = dork.name;
+  $("days").hidden = petDays === null;
+  $("days").textContent = petDays === 1 ? "🐾 Your first day together" : `🐾 ${petDays} days together`;
   const current = TABS.find(t => t.id === tab);
   for (const b of $("tabs").children) b.setAttribute("aria-selected", b.dataset.tab === tab);
 
@@ -50,6 +55,12 @@ function render(pop = true) {
     b.setAttribute("aria-label", label(part, value));
     b.dataset.part = part;
     b.dataset.value = value;
+    // A pet's outfit it hasn't earned yet: shown locked.
+    if (!unlocked(part, value, petDays) && dork[part] !== value) {
+      b.disabled = true;
+      b.classList.add("locked");
+      b.setAttribute("aria-label", `Locked: unlocks after ${unlockOf(part, value).days} days together`);
+    }
     if (swatch) b.style.setProperty("--swatch", swatch);
     if (content) b.append(content);
     return b;
@@ -58,7 +69,7 @@ function render(pop = true) {
   grid.hidden = !current.options;
   if (current.options) {
     grid.replaceChildren(
-      ...PARTS[current.options].map(value => {
+      ...PARTS[current.options].filter(value => offered(current.options, value)).map(value => {
         const img = new Image();
         img.alt = "";
         img.src = dorkURL({ ...dork, [current.options]: value }, 160);
@@ -69,8 +80,18 @@ function render(pop = true) {
   const colors = $("colors");
   colors.hidden = !current.colors;
   if (current.colors) {
-    colors.replaceChildren(...Object.entries(PARTS[current.colors]).map(([value, color]) => choice(current.colors, value, null, color)));
+    colors.replaceChildren(
+      ...Object.entries(PARTS[current.colors])
+        .filter(([value]) => offered(current.colors, value))
+        .map(([value, color]) => choice(current.colors, value, null, color))
+    );
   }
+}
+
+/** Pet outfits are offered once your dork is a pet (locked until earned), and
+ * not at all otherwise, unless your dork already wears one. */
+function offered(part, value) {
+  return petDays !== null || unlocked(part, value, null) || dork[part] === value;
 }
 
 function update(changes) {
@@ -135,6 +156,13 @@ async function savePicture() {
 }
 
 (async () => {
-  dork = (await myDork()).dork;
-  render(false);
+  ({ dork, petDays } = await myDork());
+  // From "Try it on" (a dork pet's new outfit): dork.html?wear=hair.crown
+  const [part, value] = (new URLSearchParams(location.search).get("wear") || "").split(".");
+  if (PARTS[part] && choices(part).includes(value) && unlocked(part, value, petDays)) {
+    tab = TABS.find(t => t.id === part || t.colors === part || t.options === part)?.id ?? tab;
+    update({ [part]: value });
+  } else {
+    render(false);
+  }
 })();

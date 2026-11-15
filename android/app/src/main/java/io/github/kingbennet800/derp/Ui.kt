@@ -30,7 +30,7 @@ import android.view.animation.PathInterpolator
 import android.widget.LinearLayout
 
 /** Derp's colors: desktop Derp's theme tokens (theme/derp-theme.css), for
- * light, dark and private tabs. */
+ * light, dark and private tabs, in the look you pick (⋮ → Look). */
 data class Palette(
     /** Behind the tab strip. */
     val frame: Int,
@@ -79,8 +79,7 @@ data class Palette(
                 Configuration.UI_MODE_NIGHT_YES
             return when {
                 private -> PRIVATE
-                night -> DARK
-                else -> LIGHT
+                else -> Look.of(context).palette(night)
             }
         }
     }
@@ -277,5 +276,56 @@ class ProgressLine(context: Context, private val lineAtTop: Boolean) : View(cont
         } else {
             canvas.drawRect(0f, 0f, w, h, streak)
         }
+    }
+}
+
+/** Looks (⋮ → Look): Derp's colors, the same as desktop Derp's (the derp.look
+ * pref there; theme/derp-theme.css). Each gives its light and dark colors
+ * for the frame, toolbar, address bar, lines, page and accent; text stays. */
+enum class Look(val label: String, private val light: Map<String, String>, private val dark: Map<String, String>) {
+    DERP("Derp (blue)", emptyMap(), emptyMap()),
+    GRAPE(
+        "Grape",
+        mapOf("accent" to "#7C4DFF", "frame" to "#E7DEF7", "toolbar" to "#F8F4FF", "fieldFocus" to "#FFFFFF", "line" to "#D4C7EC", "contentLine" to "#DDD3F0", "content" to "#FFFFFF"),
+        mapOf("accent" to "#B8A4FF", "frame" to "#1E1829", "toolbar" to "#2A2336", "fieldFocus" to "#352C44", "line" to "#3F3550", "contentLine" to "#382F48", "content" to "#201B28"),
+    ),
+    MINT(
+        "Mint",
+        mapOf("accent" to "#0D9A80", "frame" to "#DBEFE7", "toolbar" to "#F4FBF8", "fieldFocus" to "#FFFFFF", "line" to "#C3E0D4", "contentLine" to "#CFE6DC", "content" to "#FFFFFF"),
+        mapOf("accent" to "#4FD8B8", "frame" to "#15211D", "toolbar" to "#1F2D28", "fieldFocus" to "#283A33", "line" to "#31453D", "contentLine" to "#2D3F38", "content" to "#1A2320"),
+    ),
+    PEACH(
+        "Peach",
+        mapOf("accent" to "#E2540A", "frame" to "#F8E6D9", "toolbar" to "#FFF8F2", "fieldFocus" to "#FFFFFF", "line" to "#ECD2BF", "contentLine" to "#F1DCCC", "content" to "#FFFFFF"),
+        mapOf("accent" to "#FFA56B", "frame" to "#241B15", "toolbar" to "#2F251E", "fieldFocus" to "#3A2E26", "line" to "#45372D", "contentLine" to "#3F3229", "content" to "#221B17"),
+    ),
+    BUBBLEGUM(
+        "Bubblegum",
+        mapOf("accent" to "#D93A74", "frame" to "#F8E1EC", "toolbar" to "#FFF6FA", "fieldFocus" to "#FFFFFF", "line" to "#ECC9D9", "contentLine" to "#F1D4E1", "content" to "#FFFFFF"),
+        mapOf("accent" to "#FF8FB6", "frame" to "#25171E", "toolbar" to "#302129", "fieldFocus" to "#3B2A33", "line" to "#47323D", "contentLine" to "#403039", "content" to "#22191E"),
+    ),
+    GRAPHITE("Graphite", mapOf("accent" to "#3A3A3C"), mapOf("accent" to "#D4D4D8"));
+
+    /** The accent, light and dark, as #rrggbb (for Derp's pages). */
+    val accents get() = (light["accent"] ?: "#2F6FEB") to (dark["accent"] ?: "#86B1FF")
+
+    fun palette(night: Boolean): Palette {
+        val base = if (night) Palette.DARK else Palette.LIGHT
+        val colors = if (night) dark else light
+        fun c(name: String, fallback: Int) = colors[name]?.let(Color::parseColor) ?: fallback
+        return base.copy(
+            frame = c("frame", base.frame), toolbar = c("toolbar", base.toolbar), fieldFocus = c("fieldFocus", base.fieldFocus),
+            content = c("content", base.content), line = c("line", base.line), contentLine = c("contentLine", base.contentLine),
+            accent = c("accent", base.accent),
+        )
+    }
+
+    companion object {
+        fun of(context: Context): Look =
+            runCatching { Look.valueOf(prefs(context).getString("look", "DERP")!!) }.getOrDefault(Look.DERP)
+
+        fun set(context: Context, look: Look) = prefs(context).edit().putString("look", look.name).apply()
+
+        private fun prefs(context: Context) = context.getSharedPreferences("browser", Context.MODE_PRIVATE)
     }
 }

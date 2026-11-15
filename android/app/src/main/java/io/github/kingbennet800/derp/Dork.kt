@@ -27,22 +27,32 @@ class Dork(context: Context) {
             listener?.invoke()
         }
 
-    fun save(dork: JSONObject, svg: String) {
-        prefs.edit().putString("dork", dork.toString()).putString("svg", svg).apply()
+    /** [sleepy] is your dork with its eyes shut, for when your dork pet naps. */
+    fun save(dork: JSONObject, svg: String, sleepy: String? = null) {
+        prefs.edit().putString("dork", dork.toString()).putString("svg", svg).putString("sleepy", sleepy).apply()
         cached = null
         listener?.invoke()
     }
 
+    /** Whether a napping picture came with your dork (older Derps didn't send one). */
+    val hasSleepy get() = prefs.getString("sleepy", null) != null
+
     /** Your dork as a bitmap, or null before you have one. */
     fun avatar(size: Int): Bitmap? {
         cached?.let { if (it.width == size) return it }
-        val svg = prefs.getString("svg", null) ?: return null
-        cached = runCatching {
-            val doc = SVG.getFromString(svg)
+        cached = render(prefs.getString("svg", null), size)
+        return cached
+    }
+
+    /** Your dork napping, or null without a picture of that. */
+    fun sleepy(size: Int): Bitmap? = render(prefs.getString("sleepy", null), size)
+
+    private fun render(svg: String?, size: Int): Bitmap? = svg?.let {
+        runCatching {
+            val doc = SVG.getFromString(it)
             doc.documentWidth = size.toFloat()
             doc.documentHeight = size.toFloat()
-            Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also { doc.renderToCanvas(Canvas(it)) }
+            Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also { bitmap -> doc.renderToCanvas(Canvas(bitmap)) }
         }.getOrNull()
-        return cached
     }
 }

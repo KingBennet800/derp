@@ -3,7 +3,8 @@
 # the welcome dork editor, open a link, bookmark it, check history, save a
 # password and get it offered back, the just-for-fun gags, the ad blocker,
 # find in page, Reader view, Add to home screen, Memory Saver, pairing with a
-# computer (tests/pairing.py standing in for it, through a test relay), dark mode;
+# computer (tests/pairing.py standing in for it, through a test relay), a
+# screenshot with stickers, looks, dark mode;
 # screenshots and logcat go to $2. Fails if Derp crashes or isn't running.
 set -euo pipefail
 apk=$1 out=$2 pkg=io.github.kingbennet800.derp
@@ -199,7 +200,7 @@ tap Menu
 sleep 1
 pick "Just for fun"
 sleep 1
-for name in "Snail mode" "Peekaboo" "Party mode" "Sleepy tabs" "Power typing" "Hiccups" "Tab ghosts" "Rainbow mode"; do
+for name in "Dork pet" "Snail mode" "Peekaboo" "Party mode" "Sleepy tabs" "Power typing" "Hiccups" "Tab ghosts" "Rainbow mode" "Seasons" "Download duck"; do
   gag "$name"
   sleep 0.5
 done
@@ -370,6 +371,34 @@ adb shell input text "derp%sbrowser"
 adb shell input keyevent KEYCODE_ENTER
 shot 5-search 12
 alive "searching"
+
+# Screenshot with stickers: a picture of the page, in the sticker editor;
+# Save keeps it in Pictures and goes back to the page.
+tap Menu
+sleep 1
+pick "Screenshot with stickers"
+sleep 8
+shot 5b-stickers 1
+logged "page asks: stickers.get" "The sticker editor didn't open"
+tap_text Save || { ui >"$out/ui-no-sticker-save.xml"; echo "No Save in the sticker editor"; exit 1; }
+sleep 5
+logged "Stickers saved: true" "The stickered screenshot didn't save"
+alive "screenshot with stickers"
+
+# Looks: Grape, then back to Derp's blue.
+tap Menu
+sleep 1
+pick Look
+sleep 1
+tap_text Grape || { echo "No Grape look"; exit 1; }
+shot 5c-look-grape 2
+tap Menu
+sleep 1
+pick Look
+sleep 1
+tap_text "Derp (blue)" || { echo "No Derp look"; exit 1; }
+sleep 1
+alive "looks"
 
 # Dark mode.
 adb shell cmd uimode night yes

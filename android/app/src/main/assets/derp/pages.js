@@ -14,18 +14,35 @@ async function derp(message) {
 
 const dorkURL = (dork, size = 256) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(draw(dork, size));
 
-/** Your dork from the app, or a new random one (saved, so it sticks). */
+/** Your dork from the app, or a new random one (saved, so it sticks).
+ * [petDays]: your days together, if your dork is a pet (Just for fun). */
 async function myDork() {
   const state = (await derp({ type: "getState" })) || {};
-  if (state.dork) return { dork: normalizeDork(state.dork), made: !!state.made };
+  const petDays = typeof state.petDays === "number" ? state.petDays : null;
+  if (state.dork) {
+    const dork = normalizeDork(state.dork);
+    // Older Derps saved no napping picture for the dork pet.
+    if (!state.sleepy) saveDork(dork);
+    return { dork, made: !!state.made, petDays };
+  }
   const dork = randomDork();
   await saveDork(dork);
-  return { dork, made: false };
+  return { dork, made: false, petDays };
 }
 
+/** Saves your dork, as drawn in the toolbar (and napping, eyes shut). */
 function saveDork(dork) {
-  return derp({ type: "setDork", dork, svg: draw(dork, 128) });
+  return derp({ type: "setDork", dork, svg: draw(dork, 128), sleepy: draw({ ...dork, eyes: "sleepy" }, 128) });
 }
+
+// The look you picked (⋮ → Look): its accent on Derp's pages.
+derp({ type: "getState" }).then(state => {
+  const [light, dark] = state?.accent || [];
+  if (!light || !dark) return;
+  const style = document.createElement("style");
+  style.textContent = `:root { --accent: ${light}; } @media (prefers-color-scheme: dark) { :root { --accent: ${dark}; } }`;
+  document.head.append(style);
+});
 
 // ── For the bookmarks, history, passwords and import pages ────────────────
 

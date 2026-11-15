@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Download duck's parcel; the same as desktop Derp's (PARCEL_URL in
+     src/features/DerpFun.sys.mjs). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp" android:height="18dp"
+    android:viewportWidth="32" android:viewportHeight="32">
+    <path android:fillColor="#D9A066" android:pathData="M4,11L16,5.5L28,11V23.5L16,29L4,23.5Z" />
+    <path android:pathData="M4,11L16,16.5L28,11M16,16.5V29" android:strokeColor="#B07B45" android:strokeWidth="1.5"
+        android:strokeLineJoin="round" android:fillColor="#00000000" />
+    <path android:pathData="M9.5,8.3L21.5,13.9V18.4" android:strokeColor="#F4D9B0" android:strokeWidth="2.6"
+        android:fillColor="#00000000" />
+</vector>

@@ -10,6 +10,7 @@ import android.app.KeyguardManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
@@ -24,12 +25,15 @@ import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.PersistableBundle
 import android.os.SystemClock
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.TextUtils
@@ -40,7 +44,9 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.util.Base64
 import android.util.Log
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
@@ -59,7 +65,12 @@ import android.widget.TextView
 import android.widget.Toast
 import android.window.OnBackInvokedDispatcher
 import com.caverock.androidsvg.SVG
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.net.HttpURLConnection
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.net.URL
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
@@ -125,6 +136,7 @@ class MainActivity : Activity() {
         }
         browser.start(intent)
         render()
+        root.postDelayed({ maybeFlurry(1) }, 1200)
     }
 
     /** Every time Derp comes to the screen, it looks for a newer Derp (at most once an hour). */
@@ -134,6 +146,8 @@ class MainActivity : Activity() {
         root.removeCallbacks(sweep)
         root.postDelayed(sweep, SWEEP)
         app.pairing.resumed()
+        val away = if (awayAt == 0L) 0L else SystemClock.elapsedRealtime() - awayAt
+        root.post { petResume(away) }
     }
 
     /** Memory Saver looks over your tabs every few minutes while Derp is on screen. */
@@ -152,6 +166,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPause() {
+        awayAt = SystemClock.elapsedRealtime()
         root.removeCallbacks(sweep)
         app.pairing.paused()
         browser.save()
@@ -835,6 +850,56 @@ class MainActivity : Activity() {
     /** Peekaboo: a new blank tab now and then (1 in 6) gets a visit from your dork. */
     fun onBlankTab() {
         if (Gag.PEEKABOO.on(this) && ValueAnimator.areAnimatorsEnabled() && Random.nextInt(6) == 0) root.post { peek() }
+        root.post { maybeFlurry(5) }
+    }
+
+    /** Seasons: 1 in [chance] times, the season drifts down over the page. */
+    private fun maybeFlurry(chance: Int) {
+        if (!Gag.SEASONS.on(this) || !ValueAnimator.areAnimatorsEnabled() || Random.nextInt(chance) != 0) return
+        val art = Seasons.art(this, dp(32))
+        if (art.isEmpty()) return
+        root.addView(Flurry(this, art, dpf(260)), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        Log.d("Derp", "Seasons: ${Seasons.of(java.time.LocalDate.now())}")
+    }
+
+    // ── Dork pet ───────────────────────────────────────────────────────────
+
+    /** When Derp went off the screen (0: it hasn't). */
+    private var awayAt = 0L
+
+    /** Back on the screen: today's a day together (maybe with an outfit to
+     * show), and after a while away your dork has napped: it wakes up. */
+    private fun petResume(away: Long) {
+        val pet = Pet(this)
+        if (!pet.on) return
+        if (away >= NAP && ValueAnimator.areAnimatorsEnabled()) wakeUp()
+        pet.count()?.let { announce(it) }
+    }
+
+    /** Your dork shows sleepy for a moment, then hops awake. */
+    private fun wakeUp() {
+        val sleepy = app.dork.sleepy(dp(64)) ?: return
+        avatar.setImageBitmap(sleepy)
+        avatar.postDelayed({
+            paintAvatar()
+            avatar.animate().translationY(-dpf(6)).setDuration(160).withEndAction {
+                avatar.animate().translationY(0f).setDuration(280).setInterpolator(OvershootInterpolator(3f)).start()
+            }.start()
+        }, 1200)
+        Log.d("Derp", "Your dork woke up")
+    }
+
+    /** "Bloop unlocked a crown!", with Try it on (the dork editor, wearing it). */
+    private fun announce(unlock: Pet.Unlock) {
+        val name = app.dork.json?.optString("name").orEmpty().ifBlank { "Your dork" }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("$name unlocked ${unlock.what}!")
+            .setMessage("${unlock.days} days together")
+            .setNegativeButton("Later", null)
+            .setPositiveButton("Try it on") { _, _ -> browser.openPage("dork.html?wear=${unlock.part}.${unlock.value}") }
+        app.dork.avatar(dp(48))?.let { dialog.setIcon(BitmapDrawable(resources, it)) }
+        dialog.show()
+        Log.d("Derp", "Your dork unlocked ${unlock.value}")
     }
 
     private fun peek() {
@@ -1054,6 +1119,7 @@ class MainActivity : Activity() {
         item("Find in page", enabled = browser.isWebPage(tab) || browser.isReader(tab)) { openFind() }
         item("Reader view", enabled = browser.canRead(tab)) { browser.openReader(tab) }
         item("Add to home screen", enabled = browser.isWebPage(tab)) { addToHome(tab) }
+        item("Screenshot with stickers", enabled = browser.isWebPage(tab)) { screenshotStickers(tab) }
         item("Desktop site", if (tab.desktop) "On" else "Off") { browser.toggleDesktop(tab) }
         item("Your dork") { browser.openDork() }
         divider()
@@ -1064,6 +1130,7 @@ class MainActivity : Activity() {
         item("Your devices", if (app.pairing.paired) "Paired" else null) { browser.openPage("devices.html") }
         divider()
         item("Search engine", browser.engine.label) { pickEngine() }
+        item("Look", Look.of(this).label) { pickLook() }
         item("Ad blocker", blockerState()) { adBlocker() }
         item("Memory Saver", if (browser.memorySaver) "On" else "Off") { memorySaver() }
         item("Just for fun", Gag.values().count { it.on(this) }.let { if (it == 0) "Off" else "$it on" }) { justForFun() }
@@ -1294,6 +1361,19 @@ class MainActivity : Activity() {
             .show()
     }
 
+    /** Looks: Derp's colors (the same as desktop Derp's). */
+    private fun pickLook() {
+        val looks = Look.values()
+        AlertDialog.Builder(this)
+            .setTitle("Look")
+            .setSingleChoiceItems(looks.map { it.label }.toTypedArray(), looks.indexOf(Look.of(this))) { d, which ->
+                Look.set(this, looks[which])
+                render()
+                d.dismiss()
+            }
+            .show()
+    }
+
     private fun pickEngine() {
         val engines = Engine.values()
         AlertDialog.Builder(this)
@@ -1517,9 +1597,105 @@ class MainActivity : Activity() {
     }
 
     fun download(response: WebResponse) {
+        carryDownload()
         Downloads.save(this, response) { name ->
             Toast.makeText(this, if (name != null) "Saved $name to Downloads" else "The download didn't finish", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /** Download duck: a duck carries the download along the toolbar, drops it
+     * off at the end, and goes. */
+    private fun carryDownload() {
+        if (!Gag.DOWNLOAD_DUCK.on(this) || !ValueAnimator.areAnimatorsEnabled() || fullScreen) return
+        val size = dp(30)
+        val duck = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.BOTTOM
+        }
+        // The duck walks left; this one walks right, its parcel in its beak.
+        val bird = ImageView(this).apply {
+            setImageResource(R.drawable.ic_duck)
+            scaleX = -1f
+        }
+        val parcel = ImageView(this).apply {
+            setImageResource(R.drawable.ic_parcel)
+            translationY = -dpf(11)
+        }
+        duck.addView(bird, LinearLayout.LayoutParams(size, size))
+        duck.addView(parcel, LinearLayout.LayoutParams(dp(18), dp(18)).apply { marginStart = -dp(6) })
+        // On the toolbar's edge by the page: its top on phones, its bottom on tablets.
+        val rootAt = IntArray(2).also { root.getLocationInWindow(it) }
+        val barAt = IntArray(2).also { bar.getLocationInWindow(it) }
+        val top = barAt[1] - rootAt[1]
+        root.addView(duck, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        duck.translationX = dpf(12)
+        duck.translationY = (if (tablet) top + bar.height - size + dp(4) else top - size + dp(6)).toFloat()
+        val waddle = ObjectAnimator.ofFloat(bird, View.ROTATION, -8f, 8f).setDuration(300).apply {
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            start()
+        }
+        duck.animate().translationX(root.width - dpf(64)).setDuration(2200).setInterpolator(AccelerateDecelerateInterpolator()).withEndAction {
+            parcel.animate().translationX(dpf(22)).scaleX(0.3f).scaleY(0.3f).alpha(0f).setDuration(380).start()
+            duck.animate().alpha(0f).translationYBy(dpf(8)).setStartDelay(380).setDuration(600).withEndAction {
+                waddle.cancel()
+                root.removeView(duck)
+            }.start()
+        }.start()
+        Log.d("Derp", "The download duck is on its way")
+    }
+
+    // ── Screenshot with stickers ───────────────────────────────────────────
+
+    /** A picture of the page, into the sticker editor (stickers.html, desktop
+     * Derp's editor) in a new tab. */
+    private fun screenshotStickers(tab: Tab) {
+        geckoView.capturePixels().accept({ bitmap ->
+            val shot = bitmap ?: return@accept
+            Thread {
+                // At most 2000px along its long side, to keep it quick to pass along.
+                val scale = minOf(1f, 2000f / maxOf(shot.width, shot.height))
+                val picture = if (scale < 1f) Bitmap.createScaledBitmap(shot, (shot.width * scale).toInt(), (shot.height * scale).toInt(), true) else shot
+                val png = ByteArrayOutputStream().also { picture.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+                val url = "data:image/png;base64," + Base64.encodeToString(png, Base64.NO_WRAP)
+                runOnUiThread { browser.openStickers(url, tab) }
+            }.start()
+        }, { error ->
+            Log.e("Derp", "Screenshot didn't work", error)
+            Toast.makeText(this, "The screenshot didn't work", Toast.LENGTH_SHORT).show()
+        })
+    }
+
+    /** Saves the sticker editor's picture (a PNG data: URL) to Pictures/Derp. */
+    fun saveStickers(png: String, done: (Boolean) -> Unit) {
+        Thread {
+            val saved = runCatching {
+                val bytes = Base64.decode(png.substringAfter("base64,"), Base64.DEFAULT)
+                val name = "Derp screenshot ${SimpleDateFormat("yyyy-MM-dd 'at' HH.mm.ss", Locale.US).format(Date())}.png"
+                if (Build.VERSION.SDK_INT >= 29) {
+                    val values = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, name)
+                        put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                        put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Derp")
+                        put(MediaStore.Images.Media.IS_PENDING, 1)
+                    }
+                    val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: error("couldn't create the file")
+                    contentResolver.openOutputStream(uri)!!.use { it.write(bytes) }
+                    values.clear()
+                    values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                    contentResolver.update(uri, values, null, null)
+                } else {
+                    val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir
+                    File(dir, name).writeBytes(bytes)
+                }
+                true
+            }.getOrDefault(false)
+            runOnUiThread {
+                Toast.makeText(this, if (saved) "Saved to Pictures" else "The picture didn't save", Toast.LENGTH_SHORT).show()
+                Log.d("Derp", "Stickers saved: $saved")
+                done(saved)
+            }
+        }.start()
     }
 
     /** mailto:, tel:, intent: and other apps' links. */
@@ -1677,6 +1853,8 @@ class MainActivity : Activity() {
         private const val REQUEST_UNLOCK = 4
         /** Memory Saver looks over your tabs this often. */
         private const val SWEEP = 5 * 60 * 1000L
+        /** Away this long, your dork pet has napped. */
+        private const val NAP = 5 * 60 * 1000L
         /** Sleeping tabs fade, like on desktop. */
         private const val ASLEEP = 0.55f
         /** Private tabs' mask on light backgrounds (their own accent is for dark ones). */

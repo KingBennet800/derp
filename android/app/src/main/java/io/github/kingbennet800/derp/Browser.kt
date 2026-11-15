@@ -217,6 +217,24 @@ class Browser(val app: DerpApp) {
 
     fun openDork() = openPage("dork.html")
 
+    /** Screenshot with stickers: the picture (a PNG data: URL) waiting for
+     * stickers.html, and the tab it opens in. */
+    var stickerShot: String? = null
+    private var stickerTab: Tab? = null
+
+    /** Opens the sticker editor in a new tab, next to [from], with [shot]. */
+    fun openStickers(shot: String, from: Tab) {
+        stickerShot = shot
+        app.withPages { stickerTab = newTab(it.metaData.baseUrl + "stickers.html", private = from.private, parent = from) }
+    }
+
+    /** The sticker editor is done (saved or cancelled): back to the page. */
+    fun closeStickers() {
+        stickerShot = null
+        stickerTab?.let { if (it in tabs) close(it) }
+        stickerTab = null
+    }
+
     /** One of Derp's own pages (bookmarks.html, history.html…) in the current tab. */
     fun openPage(name: String) {
         val tab = current ?: return
@@ -583,8 +601,17 @@ class Browser(val app: DerpApp) {
                 "getState" -> {
                     app.dork.json?.let { reply.put("dork", it) }
                     reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME).put("engine", engine.label)
+                    reply.put("sleepy", app.dork.hasSleepy)
+                    Pet(app).days?.let { reply.put("petDays", it) }
+                    val (light, dark) = Look.of(app).accents
+                    reply.put("accent", JSONArray().put(light).put(dark))
                 }
-                "setDork" -> app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"))
+                "setDork" -> app.dork.save(msg.getJSONObject("dork"), msg.getString("svg"), msg.optString("sleepy").ifBlank { null })
+                "stickers.get" -> {
+                    stickerShot?.let { reply.put("image", it) }
+                    app.dork.json?.let { reply.put("dork", it) }
+                }
+                "stickers.close" -> closeStickers()
                 "made" -> app.dork.made = true
                 "focusUrl" -> ui?.focusUrl()
                 "bookmarks.list" -> reply.put("items", library.bookmarks(msg.optString("query"), msg.optInt("limit", 500)))
@@ -613,11 +640,15 @@ class Browser(val app: DerpApp) {
 
         /** Questions answered later: ones that need you (a file to pick, your screen lock). */
         private fun later(type: String, msg: JSONObject): GeckoResult<Any>? {
-            if (type !in setOf("import", "logins.reveal", "logins.copy", "devices.sync", "devices.leave")) return null
+            if (type !in setOf("import", "logins.reveal", "logins.copy", "devices.sync", "devices.leave", "stickers.save")) return null
             val result = GeckoResult<Any>()
             val ui = ui ?: return GeckoResult.fromValue(JSONObject().put("ok", false).toString())
             fun done(reply: JSONObject) = result.complete(reply.toString())
             when (type) {
+                "stickers.save" -> ui.saveStickers(msg.optString("png")) { saved ->
+                    done(JSONObject().put("ok", saved))
+                    if (saved) closeStickers()
+                }
                 "devices.sync" -> app.pairing.syncNow { done(JSONObject().put("ok", true).put("devices", app.pairing.summary)) }
                 "devices.leave" -> app.pairing.leave { done(JSONObject().put("ok", true).put("devices", app.pairing.summary)) }
                 "import" -> ui.importFile(msg.optString("kind")) {

@@ -48,10 +48,11 @@ export const GHOST_URL =
 
 const svg = s => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${s}</svg>`);
 
-/** Seasons' things that fall. The Android app draws the same ones. */
+/** Seasons' things that fall. The Android app draws the same ones
+ * (prepare_assets.py copies each out, so keep them plain SVG). */
 export const SEASON_ART = {
   snow: svg(`<g stroke="#9cc4ff" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M16 3v26M4.7 9.5l22.6 13M4.7 22.5l22.6-13"/><path d="M12 5l4 3.5L20 5M12 27l4-3.5 4 3.5M4.6 14.4l5.2-1 -1.7-5M27.4 17.6l-5.2 1 1.7 5M4.6 17.6l5.2 1-1.7 5M27.4 14.4l-5.2-1 1.7-5"/></g>`),
-  blossom: svg(`<g fill="#ffb3cf">${[0, 72, 144, 216, 288].map(a => `<ellipse cx="16" cy="8.5" rx="5" ry="7" transform="rotate(${a} 16 16)"/>`).join("")}</g><circle cx="16" cy="16" r="3.4" fill="#ffd84d"/>`),
+  blossom: svg(`<g fill="#ffb3cf"><ellipse cx="16" cy="8.5" rx="5" ry="7" transform="rotate(0 16 16)"/><ellipse cx="16" cy="8.5" rx="5" ry="7" transform="rotate(72 16 16)"/><ellipse cx="16" cy="8.5" rx="5" ry="7" transform="rotate(144 16 16)"/><ellipse cx="16" cy="8.5" rx="5" ry="7" transform="rotate(216 16 16)"/><ellipse cx="16" cy="8.5" rx="5" ry="7" transform="rotate(288 16 16)"/></g><circle cx="16" cy="16" r="3.4" fill="#ffd84d"/>`),
   sun: svg(`<path d="M16 2l3 10 10 4-10 3-3 11-3-11-10-3 10-4z" fill="#ffd43b"/><circle cx="16" cy="16" r="3" fill="#fff6c2"/>`),
   leaf: svg(`<path d="M5 27C5 13 13 5 27 5c0 14-8 22-22 22z" fill="#f08c2e"/><path d="M5 27L20 12" stroke="#b5571a" stroke-width="1.6" stroke-linecap="round"/>`),
   redLeaf: svg(`<path d="M5 27C5 13 13 5 27 5c0 14-8 22-22 22z" fill="#d9472b"/><path d="M5 27L20 12" stroke="#93281a" stroke-width="1.6" stroke-linecap="round"/>`),

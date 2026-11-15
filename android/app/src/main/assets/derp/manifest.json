@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Derp",
-  "version": "2.1",
+  "version": "2.2",
   "description": "Derp's own pages (the new tab, your dork, reader view…), a little script in web pages for Reader view and Add to home screen, and Doodle's look on its results.",
   "browser_specific_settings": {
     "gecko": {
@@ -41,6 +41,18 @@
       ],
       "css": [
         "doodle-page.css"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://duckduckgo.com/*"
+      ],
+      "js": [
+        "doodle-ddg.js"
+      ],
+      "css": [
+        "doodle-ddg.css"
       ],
       "run_at": "document_end"
     }

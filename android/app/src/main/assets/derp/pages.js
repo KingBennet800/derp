@@ -15,19 +15,21 @@ async function derp(message) {
 const dorkURL = (dork, size = 256) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(draw(dork, size));
 
 /** Your dork from the app, or a new random one (saved, so it sticks).
- * [petDays]: your days together, if your dork is a pet (Just for fun). */
+ * [petDays]: your days together, if your dork is a pet (Just for fun);
+ * [doodlePicked]: whether you've picked where Doodle's results come from. */
 async function myDork() {
   const state = (await derp({ type: "getState" })) || {};
   const petDays = typeof state.petDays === "number" ? state.petDays : null;
+  const doodlePicked = !!state.doodlePicked;
   if (state.dork) {
     const dork = normalizeDork(state.dork);
     // Older Derps saved no napping picture for the dork pet.
     if (!state.sleepy) saveDork(dork);
-    return { dork, made: !!state.made, petDays };
+    return { dork, made: !!state.made, petDays, doodlePicked };
   }
   const dork = randomDork();
   await saveDork(dork);
-  return { dork, made: false, petDays };
+  return { dork, made: false, petDays, doodlePicked };
 }
 
 /** Saves your dork, as drawn in the toolbar (and napping, eyes shut). */

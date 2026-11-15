@@ -17,6 +17,7 @@ const UNLOAD_AFTER_MINUTES = [15, 30, 60, 120, 240];
 
 Preferences.addAll([
   { id: "derp.look", type: "string" },
+  { id: "derp.doodle.results", type: "string" },
   { id: "derp.memorySaver.enabled", type: "bool" },
   { id: "derp.memorySaver.minutes", type: "int" },
   { id: "browser.taskbarTabs.enabled", type: "bool" },
@@ -38,6 +39,11 @@ Preferences.addAll([
 // Looks: Derp's colors (theme/derp-theme.css follows the pref).
 const LOOKS = ["derp", "grape", "mint", "peach", "bubblegum", "graphite"];
 Preferences.addSetting({ id: "derpLook", pref: "derp.look", get: look => (LOOKS.includes(look) ? look : "derp") });
+Preferences.addSetting({
+  id: "derpDoodleResults",
+  pref: "derp.doodle.results",
+  get: source => (source === "duckduckgo" ? "duckduckgo" : "google"),
+});
 Preferences.addSetting({ id: "derpMemorySaver", pref: "derp.memorySaver.enabled" });
 Preferences.addSetting({
   id: "derpMemorySaverMinutes",
@@ -214,6 +220,22 @@ SettingGroupManager.registerGroups({
         l10nId: "derp-look",
         control: "moz-select",
         options: LOOKS.map(look => ({ value: look, l10nId: `derp-look-${look}` })),
+      },
+    ],
+  },
+  derpDoodle: {
+    l10nId: "derp-doodle-group",
+    headingLevel: 2,
+    iconSrc: "chrome://global/skin/icons/search-glass.svg",
+    items: [
+      {
+        id: "derpDoodleResults",
+        l10nId: "derp-doodle-results",
+        control: "moz-select",
+        options: [
+          { value: "google", l10nId: "derp-doodle-results-google" },
+          { value: "duckduckgo", l10nId: "derp-doodle-results-duckduckgo" },
+        ],
       },
     ],
   },

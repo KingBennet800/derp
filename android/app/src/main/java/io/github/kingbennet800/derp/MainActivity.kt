@@ -1133,7 +1133,7 @@ class MainActivity : Activity() {
         item("Import data") { browser.openPage("import.html") }
         item("Your devices", if (app.pairing.paired) "Paired" else null) { browser.openPage("devices.html") }
         divider()
-        item("Search engine", browser.engine.label) { pickEngine() }
+        item("Search engine", browser.engineLabel) { pickEngine() }
         item("Look", Look.of(this).label) { pickLook() }
         item("Ad blocker", blockerState()) { adBlocker() }
         item("Memory Saver", if (browser.memorySaver) "On" else "Off") { memorySaver() }
@@ -1378,12 +1378,17 @@ class MainActivity : Activity() {
             .show()
     }
 
+    /** The search engine: Doodle with Google's or DuckDuckGo's results, or another. */
     private fun pickEngine() {
-        val engines = Engine.values()
+        val choices = DoodleResults.values().map { Engine.DOODLE to it } + Engine.values().filter { it != Engine.DOODLE }.map { it to null }
+        val labels = choices.map { (engine, results) -> if (results != null) "Doodle, with ${results.label}’s results" else engine.label }
+        val current = choices.indexOfFirst { (engine, results) -> engine == browser.engine && (results == null || results == browser.doodle) }
         AlertDialog.Builder(this)
             .setTitle("Search engine")
-            .setSingleChoiceItems(engines.map { it.label }.toTypedArray(), engines.indexOf(browser.engine)) { d, which ->
-                browser.engine = engines[which]
+            .setSingleChoiceItems(labels.toTypedArray(), current) { d, which ->
+                val (engine, results) = choices[which]
+                browser.engine = engine
+                results?.let { browser.doodle = it }
                 d.dismiss()
             }
             .show()

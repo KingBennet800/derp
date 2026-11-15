@@ -9,8 +9,8 @@
  * - Your dork: Derp's own account, an avatar you design, kept on this device
  *   (DerpDork.sys.mjs).
  * - Doodle: Derp's search (the default, by policy in config/policies.json),
- *   Google's results in Doodle's look (doodle-look/), dark while Derp is
- *   dark.
+ *   with Google's or DuckDuckGo's results as you pick (DerpDoodle.sys.mjs),
+ *   in Doodle's look (doodle-look/), dark while Derp is dark.
  * - Your devices: pair with Derp on your phone to share bookmarks, passwords
  *   and open tabs, end-to-end encrypted (DerpPair.sys.mjs).
  * - Just for fun (all off by default): Duck mode, where now and then a duck
@@ -131,29 +131,13 @@ const Fun = {
   },
 };
 
-// Doodle searches Google, with doodle=1 in the address to mark the page as
-// Doodle's, which gets Doodle's look. Derp tells Google whether it's light or
-// dark, the way Chrome does (its Sec-CH-Prefers-Color-Scheme hint, which
-// Google doesn't get from Firefox otherwise), so Google's pages, Doodle's
-// results among them, come in Derp's theme.
+// Doodle: its results from Google or DuckDuckGo, as you pick (DerpDoodle.sys.mjs),
+// in Doodle's look.
 const Doodle = {
   init() {
-    Services.obs.addObserver(this, "http-on-modify-request");
+    const { DerpDoodle } = ChromeUtils.importESModule(derpURL("DerpDoodle.sys.mjs"));
+    DerpDoodle.init({ cssURL: derpURL("doodle.css") });
     this.installLook().catch(e => console.error("Doodle's look didn't install:", e));
-  },
-  observe(subject) {
-    const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-    if (
-      channel.URI.host === "www.google.com" &&
-      channel.loadInfo.externalContentPolicyType === Ci.nsIContentPolicy.TYPE_DOCUMENT
-    ) {
-      channel.setRequestHeader("Sec-CH-Prefers-Color-Scheme", this.dark() ? "dark" : "light", false);
-    }
-  },
-  // Settings → Website appearance: dark, light, or (2) following the theme.
-  dark() {
-    const appearance = Services.prefs.getIntPref("layout.css.prefers-color-scheme.content-override", 2);
-    return appearance === 2 ? Services.appinfo.contentThemeDerivedColorSchemeIsDark : appearance === 0;
   },
   // Doodle's look on its result pages is a tiny built-in extension
   // (doodle-look/): web pages' processes can't read Derp's files, but an
@@ -165,7 +149,8 @@ const Doodle = {
     const { AddonManager } = ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs");
     const { ExtensionPermissions } = ChromeUtils.importESModule("resource://gre/modules/ExtensionPermissions.sys.mjs");
     const base = "resource://derp/doodle-look/";
-    const stamp = ["manifest.json", "doodle-page.js", "doodle-page.css"].map(f => derpURL(`doodle-look/${f}`).split("?v=")[1]).join(".");
+    const files = ["manifest.json", "doodle-page.js", "doodle-page.css", "doodle-ddg.js", "doodle-ddg.css"];
+    const stamp = files.map(f => derpURL(`doodle-look/${f}`).split("?v=")[1]).join(".");
     const { version } = await (await fetch(base + "manifest.json")).json();
     if (Services.prefs.getStringPref(this.LOOK_PREF, "") !== stamp) {
       // Out with the old copy first: Firefox keeps an extension's manifest

@@ -46,9 +46,24 @@ class Tab(val private: Boolean) {
     val asleep get() = sleeping != null
 }
 
+// Doodle's DuckDuckGo settings: links and addresses in Derp's colors, light
+// and dark (DuckDuckGo stays light unless asked); they mark its pages as
+// Doodle's, for Doodle's look. The same as desktop Derp's (DDG_LIGHT and
+// DDG_DARK in src/features/DerpDoodle.sys.mjs).
+internal const val DOODLE_LIGHT = "k9=2f6feb&kaa=7a52c7&kx=0f8a74"
+internal const val DOODLE_DARK = "kae=d&k9=86b1ff&kaa=a98bf0&kx=34c6a0"
+internal const val DOODLE_DUCK = "https://duckduckgo.com/?q=%s&$DOODLE_LIGHT&kt=system-ui&ka=system-ui"
+
+/** Where Doodle's results come from: picked when you first start Derp (right
+ * after making your dork), or later in ⋮ → Search engine. */
+enum class DoodleResults(val label: String) {
+    GOOGLE("Google"),
+    DUCKDUCKGO("DuckDuckGo"),
+}
+
 enum class Engine(val label: String, val template: String) {
-    // Google's results, marked doodle=1 for Doodle's look (desktop Derp's
-    // Doodle is in config/policies.json).
+    // Google's results, marked doodle=1 for Doodle's look, or DuckDuckGo's
+    // (DOODLE_DUCK), as you pick (desktop Derp's Doodle is in config/policies.json).
     DOODLE("Doodle", "https://www.google.com/search?q=%s&doodle=1"),
     GOOGLE("Google", "https://www.google.com/search?q=%s"),
     DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=%s"),
@@ -57,13 +72,20 @@ enum class Engine(val label: String, val template: String) {
     ECOSIA("Ecosia", "https://www.ecosia.org/search?q=%s"),
     ;
 
-    /** A search for [encoded] (already URL-encoded). */
-    fun search(encoded: String) = template.replace("%s", encoded)
+    /** A search for [encoded] (already URL-encoded); Doodle's gets [doodle]'s
+     * results, on DuckDuckGo dark or not as Derp is ([dark]). */
+    fun search(encoded: String, doodle: DoodleResults = DoodleResults.GOOGLE, dark: Boolean = false): String {
+        if (this == DOODLE && doodle == DoodleResults.DUCKDUCKGO) {
+            val url = DOODLE_DUCK.replace("%s", encoded)
+            return if (dark) url.replace(DOODLE_LIGHT, DOODLE_DARK) else url
+        }
+        return template.replace("%s", encoded)
+    }
 
     /** The words searched for, if [url] is a search on this engine. */
     fun terms(url: String): String? {
-        val start = template.substringBefore("%s")
-        if (!url.startsWith(start)) return null
+        val templates = if (this == DOODLE) listOf(template, DOODLE_DUCK) else listOf(template)
+        if (templates.none { url.startsWith(it.substringBefore("%s")) }) return null
         return runCatching { Uri.parse(url).getQueryParameter("q") }.getOrNull()?.trim()?.ifBlank { null }
     }
 }
@@ -84,6 +106,29 @@ class Browser(val app: DerpApp) {
     var engine: Engine
         get() = runCatching { Engine.valueOf(prefs.getString("engine", "DOODLE")!!) }.getOrDefault(Engine.DOODLE)
         set(value) = prefs.edit().putString("engine", value.name).apply()
+
+    /** Where Doodle's results come from (Google until you pick). */
+    var doodle: DoodleResults
+        get() = runCatching { DoodleResults.valueOf(prefs.getString("doodle", "GOOGLE")!!) }.getOrDefault(DoodleResults.GOOGLE)
+        set(value) {
+            prefs.edit().putString("doodle", value.name).apply()
+            Log.d("Derp", "Doodle's results: ${value.name}")
+        }
+
+    /** Whether you've picked Doodle's results (when first starting Derp). */
+    val doodlePicked get() = prefs.contains("doodle")
+
+    /** What the menu says for the search engine: "Doodle (DuckDuckGo)". */
+    val engineLabel get() = if (engine == Engine.DOODLE) "Doodle (${doodle.label})" else engine.label
+
+    /** With DuckDuckGo picked for Doodle, a Doodle search on Google (from
+     * Doodle's home page, say) goes to DuckDuckGo instead. */
+    fun doodleOnDuck(url: String): String? {
+        if (doodle != DoodleResults.DUCKDUCKGO) return null
+        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return null
+        if (uri.host != "www.google.com" || uri.path != "/search" || uri.getQueryParameter("doodle") != "1") return null
+        return Engine.DOODLE.search(Uri.encode(uri.getQueryParameter("q").orEmpty()), doodle, app.dark)
+    }
 
     // ── Starting ───────────────────────────────────────────────────────────
 
@@ -278,7 +323,7 @@ class Browser(val app: DerpApp) {
             scheme.containsMatchIn(text) -> text
             !text.contains(' ') && Regex("^localhost(:\\d+)?(/.*)?$").matches(text) -> "http://$text"
             !text.contains(' ') && Regex("^[^/\\s]+\\.[a-zA-Z]{2,}(:\\d+)?(/.*)?$").matches(text) -> "https://$text"
-            else -> engine.search(Uri.encode(text))
+            else -> engine.search(Uri.encode(text), doodle, app.dark)
         }
     }
 
@@ -462,6 +507,10 @@ class Browser(val app: DerpApp) {
                 ui?.confirmPair(request.uri)
                 return GeckoResult.fromValue(AllowOrDeny.DENY)
             }
+            doodleOnDuck(request.uri)?.let { duck ->
+                load(tab, duck)
+                return GeckoResult.fromValue(AllowOrDeny.DENY)
+            }
             val scheme = Uri.parse(request.uri).scheme?.lowercase() ?: return null
             if (scheme in WEB_SCHEMES) return null
             ui?.openExternal(request.uri, tab)
@@ -606,6 +655,7 @@ class Browser(val app: DerpApp) {
                     app.dork.json?.let { reply.put("dork", it) }
                     reply.put("made", app.dork.made).put("version", BuildConfig.VERSION_NAME).put("engine", engine.label)
                     reply.put("sleepy", app.dork.hasSleepy)
+                    reply.put("doodle", doodle.name).put("doodlePicked", doodlePicked)
                     Pet(app).days?.let { reply.put("petDays", it) }
                     val (light, dark) = Look.of(app).accents
                     reply.put("accent", JSONArray().put(light).put(dark))
@@ -616,6 +666,7 @@ class Browser(val app: DerpApp) {
                     app.dork.json?.let { reply.put("dork", it) }
                 }
                 "stickers.close" -> closeStickers(tab)
+                "doodle.set" -> doodle = runCatching { DoodleResults.valueOf(msg.getString("results")) }.getOrDefault(DoodleResults.GOOGLE)
                 "made" -> app.dork.made = true
                 "focusUrl" -> ui?.focusUrl()
                 "bookmarks.list" -> reply.put("items", library.bookmarks(msg.optString("query"), msg.optInt("limit", 500)))

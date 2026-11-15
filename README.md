@@ -159,10 +159,15 @@ Windows) to delete it too.
   Safe Browsing, add-on installs and updates from addons.mozilla.org, and
   downloads of on-device translation models.
 - **Doodle**: Derp's own search engine, and the default. It has googly eyes
-  for its oo's. Results come from Google, in Doodle's look: Doodle's header
+  for its oo's. Its results come from Google or DuckDuckGo, as you pick when
+  you first start Derp (right after making your dork; later, Settings → Derp →
+  Doodle, or ⋮ → Search engine on Android); with DuckDuckGo, Doodle's searches
+  and suggestions go straight there, never to Google. Either way they're in
+  Doodle's look: Doodle's header
   and search box, results on cards in Derp's colors (dark while Derp is dark),
-  with credit to Google (their "G") and their ads left as they are, and
-  without Google's AI (AI Overviews, AI Mode) or Sign in. Derp tells Google
+  with credit to Google or DuckDuckGo and their ads left as they are, and
+  without their AI (Google's AI Overviews and AI Mode, DuckDuckGo's Search
+  Assist and Duck.ai) or Google's Sign in. Derp tells Google
   whether it's light or dark, as Chrome does, so Google's pages come in Derp's
   theme. The look is a small built-in extension (`src/features/doodle-look/`, on Android too)
   that only touches Doodle searches. Type `@doodle` to use Doodle when another engine is the default. Doodle has a home page too, at

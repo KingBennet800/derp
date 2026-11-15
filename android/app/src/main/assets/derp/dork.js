@@ -17,6 +17,8 @@ let dork = randomDork();
 let tab = "face";
 // Your days together if your dork is a pet (Just for fun), which unlock outfits.
 let petDays = null;
+// Whether you've picked Doodle's results (when starting Derp, after your dork).
+let doodlePicked = true;
 
 document.getElementById("welcome").hidden = !welcome;
 document.getElementById("plain").hidden = welcome;
@@ -112,11 +114,21 @@ document.body.addEventListener("click", async e => {
     update(randomDork(dork.name));
   } else if (b.id === "save") {
     savePicture();
+  } else if (b.dataset.doodle) {
+    await derp({ type: "doodle.set", results: b.dataset.doodle });
+    location.replace("newtab.html");
   } else if (b.id === "done") {
     await saveDork(dork);
     if (welcome) {
       await derp({ type: "made" });
-      location.replace("newtab.html");
+      // Starting Derp: next, where Doodle's results come from.
+      if (doodlePicked) {
+        location.replace("newtab.html");
+      } else {
+        document.body.classList.add("asking");
+        $("doodle-ask").hidden = false;
+        scrollTo(0, 0);
+      }
     } else if (history.length > 1) {
       history.back();
     } else {
@@ -156,7 +168,7 @@ async function savePicture() {
 }
 
 (async () => {
-  ({ dork, petDays } = await myDork());
+  ({ dork, petDays, doodlePicked } = await myDork());
   // From "Try it on" (a dork pet's new outfit): dork.html?wear=hair.crown
   const [part, value] = (new URLSearchParams(location.search).get("wear") || "").split(".");
   if (PARTS[part] && choices(part).includes(value) && unlocked(part, value, petDays)) {

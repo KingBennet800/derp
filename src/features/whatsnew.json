@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.2.0",
+    "title": "Doodle, your way",
+    "items": [
+      {
+        "icon": "🦆",
+        "title": "Doodle with DuckDuckGo",
+        "text": "Pick where Doodle’s results come from: Google, or DuckDuckGo for private search. Doodle looks the same either way, without the AI.",
+        "desktop": "Settings → Derp → Doodle",
+        "android": "⋮ → Search engine"
+      }
+    ]
+  },
+  {
     "version": "2.1.0",
     "title": "Derp gets personality",
     "items": [

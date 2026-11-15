@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Smoke-test Derp for Android on an emulator: install, start, check it shows
-# the welcome dork editor, open a link, bookmark it, check history, save a
+# the welcome dork editor (then pick Doodle's results), open a link, bookmark it, check history, save a
 # password and get it offered back, the just-for-fun gags, the ad blocker,
 # find in page, Reader view, Add to home screen, Memory Saver, pairing with a
 # computer (tests/pairing.py standing in for it, through a test relay), a
@@ -105,6 +105,16 @@ ui >"$out/ui-first-start.xml"
 for view in "Address bar" "Tabs" "Your dork" "Menu"; do
   grep -q "content-desc=\"$view\"" "$out/ui-first-start.xml" || { echo "No '$view' in the toolbar"; exit 1; }
 done
+
+# Starting Derp: "That's me!" makes your dork, and then Doodle asks where its
+# results come from. DuckDuckGo here (the searches below show its look).
+tap_text "That’s me!" || { ui >"$out/ui-no-thats-me.xml"; echo "No That's me! on the welcome"; exit 1; }
+sleep 3
+shot 1b-doodle-results 1
+tap_has DuckDuckGo || { ui >"$out/ui-no-doodle-ask.xml"; echo "Doodle didn't ask where its results come from"; exit 1; }
+sleep 3
+logged "Doodle's results: DUCKDUCKGO" "Picking DuckDuckGo for Doodle didn't stick"
+alive "starting Derp"
 
 # A link from another app opens in a new tab.
 adb shell am start -W -a android.intent.action.VIEW -d https://example.com "$pkg"

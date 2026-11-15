@@ -28,6 +28,21 @@
     <button id="save" type="button">Save picture</button>
     <button id="done" class="primary" type="button">Done</button>
   </footer>
+  <!-- Starting Derp, after your dork: where Doodle's results come from. -->
+  <section class="doodle-ask" id="doodle-ask" hidden>
+    <img class="doodle-icon" src="doodle.svg" alt="">
+    <h1>Where should Doodle get its results?</h1>
+    <p>Doodle is Derp’s search engine. It looks the same either way, in Doodle’s own look.</p>
+    <button class="choice" type="button" data-doodle="GOOGLE">
+      <span class="choice-icon" aria-hidden="true">🌍</span>
+      <span><strong>Google</strong><span>The biggest index of the web. Doodle hides Google’s AI and its Sign in.</span></span>
+    </button>
+    <button class="choice" type="button" data-doodle="DUCKDUCKGO">
+      <span class="choice-icon" aria-hidden="true">🦆</span>
+      <span><strong>DuckDuckGo</strong><span>Private search that doesn’t track you or keep a profile of your searches.</span></span>
+    </button>
+    <p class="note">You can change this any time in ⋮ → Search engine.</p>
+  </section>
   <script src="dork-art.js"></script>
   <script src="pages.js"></script>
   <script src="dork.js"></script>

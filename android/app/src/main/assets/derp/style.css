@@ -185,6 +185,18 @@ img { display: block; }
 .grid button.locked::after, .colors button.locked::after { content: "🔒"; position: absolute; inset-block-end: 2px; inset-inline-end: 4px; font-size: 13px; }
 .colors button.locked::after { inset: 0; display: grid; place-items: center; font-size: 12px; }
 .grid button.locked:active, .colors button.locked:active { transform: none; }
+/* Starting Derp, after your dork: where Doodle's results come from. */
+body.asking > :not(.doodle-ask, script) { display: none !important; }
+.doodle-ask { display: grid; gap: 12px; text-align: center; }
+.doodle-ask[hidden] { display: none; }
+.doodle-ask .doodle-icon { width: 64px; height: 64px; margin: 8px auto 4px; }
+.doodle-ask h1 { margin: 0; font-size: 1.4rem; }
+.doodle-ask > p { margin: 0; color: var(--dim); }
+.doodle-ask .choice { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); font: inherit; text-align: start; }
+.doodle-ask .choice:active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.doodle-ask .choice strong { display: block; font-size: 1.05rem; }
+.doodle-ask .choice span > span { display: block; margin-top: 2px; color: var(--dim); font-size: 0.92rem; line-height: 1.35; }
+.doodle-ask .choice-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--sunken); font-size: 22px; }
 .days { margin: 6px 0 0; color: var(--accent); font-size: 0.9rem; font-weight: 600; text-align: center; }
 .days[hidden] { display: none; }
 .grid button, .colors button { transition: background-color 120ms ease, box-shadow 120ms ease, transform 200ms var(--spring); }

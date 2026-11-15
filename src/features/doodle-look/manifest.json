@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Doodle’s look",
-  "version": "2.1.0",
-  "description": "Doodle’s look on its search results: Google’s results pages, for Doodle searches only. Part of Derp.",
+  "version": "2.2.0",
+  "description": "Doodle’s look on its search results, from Google or DuckDuckGo, for Doodle searches only. Part of Derp.",
   "browser_specific_settings": {
     "gecko": { "id": "doodle-look@kingbennet800.github.io" }
   },
@@ -11,6 +11,12 @@
       "matches": ["https://www.google.com/search*"],
       "js": ["doodle-page.js"],
       "css": ["doodle-page.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://duckduckgo.com/*"],
+      "js": ["doodle-ddg.js"],
+      "css": ["doodle-ddg.css"],
       "run_at": "document_end"
     }
   ]

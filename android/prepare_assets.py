@@ -56,8 +56,8 @@ def main(out):
     )
     shutil.copyfile(ROOT / "brand/derp.svg", assets / "logo.svg")
     shutil.copyfile(ROOT / "brand/doodle-icon.svg", assets / "doodle.svg")
-    # Doodle's look on its results pages: desktop Derp's content script and style.
-    for name in ("doodle-page.js", "doodle-page.css"):
+    # Doodle's look on its results pages (Google's and DuckDuckGo's): desktop Derp's content scripts and styles.
+    for name in ("doodle-page.js", "doodle-page.css", "doodle-ddg.js", "doodle-ddg.css"):
         shutil.copyfile(ROOT / "src/features/doodle-look" / name, assets / name)
     # The wordmark in desktop Derp's new tab colors, for light and dark.
     for scheme, color in (("light", "#1f2328"), ("dark", "#e8eaed")):

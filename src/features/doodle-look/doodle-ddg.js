@@ -13,7 +13,34 @@
     return;
   }
   const params = new URLSearchParams(location.search);
-  document.documentElement.dataset.doodle = params.get("kae") === "d" ? "dark" : "light";
+  const dark = params.get("kae") === "d";
+  document.documentElement.dataset.doodle = dark ? "dark" : "light";
+
+  // Light or dark, as Derp is: when that changes (or the page came in the
+  // other colors), it comes again in Doodle's colors for now, once you're
+  // looking at it.
+  const LIGHT = "k9=2f6feb&kaa=7a52c7&kx=0f8a74";
+  const DARK = "kae=d&k9=86b1ff&kaa=a98bf0&kx=34c6a0";
+  const darkMode = matchMedia("(prefers-color-scheme: dark)");
+  const follow = () => {
+    if (darkMode.matches === dark) {
+      return;
+    }
+    if (document.hidden) {
+      document.addEventListener("visibilitychange", follow, { once: true });
+      return;
+    }
+    const url = new URL(location.href);
+    for (const name of ["kae", "k9", "kaa", "kx"]) {
+      url.searchParams.delete(name);
+    }
+    for (const [name, value] of new URLSearchParams(darkMode.matches ? DARK : LIGHT)) {
+      url.searchParams.set(name, value);
+    }
+    location.replace(url);
+  };
+  darkMode.addEventListener("change", follow);
+  follow();
 
   // Doodle's logo (brand/doodle.svg), with its own ids.
   const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 268 84" role="img" aria-label="Doodle">

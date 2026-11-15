@@ -36,6 +36,9 @@ class DoodleTest {
         val desktop = File(repo, "src/features/DerpDoodle.sys.mjs").readText()
         assertTrue("DerpDoodle has Doodle's light colors", desktop.contains("DDG_LIGHT = \"$DOODLE_LIGHT\""))
         assertTrue("DerpDoodle has Doodle's dark colors", desktop.contains("DDG_DARK = \"$DOODLE_DARK\""))
+        val look = File(repo, "src/features/doodle-look/doodle-ddg.js").readText()
+        assertTrue("doodle-ddg.js has Doodle's light colors", look.contains("LIGHT = \"$DOODLE_LIGHT\""))
+        assertTrue("doodle-ddg.js has Doodle's dark colors", look.contains("DARK = \"$DOODLE_DARK\""))
     }
 
     @Test

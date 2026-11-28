@@ -168,6 +168,7 @@ final class Blocker {
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        NSLog("Derp: launching (%@)", DerpApp.shared.setup.summary)
         DerpApp.shared.start()
         return true
     }
@@ -209,6 +210,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             controller.start(opening: url)
         }
         if let shortcut = options.shortcutItem { DispatchQueue.main.async { self.perform(shortcut) } }
+        NSLog("Derp: window ready with %d tab(s)", controller.browser.tabs.count)
     }
 
     func scene(_ scene: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) {

@@ -447,8 +447,10 @@ extension Browser: WKNavigationDelegate, WKUIDelegate {
             let source = action.value(forKey: "sourceFrame") as? WKFrameInfo
             let fromPage = source?.securityOrigin.protocol == Pages.scheme
             let fromDerp = tab.opening.map { $0.path == url.path } ?? false
+            // Back, forward and reload return to a page you were already on.
+            let history = action.navigationType == .backForward || action.navigationType == .reload
             tab.opening = nil
-            return decisionHandler(fromPage || fromDerp || !main ? .allow : .cancel, preferences)
+            return decisionHandler(fromPage || fromDerp || history || !main ? .allow : .cancel, preferences)
         }
         let scheme = url.scheme?.lowercased() ?? ""
         if !["http", "https", "about", "data", "blob", "file", "javascript"].contains(scheme) {

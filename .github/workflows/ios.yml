@@ -113,43 +113,60 @@ jobs:
           EOF
           cat "$GITHUB_OUTPUT"
 
-      - name: Unit tests and the UI smoke test (${{ steps.sims.outputs.names }})
+      - name: Build for testing
+        run: |
+          xcodebuild build-for-testing \
+            -project ios/Derp.xcodeproj -scheme Derp \
+            -destination "generic/platform=iOS Simulator" -derivedDataPath "$RUNNER_TEMP/dd" \
+            MARKETING_VERSION="$(cat VERSION)" CURRENT_PROJECT_VERSION="$(cat VERSION)" \
+            > "$RUNNER_TEMP/build.log" 2>&1 || { grep -E -B3 -A20 'error:|ld: |failed' "$RUNNER_TEMP/build.log" | head -300; exit 1; }
+          grep -E '^\*\*' "$RUNNER_TEMP/build.log"
+
+      - name: Start the simulators (${{ steps.sims.outputs.names }})
+        run: |
+          xcrun simctl boot "${{ steps.sims.outputs.ipad }}" || true
+          xcrun simctl boot "${{ steps.sims.outputs.iphone }}" || true
+          perl -e 'alarm 900; exec @ARGV' xcrun simctl bootstatus "${{ steps.sims.outputs.ipad }}" -b
+          perl -e 'alarm 900; exec @ARGV' xcrun simctl bootstatus "${{ steps.sims.outputs.iphone }}" -b
+
+      - name: Unit tests
+        run: python ios/ci/run.py unit "${{ steps.sims.outputs.ipad }}" 15 -only-testing:DerpTests
+
+      - name: UI smoke test on the iPad
+        if: success() || failure()
         run: |
           python -m http.server 8765 --directory ios/ci/site >/dev/null 2>&1 &
-          set -o pipefail
-          xcodebuild test \
-            -project ios/Derp.xcodeproj -scheme Derp \
-            -destination "id=${{ steps.sims.outputs.ipad }}" \
-            -destination "id=${{ steps.sims.outputs.iphone }}" \
-            -resultBundlePath "$RUNNER_TEMP/results.xcresult" \
-            MARKETING_VERSION="$(cat VERSION)" CURRENT_PROJECT_VERSION="$(cat VERSION)" \
-            | tee "$RUNNER_TEMP/test.log" | grep -E '^(Test Case|Testing|\*\*|.*error:|.*warning: .*Derp/)|Derp: ' || true
-          if ! grep -q '\*\* TEST SUCCEEDED \*\*' "$RUNNER_TEMP/test.log"; then
-            echo "::group::What went wrong"
-            grep -E -B3 -A20 'error:|Undefined symbol|duplicate symbol|ld: |failed:|XCTAssert|Restarting after unexpected exit' "$RUNNER_TEMP/test.log" | head -400
-            echo "::endgroup::"
-            exit 1
-          fi
+          python ios/ci/run.py ipad "${{ steps.sims.outputs.ipad }}" 25 -only-testing:DerpUITests
+
+      - name: UI smoke test on the iPhone
+        if: success() || failure()
+        run: |
+          python -m http.server 8765 --directory ios/ci/site >/dev/null 2>&1 &
+          python ios/ci/run.py iphone "${{ steps.sims.outputs.iphone }}" 25 -only-testing:DerpUITests
 
       - name: Screenshots
         if: always()
         run: |
           mkdir -p screenshots
-          [ -d "$RUNNER_TEMP/results.xcresult" ] || exit 0
-          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/results.xcresult" --output-path "$RUNNER_TEMP/attachments"
-          python - "$RUNNER_TEMP/attachments" screenshots <<'EOF'
+          for run in unit ipad iphone; do
+            bundle="$RUNNER_TEMP/$run.xcresult"
+            [ -d "$bundle" ] || continue
+            xcrun xcresulttool export attachments --path "$bundle" --output-path "$RUNNER_TEMP/attachments-$run" || continue
+            python - "$RUNNER_TEMP/attachments-$run" screenshots <<'EOF'
           import json, pathlib, shutil, sys
           src, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
           for test in json.loads((src / "manifest.json").read_text()):
               for item in test.get("attachments", []):
                   name = item.get("suggestedHumanReadableName") or item["exportedFileName"]
                   shutil.copyfile(src / item["exportedFileName"], out / name)
-          print("\n".join(sorted(p.name for p in out.iterdir())))
           EOF
+          done
+          cp "$RUNNER_TEMP"/*.log screenshots/ 2>/dev/null || true
+          ls screenshots
 
       - name: What Derp for iOS seals, desktop Derp opens
         run: |
-          blob=$(cat screenshots/pairing-sealed*.txt | head -1)
+          blob=$(cat screenshots/pairing-sealed* | head -1)
           python - "$blob" <<'EOF'
           import base64, sys
           sys.path.insert(0, "tests")
@@ -164,9 +181,7 @@ jobs:
         if: always()
         with:
           name: ios-screenshots
-          path: |
-            screenshots
-            ${{ runner.temp }}/test.log
+          path: screenshots
           if-no-files-found: ignore
 
       - name: Build Derp.ipa

@@ -129,6 +129,14 @@ jobs:
           perl -e 'alarm 900; exec @ARGV' xcrun simctl bootstatus "${{ steps.sims.outputs.ipad }}" -b
           perl -e 'alarm 900; exec @ARGV' xcrun simctl bootstatus "${{ steps.sims.outputs.iphone }}" -b
 
+      - name: Launch Derp once (its console, and why if it crashes)
+        run: |
+          app="$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Derp.app"
+          xcrun simctl install "${{ steps.sims.outputs.ipad }}" "$app"
+          perl -e 'alarm 45; exec @ARGV' xcrun simctl launch --console-pty --terminate-running-process "${{ steps.sims.outputs.ipad }}" io.github.kingbennet800.derp -derpStill 2>&1 | grep -v -E '^\s*$' | head -120 || true
+          sleep 3
+          python ios/ci/crashes.py
+
       - name: Unit tests
         run: python ios/ci/run.py unit "${{ steps.sims.outputs.ipad }}" 15 -only-testing:DerpTests
 
@@ -162,6 +170,7 @@ jobs:
           EOF
           done
           cp "$RUNNER_TEMP"/*.log screenshots/ 2>/dev/null || true
+          python ios/ci/crashes.py
           ls screenshots
 
       - name: What Derp for iOS seals, desktop Derp opens

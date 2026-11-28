@@ -375,8 +375,9 @@ final class Browser: NSObject {
     /// Asks the page for itself (page.js); Reader view opens with it.
     func openReader(_ tab: Tab) {
         guard canRead(tab), let webView = tab.webView else { return }
-        webView.evaluateJavaScript("derpReaderPage()", in: nil, in: Pages.world) { [weak self] result in
-            guard let self, case .success(let value) = result, let page = value as? [String: Any],
+        // (WebKit's own method: its Swift wrapper is in a library not every iOS has.)
+        webView.__evaluateJavaScript("derpReaderPage()", inFrame: nil, in: Pages.world) { [weak self] value, _ in
+            guard let self, let page = value as? [String: Any],
                   let url = page["url"] as? String, let html = page["html"] as? String else { return }
             tab.reading = (url, html)
             self.load(tab, Pages.base + "reader.html")
@@ -413,8 +414,8 @@ final class Browser: NSObject {
             sheet.addAction(UIAlertAction(title: login.username.isEmpty ? "(no username)" : login.username, style: .default) { [weak self] _ in
                 guard let password = self?.app.logins.password(login.guid) else { return }
                 self?.app.logins.used(login.guid)
-                webView.callAsyncJavaScript("return derpFill(username, password)", arguments: ["username": login.username, "password": password],
-                                            in: frame, in: Pages.world, completionHandler: nil)
+                webView.__callAsyncJavaScript("return derpFill(username, password)", arguments: ["username": login.username, "password": password],
+                                              inFrame: frame, in: Pages.world, completionHandler: nil)
             })
         }
         sheet.addAction(UIAlertAction(title: "Not now", style: .cancel))

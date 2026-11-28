@@ -15,8 +15,11 @@
     <ol class="dev-steps">
       <li>On your computer, open Derp’s <b>Settings</b>, then <b>You and your dork</b>.</li>
       <li>Under <b>Your devices</b>, choose <b>Pair a phone</b>.</li>
-      <li>Point this phone’s camera at the code, and open the link in Derp.</li>
+      <li id="step-camera">Point this phone’s camera at the code, and open the link in Derp.</li>
     </ol>
+    <div class="lib-actions" id="scan-actions" hidden>
+      <button class="lib-btn primary" type="button" id="scan">Scan the code</button>
+    </div>
     <p class="lib-lede">Your bookmarks, passwords and open tabs are encrypted on your devices, with a key only they have. Derp’s relay passes them along without being able to read them, and there’s still no account.</p>
   </section>
   <div id="devices"></div>

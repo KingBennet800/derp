@@ -1,0 +1,76 @@
+# Derp for iOS and iPadOS. XcodeGen makes Derp.xcodeproj from this (in CI,
+# on a Mac; see .github/workflows/ios.yml), after prepare.py has gathered the
+# shared pages and art into Generated/. The IPA is built unsigned: SideStore,
+# AltStore or LiveContainer signs it when you install it.
+name: Derp
+options:
+  bundleIdPrefix: io.github.kingbennet800
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+targets:
+  Derp:
+    type: application
+    platform: iOS
+    sources:
+      - path: Derp
+      - path: Generated/derp
+        type: folder
+        buildPhase: resources
+      - path: Generated/Assets.xcassets
+      - path: Generated/blocklist.json
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.kingbennet800.derp
+        PRODUCT_NAME: Derp
+        INFOPLIST_FILE: Derp/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_BITCODE: "NO"
+        SUPPORTS_MACCATALYST: "NO"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
+  DerpTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DerpTests
+    dependencies:
+      - target: Derp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.kingbennet800.derp.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Derp.app/Derp"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  DerpUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: DerpUITests
+    dependencies:
+      - target: Derp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.kingbennet800.derp.uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_TARGET_NAME: Derp
+schemes:
+  Derp:
+    build:
+      targets:
+        Derp: all
+        DerpTests: [test]
+        DerpUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - DerpTests
+        - DerpUITests

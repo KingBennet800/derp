@@ -1,0 +1,175 @@
+name: iOS
+
+# Builds Derp for iOS and iPadOS on a Mac, runs its unit tests and the UI
+# smoke test on an iPad and an iPhone simulator (screenshots are kept as the
+# "ios-screenshots" artifact), and builds the unsigned Derp.ipa that SideStore,
+# AltStore or LiveContainer signs when you install it.
+on:
+  push:
+    branches: [main, ios]
+    paths:
+      - ios/**
+      - android/app/src/main/assets/derp/**
+      - android/prepare_assets.py
+      - src/features/DerpDork.sys.mjs
+      - src/features/DerpDuck.sys.mjs
+      - src/features/DerpFun.sys.mjs
+      - src/features/stickers.js
+      - src/features/stickers.css
+      - src/features/whatsnew.json
+      - src/features/doodle-look/**
+      - site/build.py
+      - theme/icons/**
+      - brand/**
+      - tests/pairing.py
+      - VERSION
+      - .github/workflows/ios.yml
+  pull_request:
+    paths:
+      - ios/**
+      - android/app/src/main/assets/derp/**
+      - android/prepare_assets.py
+      - src/features/DerpDork.sys.mjs
+      - src/features/DerpDuck.sys.mjs
+      - src/features/DerpFun.sys.mjs
+      - src/features/stickers.js
+      - src/features/stickers.css
+      - src/features/whatsnew.json
+      - src/features/doodle-look/**
+      - site/build.py
+      - theme/icons/**
+      - brand/**
+      - tests/pairing.py
+      - VERSION
+      - .github/workflows/ios.yml
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tools
+        run: |
+          brew install xcodegen
+          python -m pip install --quiet cryptography
+
+      - name: Filter lists for the ad blocker
+        run: |
+          curl --retry 4 --retry-all-errors -fsSL -o "$RUNNER_TEMP/easylist.txt" https://easylist.to/easylist/easylist.txt
+          curl --retry 4 --retry-all-errors -fsSL -o "$RUNNER_TEMP/easyprivacy.txt" https://easylist.to/easylist/easyprivacy.txt
+
+      - name: Gather Derp's pages and art
+        run: python ios/prepare.py --lists "$RUNNER_TEMP/easylist.txt" "$RUNNER_TEMP/easyprivacy.txt"
+
+      - name: Make the Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Pick simulators
+        id: sims
+        run: |
+          python - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          runtimes = sorted((r for r in data["devices"] if "iOS" in r), key=lambda r: [int(x) for x in r.rsplit("iOS-", 1)[1].split("-")])
+          devices = data["devices"][runtimes[-1]]
+          def pick(prefixes):
+              for prefix in prefixes:
+                  for d in devices:
+                      if d["name"].startswith(prefix):
+                          return d["udid"], d["name"]
+              raise SystemExit(f"no simulator like {prefixes}")
+          ipad = pick(["iPad Air", "iPad Pro", "iPad"])
+          iphone = pick(["iPhone 16", "iPhone 15", "iPhone"])
+          print(f"ipad={ipad[0]}")
+          print(f"iphone={iphone[0]}")
+          print(f"names={ipad[1]} and {iphone[1]} ({runtimes[-1].rsplit('.', 1)[-1]})")
+          EOF
+          cat "$GITHUB_OUTPUT"
+
+      - name: Unit tests and the UI smoke test (${{ steps.sims.outputs.names }})
+        run: |
+          python -m http.server 8765 --directory ios/ci/site >/dev/null 2>&1 &
+          set -o pipefail
+          xcodebuild test \
+            -project ios/Derp.xcodeproj -scheme Derp \
+            -destination "id=${{ steps.sims.outputs.ipad }}" \
+            -destination "id=${{ steps.sims.outputs.iphone }}" \
+            -resultBundlePath "$RUNNER_TEMP/results.xcresult" \
+            MARKETING_VERSION="$(cat VERSION)" CURRENT_PROJECT_VERSION="$(cat VERSION)" \
+            | tee "$RUNNER_TEMP/test.log" | grep -E '^(Test Case|Testing|\*\*|.*error:|.*warning: .*Derp/)|Derp: ' || true
+          grep -q '\*\* TEST SUCCEEDED \*\*' "$RUNNER_TEMP/test.log"
+
+      - name: Screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          [ -d "$RUNNER_TEMP/results.xcresult" ] || exit 0
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/results.xcresult" --output-path "$RUNNER_TEMP/attachments"
+          python - "$RUNNER_TEMP/attachments" screenshots <<'EOF'
+          import json, pathlib, shutil, sys
+          src, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+          for test in json.loads((src / "manifest.json").read_text()):
+              for item in test.get("attachments", []):
+                  name = item.get("suggestedHumanReadableName") or item["exportedFileName"]
+                  shutil.copyfile(src / item["exportedFileName"], out / name)
+          print("\n".join(sorted(p.name for p in out.iterdir())))
+          EOF
+
+      - name: What Derp for iOS seals, desktop Derp opens
+        run: |
+          blob=$(cat screenshots/pairing-sealed*.txt | head -1)
+          python - "$blob" <<'EOF'
+          import base64, sys
+          sys.path.insert(0, "tests")
+          import pairing
+          pair = pairing.Pair(bytes(range(32)))
+          snapshot = pair.open(base64.b64decode(sys.argv[1]), "0123456789abcdef0123456789abcdef")
+          assert snapshot == {"v": 1, "name": "Derp on iPad"}, snapshot
+          print("tests/pairing.py opened Derp for iOS's snapshot:", snapshot)
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screenshots
+          path: |
+            screenshots
+          if-no-files-found: ignore
+
+      - name: Build Derp.ipa
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/Derp.xcodeproj -scheme Derp -configuration Release \
+            -sdk iphoneos -destination generic/platform=iOS -derivedDataPath "$RUNNER_TEMP/build" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION="$(cat VERSION)" CURRENT_PROJECT_VERSION="$(cat VERSION)" \
+            | grep -E '^(\*\*|.*error:)' || true
+          app="$RUNNER_TEMP/build/Build/Products/Release-iphoneos/Derp.app"
+          test -x "$app/Derp"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$app" "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/Derp.ipa" Payload)
+          plutil -p "$app/Info.plist" | grep -E 'CFBundle(ShortVersionString|Version|Identifier)'
+          ls -l Derp.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: Derp.ipa

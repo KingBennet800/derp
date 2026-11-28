@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Derp test sign-in</title>
+<style>body { font: 18px system-ui; margin: 32px; } input, button { display: block; font: inherit; margin: 12px 0; padding: 8px; width: 260px; }</style>
+</head>
+<body>
+<h1>Sign in</h1>
+<form id="form">
+  <input name="user" type="text" autocomplete="username" placeholder="Username" aria-label="Username">
+  <input name="pass" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
+  <button type="submit">Sign in</button>
+</form>
+<script>
+  document.getElementById("form").addEventListener("submit", e => {
+    e.preventDefault();
+    location.href = "signed-in.html";
+  });
+</script>
+</body>
+</html>

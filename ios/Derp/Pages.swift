@@ -7,7 +7,7 @@ import WebKit
 final class Pages: NSObject, WKURLSchemeHandler {
     static let scheme = "derp"
     static let base = "derp://pages/"
-    private let folder = Bundle.main.bundleURL.appendingPathComponent("derp")
+    private let folder = Bundle.main.bundleURL.appendingPathComponent("pages")
 
     static func url(_ page: String) -> URL { URL(string: base + page)! }
 
@@ -48,7 +48,7 @@ final class Pages: NSObject, WKURLSchemeHandler {
     }
 
     private static func shared(_ name: String) -> String {
-        (try? String(contentsOf: Bundle.main.bundleURL.appendingPathComponent("derp/" + name))) ?? ""
+        (try? String(contentsOf: Bundle.main.bundleURL.appendingPathComponent("pages/" + name))) ?? ""
     }
 
     /// Doodle's look on its results (Google's and DuckDuckGo's): desktop Derp's

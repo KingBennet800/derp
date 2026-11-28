@@ -4,7 +4,7 @@
     python3 ios/prepare.py [--lists easylist.txt easyprivacy.txt ...]
 
 Writes:
-- Generated/derp/: Derp's own pages, the same ones Derp for Android shows
+- Generated/pages/: Derp's own pages, the same ones Derp for Android shows
   (android/app/src/main/assets/derp/), with what android/prepare_assets.py
   makes for them: the dork drawing code, Doodle's look, the sticker editor,
   the critters, Seasons and What's new. The WebExtension parts (manifest.json,
@@ -40,7 +40,7 @@ WORDING = {
 
 
 def pages(out):
-    """Derp's pages and their shared assets, in out/derp."""
+    """Derp's pages and their shared assets, in [out]."""
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([sys.executable, str(ROOT / "android/prepare_assets.py"), tmp], check=True)
         shutil.copytree(pathlib.Path(tmp) / "assets/derp", out, dirs_exist_ok=True)
@@ -152,10 +152,11 @@ def main():
     args = parser.parse_args()
     if OUT.exists():
         shutil.rmtree(OUT)
-    derp = OUT / "derp"
-    derp.mkdir(parents=True)
-    pages(derp)
-    catalog(OUT / "Assets.xcassets", derp)
+    # (Not "derp": on a Mac's case-insensitive disk that would be the app's own Derp.)
+    folder = OUT / "pages"
+    folder.mkdir(parents=True)
+    pages(folder)
+    catalog(OUT / "Assets.xcassets", folder)
     texts = [pathlib.Path(p).read_text(encoding="utf-8", errors="replace") for p in args.lists]
     rules = blocklist.convert(texts) if texts else blocklist.convert([blocklist.SAMPLE])
     (OUT / "blocklist.json").write_text(json.dumps(rules, separators=(",", ":")), encoding="utf-8")

@@ -94,7 +94,10 @@ jobs:
           python - <<'EOF' >> "$GITHUB_OUTPUT"
           import json, subprocess
           data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
-          runtimes = sorted((r for r in data["devices"] if "iOS" in r), key=lambda r: [int(x) for x in r.rsplit("iOS-", 1)[1].split("-")])
+          # The newest iOS this Xcode's SDK knows (newer simulators may be installed too).
+          sdk = [int(x) for x in subprocess.check_output(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"], text=True).split(".")[:2]]
+          version = lambda r: [int(x) for x in r.rsplit("iOS-", 1)[1].split("-")][:2]
+          runtimes = sorted((r for r in data["devices"] if "iOS-" in r and data["devices"][r] and version(r) <= sdk), key=version)
           devices = data["devices"][runtimes[-1]]
           def pick(prefixes):
               for prefix in prefixes:

@@ -295,7 +295,7 @@ final class BrowserViewController: UIViewController, BrowserUI, UITextFieldDeleg
 
     func textFieldDidBeginEditing(_ field: UITextField) {
         if let tab = browser.current { field.text = browser.address(tab) }
-        field.selectAll(nil)
+        DispatchQueue.main.async { field.selectAll(nil) }
         address.paint(palette, private: browser.current?.isPrivate ?? false)
     }
 

@@ -21,7 +21,7 @@ targets:
     platform: iOS
     sources:
       - path: Derp
-      - path: Generated/derp
+      - path: Generated/pages
         type: folder
         buildPhase: resources
       - path: Generated/Assets.xcassets

@@ -116,7 +116,7 @@ enum WhatsNew {
         return false
     }
 
-    static func releases(_ data: Data? = Bundle.main.url(forResource: "whatsnew", withExtension: "json", subdirectory: "derp").flatMap { try? Data(contentsOf: $0) }) -> [Release] {
+    static func releases(_ data: Data? = Bundle.main.url(forResource: "whatsnew", withExtension: "json", subdirectory: "pages").flatMap { try? Data(contentsOf: $0) }) -> [Release] {
         guard let data, let list = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
         return list.map { release in
             Release(

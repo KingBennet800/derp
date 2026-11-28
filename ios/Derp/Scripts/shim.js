@@ -8,14 +8,20 @@
   if (!handler) return;
 
   // The dork is drawn by the page (dork-art.js), so its pictures are made here too.
+  // (From a blob: URL, which is the page's own, so the canvas can be read back.)
   async function picture(svg, size) {
-    const img = new Image();
-    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-    await img.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    canvas.getContext("2d").drawImage(img, 0, 0, size, size);
-    return canvas.toDataURL("image/png");
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      canvas.getContext("2d").drawImage(img, 0, 0, size, size);
+      return canvas.toDataURL("image/png");
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   }
 
   async function send(message) {

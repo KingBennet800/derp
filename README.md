@@ -304,6 +304,49 @@ APKs and runs one on an emulator for every change; releases need the signing
 key in the `ANDROID_KEYSTORE_B64` and `ANDROID_KEYSTORE_PASSWORD` repo
 secrets.
 
+## Derp for iPhone and iPad
+
+Apple only lets apps on iPhone and iPad use its own engine, WebKit, so Derp
+for iOS is Derp's look and features around WebKit (sideloaded apps too; the
+Firefox engine isn't allowed there). It isn't on the App Store: install
+`Derp.ipa` from the latest release with **SideStore** or **AltStore**, or run
+it inside **LiveContainer**. Add this source to any of them and Derp's
+updates show up there:
+
+    https://github.com/KingBennet800/derp/releases/latest/download/derp-source.json
+
+Derp notices where it runs and uses what that gives it:
+
+- **Installed on its own** (SideStore, AltStore): Derp has its own `derp://`
+  links (`derp://open?url=https://example.com` opens a page in Derp, from the
+  Shortcuts app or a link), Home Screen quick actions (New tab, New private
+  tab, Search with Doodle), its own folder in the Files app for downloads, and
+  more than one window on an iPad. It reminds you before its signature runs
+  out, and update offers open SideStore or AltStore.
+- **In LiveContainer**: links come in through LiveContainer (share a link,
+  choose LiveContainer, choose Derp), and Derp opens them. Each LiveContainer
+  data container is its own Derp, with its own dork, tabs, bookmarks and
+  passwords; Derp shows the container's name as a profile. Derp runs in
+  LiveContainer's multitasking windows too, and **Add Derp to Home Screen**
+  (⋯ → Open links in Derp) makes an icon that opens this Derp in its
+  container.
+
+Either way it has the rest of Derp for Android: your dork (and the dork pet),
+Doodle with Google's or DuckDuckGo's results in Doodle's look, folder tabs on
+iPad and a tabs view on iPhone, private tabs, Looks, Just for fun, What's new,
+bookmarks, history, saved passwords (in the keychain; showing one asks for
+Face ID), Import data, Reader view, find in page, Desktop site, Memory Saver,
+Screenshot with stickers (saved to Photos), Your devices (scan the pairing
+code from Derp on your computer), and **Add to Home Screen**, which makes a
+small profile whose icon opens the page in Derp. Its ad blocker is WebKit's
+content blocker with EasyList and EasyPrivacy (uBlock Origin can't run in
+WebKit), and tracking parameters are stripped from links.
+
+The app's code is in `ios/` (Swift, UIKit and WebKit). CI builds it on a Mac,
+runs its unit tests and a UI test on iPad and iPhone simulators, and builds
+the unsigned `Derp.ipa` (`.github/workflows/ios.yml`); `ios/prepare.py`
+brings in Derp for Android's pages and the shared art first.
+
 ## This repo
 
 - `install.sh`, `install.ps1`, `uninstall.sh`, `uninstall.ps1`: the installers.
@@ -328,6 +371,9 @@ secrets.
   outside the web root).
 - `android/`: Derp for Android (see above). `prepare_assets.py` copies the
   logo and the dork code into the app at build time.
+- `ios/`: Derp for iPhone and iPad (see above). `project.yml` is its Xcode
+  project (XcodeGen), `prepare.py` gathers its pages and art, `blocklist.py`
+  turns filter lists into WebKit's rules, and `source.py` writes its app source.
 - `tests/pairing.py`: Your devices' protocol in Python, and a relay for
   tests.
 - `tests/verify.py`: checks an installed Derp. CI installs, re-installs,
@@ -341,8 +387,9 @@ purpose: the engine would register itself without Derp's profile.
 ### Releasing
 
 Bump `VERSION`, commit, then tag and push it (`git tag v1.2.3 && git push --tags`).
-The Release workflow publishes the archives and `SHA256SUMS`, then installs the
-release with the one-liners on all three platforms to check it.
+The Release workflow publishes the archives, the APKs, `Derp.ipa`,
+`derp-source.json` and `SHA256SUMS`, then installs the release with the
+one-liners on all three platforms to check it.
 
 ## License
 

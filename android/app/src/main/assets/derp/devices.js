@@ -1,10 +1,13 @@
 "use strict";
 // Your devices: the Derps this phone is paired with, and their open tabs.
 // Pairing starts on your computer (its QR code); the app does the syncing.
+// Derps that scan the code themselves (Derp for iOS) say so in getState.
 const lede = document.getElementById("lede");
 const devices = document.getElementById("devices");
 const problem = document.getElementById("problem");
 const sync = document.getElementById("sync");
+/** What this device is called in the page's words. */
+let here = "this phone";
 
 function ago(at) {
   const minutes = Math.round((Date.now() - at) / 60000);
@@ -22,7 +25,7 @@ function show(state) {
   document.getElementById("actions").hidden = !paired;
   lede.textContent = paired
     ? `Bookmarks, passwords and open tabs, shared with your other Derps. Synced ${ago(state.syncedAt)}.`
-    : "Pair Derp on your computer with this phone, and your bookmarks, passwords and open tabs follow you between them.";
+    : `Pair Derp on your computer with ${here}, and your bookmarks, passwords and open tabs follow you between them.`;
   problem.hidden = !state?.problem;
   problem.textContent = state?.problem ? `Couldn’t sync just now (${state.problem}). Derp tries again in a few minutes.` : "";
   const list = paired ? state.devices || [] : [];
@@ -69,9 +72,23 @@ sync.addEventListener("click", async () => {
 });
 
 document.getElementById("leave").addEventListener("click", async () => {
-  if (!confirm("Stop syncing? This phone leaves the pair. Its bookmarks and passwords stay here, and your other devices keep theirs.")) return;
+  const who = here[0].toUpperCase() + here.slice(1);
+  if (!confirm(`Stop syncing? ${who} leaves the pair. Its bookmarks and passwords stay here, and your other devices keep theirs.`)) return;
   const answer = await derp({ type: "devices.leave" });
   show(answer?.devices || { paired: false });
 });
 
-(async () => show((await derp({ type: "devices.get" }))?.devices))();
+document.getElementById("scan").addEventListener("click", async () => {
+  const answer = await derp({ type: "devices.scan" });
+  if (answer?.devices) show(answer.devices);
+});
+
+(async () => {
+  const state = await derp({ type: "getState" });
+  if (state?.scan) {
+    here = state.here || here;
+    document.getElementById("step-camera").textContent = `Tap Scan the code, and point ${here}’s camera at it.`;
+    document.getElementById("scan-actions").hidden = false;
+  }
+  show((await derp({ type: "devices.get" }))?.devices);
+})();

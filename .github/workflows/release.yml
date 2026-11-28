@@ -66,8 +66,15 @@ jobs:
           name: apks
           path: apks/
 
+  # Derp for iOS and iPadOS: Derp.ipa, unsigned (SideStore, AltStore or
+  # LiveContainer signs it when you install it), tested on simulators first.
+  ios:
+    uses: ./.github/workflows/ios.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+
   publish:
-    needs: android
+    needs: [android, ios]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -79,18 +86,24 @@ jobs:
         with:
           name: apks
           path: .
+      - uses: actions/download-artifact@v4
+        with:
+          name: ipa
+          path: .
       - name: Build archives
         run: |
           name=derp-$(cat VERSION)
           git archive --format=tar.gz --prefix="$name/" -o "$name.tar.gz" HEAD
           git archive --format=zip --prefix="$name/" -o "$name.zip" HEAD
-          sha256sum "$name.tar.gz" "$name.zip" derp-android-*.apk > SHA256SUMS
+          # SideStore, AltStore and LiveContainer read this source to keep Derp for iOS up to date.
+          python3 ios/source.py "$(cat VERSION)" Derp.ipa derp-source.json
+          sha256sum "$name.tar.gz" "$name.zip" derp-android-*.apk Derp.ipa derp-source.json > SHA256SUMS
           cat SHA256SUMS
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" derp-*.tar.gz derp-*.zip derp-android-*.apk SHA256SUMS \
+          gh release create "$TAG" derp-*.tar.gz derp-*.zip derp-android-*.apk Derp.ipa derp-source.json SHA256SUMS \
             --title "Derp $(cat VERSION)" --generate-notes --verify-tag
 
   # The website's Android buttons link straight to the latest release's APKs.

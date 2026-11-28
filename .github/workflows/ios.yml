@@ -43,7 +43,13 @@ on:
       - VERSION
       - .github/workflows/ios.yml
   workflow_dispatch:
+  # Releases build Derp.ipa from their tag with this.
   workflow_call:
+    inputs:
+      ref:
+        description: The commit or tag to build
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -58,6 +64,8 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: actions/setup-python@v5
         with:
@@ -113,7 +121,12 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/results.xcresult" \
             MARKETING_VERSION="$(cat VERSION)" CURRENT_PROJECT_VERSION="$(cat VERSION)" \
             | tee "$RUNNER_TEMP/test.log" | grep -E '^(Test Case|Testing|\*\*|.*error:|.*warning: .*Derp/)|Derp: ' || true
-          grep -q '\*\* TEST SUCCEEDED \*\*' "$RUNNER_TEMP/test.log"
+          if ! grep -q '\*\* TEST SUCCEEDED \*\*' "$RUNNER_TEMP/test.log"; then
+            echo "::group::What went wrong"
+            grep -E -B3 -A20 'error:|Undefined symbol|duplicate symbol|ld: |failed:|XCTAssert|Restarting after unexpected exit' "$RUNNER_TEMP/test.log" | head -400
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Screenshots
         if: always()
@@ -150,6 +163,7 @@ jobs:
           name: ios-screenshots
           path: |
             screenshots
+            ${{ runner.temp }}/test.log
           if-no-files-found: ignore
 
       - name: Build Derp.ipa
